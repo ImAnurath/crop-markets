@@ -11,6 +11,7 @@ __pycache__/
 
 # Data pulled at runtime (keep out of git)
 data/raw/
+data/interim/
 
 # Notebooks
 .ipynb_checkpoints/
@@ -26,3 +27,4 @@ docs/superpowers/
 .idea/
 Thumbs.db
 .DS_Store
+reports/figures/
