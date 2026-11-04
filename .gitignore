@@ -15,6 +15,12 @@ data/raw/
 # Notebooks
 .ipynb_checkpoints/
 
+# Claude Code settings, memory and AI-generated planning docs
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+docs/superpowers/
+
 # Editors / OS
 .vscode/
 .idea/
