@@ -8,10 +8,12 @@ from functools import partial
 from hazelnut.forecast.backtest import Method
 from hazelnut.forecast.methods.baselines import Naive, SeasonalNaive
 from hazelnut.forecast.methods.sarimax import Sarimax
+from hazelnut.forecast.methods.season import SeasonRegression
 
 REGISTRY: dict[str, Callable[[], Method]] = {
     "naive": Naive,
     "seasonal_naive": SeasonalNaive,
     "sarima": partial(Sarimax, exog=False),
     "sarimax": partial(Sarimax, exog=True),
+    "season_reg": SeasonRegression,
 }
