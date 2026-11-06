@@ -11,6 +11,7 @@ from hazelnut.forecast.methods.sarimax import Sarimax
 
 REGISTRY: dict[str, Callable[[], Method]] = {
     "naive": Naive,
+    "seasonal_naive": SeasonalNaive,
     "sarima": partial(Sarimax, exog=False),
     "sarimax": partial(Sarimax, exog=True),
 }
