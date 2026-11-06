@@ -55,6 +55,7 @@ setuptools==84.2.1
 shellingham==1.5.4
 statsmodels==0.15.0
 sympy==1.14.0
+tabulate==0.10.0
 threadpoolctl==3.8.0
 tokenizers==0.23.3
 torch==2.15.0

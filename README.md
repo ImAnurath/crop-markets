@@ -10,7 +10,8 @@ mostly from memory and WhatsApp groups.
 
 ## Status
 
-Early planning. Nothing is built yet.
+Raw data is collected and explored (`notebooks/01_first_look.py`). The price forecasting
+comparison is done: see [reports/forecast_results.md](reports/forecast_results.md).
 
 ## Planned parts
 
@@ -21,4 +22,4 @@ Early planning. Nothing is built yet.
 | Analysis  | Notebooks answering real questions about price movements                  |
 | Dashboard | Power BI report on price trends, regions and export destinations          |
 | Excel     | Automated weekly summary workbook                                         |
-| ML        | Price forecast with a baseline comparison and backtest                    |
+| ML        | Price forecast with a baseline comparison and backtest: [results](reports/forecast_results.md) |

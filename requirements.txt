@@ -7,3 +7,4 @@ statsmodels>=0.14.4
 lightgbm>=4.5
 scikit-learn>=1.5
 chronos-forecasting>=1.5
+tabulate>=0.9
