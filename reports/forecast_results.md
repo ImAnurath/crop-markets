@@ -12,9 +12,11 @@ Target: Giresun Commodity Exchange monthly average in-shell hazelnut price, USD/
 - **Outside inputs did not help.** SARIMAX (with crop estimate and exchange-rate changes)
   is no better than SARIMA without them, and worse at 1 month. LightGBM with every input
   is worse than naive by 5-13%, and Chronos-Bolt (zero-shot, price only) by 6-8%.
-- **Shocks are where everyone fails.** Errors more than double in the 2005 and 2014-15
-  shock periods for every method, naive included. Only seasonal naive edges past naive
-  there (at 1 and 6 months), and only by 2-4%.
+- **Shocks are where everyone fails.** In the 2005 and 2014-15 shock periods, errors are
+  2 to 2.7 times their calm-period size for every month-to-month method, naive included.
+  (The season regression's errors grow less because they are already large in calm months.)
+  Beating naive during shocks is rare and small: seasonal naive at 1 and 6 months (+2 to +4%)
+  and the season regression at 6 months (+6%).
 - **The season regression is a different tool.** Used as a monthly forecast it is far worse
   than naive (it predicts one season average for every month). At season level it beats
   "same as last season" (MAE 0.69 vs 0.93 USD/kg) but is about level
