@@ -20,8 +20,9 @@ from pathlib import Path
 import pandas as pd
 
 from hazelnut.forecast.backtest import run_backtest, split_dev
-from hazelnut.forecast.dataset import load_dataset
+from hazelnut.forecast.dataset import HORIZONS, load_dataset
 from hazelnut.forecast.methods import REGISTRY
+from hazelnut.forecast.methods.gbm import Gbm, importances
 from hazelnut.forecast.methods.season import season_backtest
 from hazelnut.forecast.metrics import score, score_by_period
 
@@ -73,6 +74,18 @@ def print_seasons(target: pd.Series, inputs: pd.DataFrame) -> None:
         print(f"  {col:<18} MAE {mae:.3f}  MAPE {mape:.1f}%")
 
 
+def print_importances(target: pd.Series, inputs: pd.DataFrame) -> None:
+    """Top features by gain for LightGBM fitted at the last origin of the data given."""
+    model = Gbm()
+    model.forecast(target, inputs, list(HORIZONS))
+    print(f"\n== LightGBM top features by gain, fitted at {target.index[-1]} ==")
+    table = pd.DataFrame(
+        {f"h={h}": importances(m).index for h, m in sorted(model.models.items())},
+        index=range(1, 9),
+    )
+    print(table.to_string())
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8")  # Windows console defaults to cp1252
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -94,6 +107,8 @@ def main(argv: list[str] | None = None) -> int:
     print_scores(load_results(folder))
     if args.seasons:
         print_seasons(target, inputs)
+    if "lightgbm" in args.methods:
+        print_importances(target, inputs)
     return 0
 
 
