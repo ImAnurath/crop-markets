@@ -27,5 +27,4 @@ docs/superpowers/
 .idea/
 Thumbs.db
 .DS_Store
-reports/figures/
 reports/backtest/
