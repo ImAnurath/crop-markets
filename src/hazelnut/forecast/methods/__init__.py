@@ -20,4 +20,8 @@ REGISTRY: dict[str, Callable[[], Method]] = {
     "season_reg": SeasonRegression,
     "lightgbm": Gbm,
     "chronos": ChronosBolt,
+    # Same methods with the official national crop estimate in place of the Giresun one.
+    "sarimax_nat": partial(Sarimax, exog=True, crop_col="nat_crop_change", name="sarimax_nat"),
+    "season_reg_nat": partial(SeasonRegression, crop_col="nat_crop_change", name="season_reg_nat"),
+    "lightgbm_nat": partial(Gbm, crop_col="nat_crop_change", name="lightgbm_nat"),
 }

@@ -19,3 +19,11 @@ def test_gbm_too_little_history_returns_none():
 
 def test_registered():
     assert REGISTRY["lightgbm"]().name == "lightgbm"
+    assert REGISTRY["lightgbm_nat"]().name == "lightgbm_nat"
+
+
+def test_gbm_national_crop_column_is_used():
+    history, inputs = synthetic(years=20)
+    inputs = inputs.assign(nat_crop_change=inputs["crop_change"] * 0 + 0.3)
+    out = Gbm(crop_col="nat_crop_change").forecast(history, inputs, [1])
+    assert np.isfinite(out[1])

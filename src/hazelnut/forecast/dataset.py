@@ -13,6 +13,10 @@ Every timing shift happens here, once, so methods never need to think about it:
 - frost_days:       March-April days with min temperature < 0, averaged over locations,
                     for year Y, visible from May of Y
 - volume_kg:        Giresun registered volume (all buyers) of month t
+- nat_crop_estimate_t,
+  nat_crop_change:  official national crop estimate for harvest year Y (data/manual), visible from
+                    the month in its visible_from column (August of Y unless the announcement is
+                    known to be later); nat_crop_change = log(est_Y / est_{Y-1})
 """
 
 from __future__ import annotations
@@ -23,6 +27,8 @@ import numpy as np
 import pandas as pd
 
 DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "interim"
+MANUAL_DIR = DATA_DIR.parent / "manual"
+NATIONAL_CROP_FILE = "national_crop_estimate.csv"
 HORIZONS = (1, 3, 6)
 FIRST_ORIGIN = pd.Period("2005-01", "M")
 HOLDOUT_MONTHS = 24
@@ -44,8 +50,11 @@ _FILES = {
 }
 
 
-def load_tables(data_dir: Path = DATA_DIR) -> dict[str, pd.DataFrame]:
-    return {key: pd.read_csv(data_dir / name) for key, name in _FILES.items()}
+def load_tables(data_dir: Path = DATA_DIR, manual_dir: Path = MANUAL_DIR) -> dict[str, pd.DataFrame]:
+    tables = {key: pd.read_csv(data_dir / name) for key, name in _FILES.items()}
+    if (manual_dir / NATIONAL_CROP_FILE).exists():
+        tables["national_crop"] = pd.read_csv(manual_dir / NATIONAL_CROP_FILE)
+    return tables
 
 
 def _year_month_index(df: pd.DataFrame) -> pd.PeriodIndex:
@@ -85,6 +94,25 @@ def crop_feature(crop: pd.DataFrame, months: pd.PeriodIndex) -> pd.DataFrame:
         {
             "crop_estimate_t": _annual(est, visible, months),
             "crop_change": _annual(change, visible, months),
+        },
+        index=months,
+    )
+
+
+def national_crop_feature(national: pd.DataFrame, months: pd.PeriodIndex) -> pd.DataFrame:
+    """Row m holds the estimate of the latest harvest year whose ``visible_from`` month is <= m."""
+    t = national.sort_values("year")
+    est = pd.Series(t["estimate_t"].astype(float).to_numpy(), index=t["year"].astype(int))
+    change = np.log(est / est.reindex(est.index - 1).to_numpy())
+    visible = pd.PeriodIndex(t["visible_from"], freq="M")
+    if not visible.is_monotonic_increasing:
+        raise ValueError("visible_from must not go backwards from one year to the next")
+    pos = np.searchsorted(visible.asi8, months.asi8, side="right") - 1
+    year = np.where(pos >= 0, est.index.to_numpy()[np.clip(pos, 0, None)], -1)
+    return pd.DataFrame(
+        {
+            "nat_crop_estimate_t": _annual(est, year, months),
+            "nat_crop_change": _annual(change, year, months),
         },
         index=months,
     )
@@ -137,18 +165,18 @@ def volume_feature(volume: pd.DataFrame, months: pd.PeriodIndex) -> pd.Series:
 
 def build_inputs(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     months = target_series(tables["giresun_price"]).index
-    return pd.concat(
-        [
-            fx_feature(tables["giresun_price"], months),
-            cpi_feature(tables["cpi"], months),
-            exports_feature(tables["comtrade"], months),
-            fao_feature(tables["faostat"], months),
-            crop_feature(tables["giresun_crop"], months),
-            frost_feature(tables["weather"], months),
-            volume_feature(tables["giresun_volume"], months),
-        ],
-        axis=1,
-    )
+    parts = [
+        fx_feature(tables["giresun_price"], months),
+        cpi_feature(tables["cpi"], months),
+        exports_feature(tables["comtrade"], months),
+        fao_feature(tables["faostat"], months),
+        crop_feature(tables["giresun_crop"], months),
+        frost_feature(tables["weather"], months),
+        volume_feature(tables["giresun_volume"], months),
+    ]
+    if "national_crop" in tables:
+        parts.append(national_crop_feature(tables["national_crop"], months))
+    return pd.concat(parts, axis=1)
 
 
 def load_dataset(data_dir: Path = DATA_DIR) -> tuple[pd.Series, pd.DataFrame]:

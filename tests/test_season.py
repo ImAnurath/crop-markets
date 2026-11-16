@@ -81,3 +81,5 @@ def test_season_backtest_rows():
 
 def test_registered():
     assert REGISTRY["season_reg"]().name == "season_reg"
+    m = REGISTRY["season_reg_nat"]()
+    assert (m.name, m.crop_col) == ("season_reg_nat", "nat_crop_change")

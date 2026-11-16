@@ -33,23 +33,25 @@ def season_averages(history: pd.Series) -> pd.Series:
     return grouped.mean()[complete].astype(float)
 
 
-def _crop_change(inputs: pd.DataFrame, year: int) -> float:
+def _crop_change(inputs: pd.DataFrame, year: int, crop_col: str = "crop_change") -> float:
     month = pd.Period(f"{year}-08", "M")
     if month not in inputs.index:
         return np.nan
-    return float(inputs.at[month, "crop_change"])
+    return float(inputs.at[month, crop_col])
 
 
-def predict_season(history: pd.Series, inputs: pd.DataFrame, year: int) -> float | None:
+def predict_season(
+    history: pd.Series, inputs: pd.DataFrame, year: int, crop_col: str = "crop_change"
+) -> float | None:
     """Predicted S_year from data up to history.index[-1], or None when it can't be made."""
     averages = season_averages(history)
     rows, labels = [], []
     for y, s in averages.items():
-        cc = _crop_change(inputs, y)
+        cc = _crop_change(inputs, y, crop_col)
         if y - 1 in averages.index and np.isfinite(cc):
             rows.append([1.0, cc])
             labels.append(np.log(s / averages[y - 1]))
-    cc_now = _crop_change(inputs, year)
+    cc_now = _crop_change(inputs, year, crop_col)
     if len(rows) < MIN_SEASONS or year - 1 not in averages.index or not np.isfinite(cc_now):
         return None
     coef, *_ = np.linalg.lstsq(np.array(rows), np.array(labels), rcond=None)
@@ -57,7 +59,11 @@ def predict_season(history: pd.Series, inputs: pd.DataFrame, year: int) -> float
 
 
 class SeasonRegression:
-    name = "season_reg"
+    """``crop_col`` picks the crop input: the Giresun estimate (default) or nat_crop_change."""
+
+    def __init__(self, crop_col: str = "crop_change", name: str = "season_reg"):
+        self.crop_col = crop_col
+        self.name = name
 
     def forecast(self, history: pd.Series, inputs: pd.DataFrame, horizons: Sequence[int]):
         origin = history.index[-1]
@@ -69,13 +75,16 @@ class SeasonRegression:
                 out[h] = None
                 continue
             if year not in cache:
-                cache[year] = predict_season(history, inputs, year)
+                cache[year] = predict_season(history, inputs, year, self.crop_col)
             out[h] = cache[year]
         return out
 
 
 def season_backtest(
-    target: pd.Series, inputs: pd.DataFrame, first_season: int = FIRST_SEASON
+    target: pd.Series,
+    inputs: pd.DataFrame,
+    first_season: int = FIRST_SEASON,
+    crop_col: str = "crop_change",
 ) -> pd.DataFrame:
     """One row per August origin (season Y predicted in August Y) whose season is complete."""
     averages = season_averages(target)
@@ -85,7 +94,7 @@ def season_backtest(
         if origin not in target.index:
             continue
         history = target.loc[:origin]
-        forecast = predict_season(history, inputs.loc[:origin], year)
+        forecast = predict_season(history, inputs.loc[:origin], year, crop_col)
         rows.append(
             (
                 year,
