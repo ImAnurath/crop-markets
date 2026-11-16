@@ -13,6 +13,11 @@ Every timing shift happens here, once, so methods never need to think about it:
 - frost_days:       March-April days with min temperature < 0, averaged over locations,
                     for year Y, visible from May of Y
 - volume_kg:        Giresun registered volume (all buyers) of month t
+
+Lira target (``load_dataset_try``): the same months priced in TRY/kg, old-lira rows divided by
+1,000,000, with two extra inputs:
+- usd_try_eom:      last daily USD/TRY quote of month t (fx_daily.csv, known at the end of t)
+- cpi:              as above (month t-1)
 """
 
 from __future__ import annotations
@@ -31,6 +36,14 @@ SHOCK_PERIODS: list[tuple[str, str]] = [
     ("2014-01", "2015-12"),
     ("2025-01", "2025-12"),
 ]
+# Lira crises, by target month, for splitting lira-target scores. Fixed from the history of
+# USD/TRY (2018 currency crisis; 2021 rate cuts through the 2022 inflation peak and the
+# mid-2023 devaluation), not tuned on forecast errors.
+LIRA_CRISES: list[tuple[str, str]] = [
+    ("2018-05", "2018-12"),
+    ("2021-09", "2023-12"),
+]
+OLD_LIRA_FACTOR = 1_000_000
 TARGET_START = pd.Period("1995-01", "M")
 
 _FILES = {
@@ -74,6 +87,25 @@ def target_series(giresun_price: pd.DataFrame) -> pd.Series:
     last = s.last_valid_index()
     idx = pd.period_range(TARGET_START, last, freq="M")
     return s.reindex(idx).rename("price_usd")
+
+
+def target_series_try(giresun_price: pd.DataFrame) -> pd.Series:
+    """Monthly average price in (new) TRY/kg; old-lira rows (pre-2005) divided by 1,000,000."""
+    raw = giresun_price["price_avg_try"].to_numpy(dtype=float)
+    old = giresun_price["old_lira"].astype(bool).to_numpy()
+    s = pd.Series(np.where(old, raw / OLD_LIRA_FACTOR, raw), index=_year_month_index(giresun_price))
+    s = s[s.index >= TARGET_START]
+    last = s.last_valid_index()
+    idx = pd.period_range(TARGET_START, last, freq="M")
+    return s.reindex(idx).rename("price_try")
+
+
+def fx_eom_feature(fx_daily: pd.DataFrame, months: pd.PeriodIndex) -> pd.Series:
+    """Row t = the last daily USD/TRY quote dated inside month t (fx_daily is in new lira)."""
+    dates = pd.to_datetime(fx_daily["date"])
+    rows = fx_daily.assign(_date=dates).dropna(subset=["usd_try"]).sort_values("_date")
+    last = rows.groupby(rows["_date"].dt.to_period("M"))["usd_try"].last().astype(float)
+    return last.reindex(months).rename("usd_try_eom")
 
 
 def crop_feature(crop: pd.DataFrame, months: pd.PeriodIndex) -> pd.DataFrame:
@@ -121,7 +153,7 @@ def exports_feature(comtrade: pd.DataFrame, months: pd.PeriodIndex) -> pd.Series
 def fx_feature(giresun_price: pd.DataFrame, months: pd.PeriodIndex) -> pd.Series:
     rate = giresun_price["usd_try"].astype(float).to_numpy()
     old = giresun_price["old_lira"].astype(bool).to_numpy()
-    s = pd.Series(np.where(old, rate / 1_000_000, rate), index=_year_month_index(giresun_price))
+    s = pd.Series(np.where(old, rate / OLD_LIRA_FACTOR, rate), index=_year_month_index(giresun_price))
     return s.reindex(months).rename("usd_try")
 
 
@@ -154,3 +186,13 @@ def build_inputs(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
 def load_dataset(data_dir: Path = DATA_DIR) -> tuple[pd.Series, pd.DataFrame]:
     tables = load_tables(data_dir)
     return target_series(tables["giresun_price"]), build_inputs(tables)
+
+
+def load_dataset_try(data_dir: Path = DATA_DIR) -> tuple[pd.Series, pd.DataFrame]:
+    """Lira target (TRY/kg) and the USD inputs plus ``usd_try_eom``, on the same months."""
+    tables = load_tables(data_dir)
+    target = target_series_try(tables["giresun_price"])
+    inputs = build_inputs(tables).reindex(target.index)
+    fx_daily = pd.read_csv(data_dir / "fx_daily.csv")
+    inputs["usd_try_eom"] = fx_eom_feature(fx_daily, target.index)
+    return target, inputs
