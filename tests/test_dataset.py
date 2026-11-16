@@ -11,6 +11,7 @@ from hazelnut.forecast.dataset import (
     frost_feature,
     fx_feature,
     load_dataset,
+    national_crop_feature,
     target_series,
     volume_feature,
 )
@@ -30,6 +31,36 @@ def test_crop_estimate_visible_from_august():
     assert f.loc[M("2023-07"), "crop_estimate_t"] == 100.0
     assert f.loc[M("2023-08"), "crop_estimate_t"] == 50.0
     assert f.loc[M("2023-08"), "crop_change"] == pytest.approx(np.log(0.5))
+
+
+def test_national_crop_follows_visible_from():
+    national = pd.DataFrame({
+        "year": [2016, 2017, 2018],
+        "estimate_t": [400.0, 800.0, 600.0],
+        "visible_from": ["2016-08", "2017-08", "2018-11"],  # 2018 announced late
+    })
+    f = national_crop_feature(national, months("2016-07", "2018-12"))
+    assert f[["nat_crop_estimate_t", "nat_crop_change"]].loc[M("2016-07")].isna().all()
+    assert f.loc[M("2017-07"), "nat_crop_estimate_t"] == 400.0
+    assert f.loc[M("2017-08"), "nat_crop_change"] == pytest.approx(np.log(2.0))
+    # August-October 2018 still show the 2017 estimate; 2018 appears in November.
+    assert (f.loc[M("2018-08"):M("2018-10"), "nat_crop_estimate_t"] == 800.0).all()
+    assert f.loc[M("2018-11"), "nat_crop_estimate_t"] == 600.0
+    assert f.loc[M("2018-11"), "nat_crop_change"] == pytest.approx(np.log(0.75))
+
+
+def test_national_crop_rows_ignore_later_years():
+    """No leak: a row never changes when a year that becomes visible later is edited."""
+    base = pd.DataFrame({
+        "year": [2016, 2017, 2018],
+        "estimate_t": [400.0, 800.0, 600.0],
+        "visible_from": ["2016-08", "2017-08", "2018-08"],
+    })
+    edited = base.assign(estimate_t=[400.0, 800.0, 9999.0])
+    idx = months("2016-01", "2018-07")
+    pd.testing.assert_frame_equal(
+        national_crop_feature(base, idx), national_crop_feature(edited, idx)
+    )
 
 
 def test_frost_visible_from_may():
@@ -127,3 +158,5 @@ def test_real_data_shapes():
     assert not target.isna().any()
     assert inputs.index.equals(target.index)
     assert np.isfinite(inputs.loc[M("2015-08"), "crop_change"])
+    assert np.isfinite(inputs.loc[M("2015-08"), "nat_crop_change"])
+    assert inputs.loc[M("2018-10"), "nat_crop_estimate_t"] == inputs.loc[M("2018-07"), "nat_crop_estimate_t"]

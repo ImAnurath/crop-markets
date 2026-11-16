@@ -27,8 +27,14 @@ FEATURES = [
 ]
 
 
-def make_features(history: pd.Series, inputs: pd.DataFrame) -> pd.DataFrame:
-    """One row per month of ``history``. NaN where a lag reaches before the data."""
+def make_features(
+    history: pd.Series, inputs: pd.DataFrame, crop_col: str = "crop_change"
+) -> pd.DataFrame:
+    """One row per month of ``history``. NaN where a lag reaches before the data.
+
+    The ``crop_change`` feature is taken from the inputs column ``crop_col`` (the Giresun
+    estimate by default, or ``nat_crop_change`` for the national estimate).
+    """
     idx = history.index
     inp = inputs.reindex(idx)
     log_price = np.log(history.astype(float))
@@ -45,7 +51,7 @@ def make_features(history: pd.Series, inputs: pd.DataFrame) -> pd.DataFrame:
             "ret_12": log_price - log_price.shift(12),
             "month": month,
             "months_since_estimate": (month - 8) % 12,
-            "crop_change": inp["crop_change"],
+            "crop_change": inp[crop_col],
             "frost_days": inp["frost_days"],
             "exports_yoy": np.log(exports / exports.shift(12)),
             "fx_ret_1": log_fx - log_fx.shift(1),

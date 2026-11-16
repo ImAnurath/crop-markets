@@ -48,10 +48,10 @@ def select_order(y: np.ndarray, exog: np.ndarray | None) -> tuple[Order, Seasona
     return best
 
 
-def exog_frame(inputs: pd.DataFrame) -> pd.DataFrame:
+def exog_frame(inputs: pd.DataFrame, crop_col: str = "crop_change") -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "crop_change": inputs["crop_change"],
+            crop_col: inputs[crop_col],
             "fx_ret_1": np.log(inputs["usd_try"]).diff(),
         },
         index=inputs.index,
@@ -59,9 +59,12 @@ def exog_frame(inputs: pd.DataFrame) -> pd.DataFrame:
 
 
 class Sarimax:
-    def __init__(self, exog: bool):
+    """``crop_col`` picks the crop input: the Giresun estimate (default) or nat_crop_change."""
+
+    def __init__(self, exog: bool, crop_col: str = "crop_change", name: str | None = None):
         self.exog = exog
-        self.name = "sarimax" if exog else "sarima"
+        self.crop_col = crop_col
+        self.name = name or ("sarimax" if exog else "sarima")
         self._orders: dict[int, tuple[Order, SeasonalOrder]] = {}
 
     def forecast(self, history: pd.Series, inputs: pd.DataFrame, horizons: Sequence[int]):
@@ -69,7 +72,7 @@ class Sarimax:
         y = np.log(history)
         X = None
         if self.exog:
-            X = exog_frame(inputs.loc[: origin])
+            X = exog_frame(inputs.loc[: origin], self.crop_col)
             bad = X.isna().any(axis=1)
             if bad.any():
                 start = bad[bad].index[-1] + 1  # keep the contiguous complete tail
@@ -88,7 +91,7 @@ class Sarimax:
         future = None
         if X is not None:
             future = np.column_stack(
-                [np.full(steps, X["crop_change"].iloc[-1]), np.zeros(steps)]
+                [np.full(steps, X[self.crop_col].iloc[-1]), np.zeros(steps)]
             )
         path = np.asarray(result.forecast(steps=steps, exog=future))
         return {h: float(np.exp(path[h - 1])) for h in horizons}

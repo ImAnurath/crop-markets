@@ -32,13 +32,15 @@ PARAMS = dict(
 
 
 class Gbm:
-    name = "lightgbm"
+    """``crop_col`` picks the crop input: the Giresun estimate (default) or nat_crop_change."""
 
-    def __init__(self):
+    def __init__(self, crop_col: str = "crop_change", name: str = "lightgbm"):
+        self.crop_col = crop_col
+        self.name = name
         self.models: dict[int, LGBMRegressor] = {}  # the last fitted model per horizon
 
     def forecast(self, history: pd.Series, inputs: pd.DataFrame, horizons: Sequence[int]):
-        features = make_features(history, inputs)
+        features = make_features(history, inputs, self.crop_col)
         last_price = float(history.dropna().iloc[-1])
         origin_row = features.iloc[[-1]]
         out: dict[int, float | None] = {}

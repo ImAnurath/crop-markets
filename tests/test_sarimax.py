@@ -51,3 +51,5 @@ def test_sarimax_future_exog_shape():
 def test_registered_under_both_names():
     assert REGISTRY["sarima"]().name == "sarima"
     assert REGISTRY["sarimax"]().name == "sarimax"
+    m = REGISTRY["sarimax_nat"]()
+    assert (m.name, m.crop_col) == ("sarimax_nat", "nat_crop_change")
