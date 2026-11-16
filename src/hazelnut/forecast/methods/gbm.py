@@ -55,6 +55,30 @@ class Gbm:
         return out
 
 
+class QuantileGbm:
+    """LightGBM quantile regression: one model per (horizon, level), same features, labels and
+    fixed parameters as ``Gbm`` but with the pinball loss for that level."""
+
+    name = "lightgbm_q"
+
+    def quantiles(self, history, inputs, horizons: Sequence[int], levels: Sequence[float]):
+        features = make_features(history, inputs)
+        last_price = float(history.dropna().iloc[-1])
+        origin_row = features.iloc[[-1]]
+        out: dict[int, list[float] | None] = {}
+        for h in horizons:
+            X, y = training_set(features, history, h)
+            if len(X) < MIN_ROWS:
+                out[h] = None
+                continue
+            preds = []
+            for lv in levels:
+                params = dict(PARAMS, objective="quantile", alpha=lv)
+                preds.append(LGBMRegressor(**params).fit(X, y).predict(origin_row)[0])
+            out[h] = list(last_price * np.exp(np.asarray(preds)))
+        return out
+
+
 def importances(model: LGBMRegressor, top: int = 8) -> pd.Series:
     """Feature importance by total gain, largest first."""
     gain = model.booster_.feature_importance(importance_type="gain")

@@ -16,6 +16,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 Order = tuple[int, int, int]
@@ -67,7 +68,8 @@ class Sarimax:
         self.name = name or ("sarimax" if exog else "sarima")
         self._orders: dict[int, tuple[Order, SeasonalOrder]] = {}
 
-    def forecast(self, history: pd.Series, inputs: pd.DataFrame, horizons: Sequence[int]):
+    def _fit_at(self, history: pd.Series, inputs: pd.DataFrame, steps: int):
+        """The fitted model at this origin and the future inputs, or None if too little data."""
         origin = history.index[-1]
         y = np.log(history)
         X = None
@@ -78,7 +80,7 @@ class Sarimax:
                 start = bad[bad].index[-1] + 1  # keep the contiguous complete tail
                 y, X = y.loc[start:], X.loc[start:]
             if len(y) < 36:
-                return {h: None for h in horizons}
+                return None
 
         if origin.year not in self._orders:
             self._orders[origin.year] = select_order(
@@ -87,11 +89,30 @@ class Sarimax:
         order, seasonal = self._orders[origin.year]
         result = _fit(y.to_numpy(), None if X is None else X.to_numpy(), order, seasonal)
 
-        steps = max(horizons)
         future = None
         if X is not None:
             future = np.column_stack(
                 [np.full(steps, X[self.crop_col].iloc[-1]), np.zeros(steps)]
             )
+        return result, future
+
+    def forecast(self, history: pd.Series, inputs: pd.DataFrame, horizons: Sequence[int]):
+        steps = max(horizons)
+        fitted = self._fit_at(history, inputs, steps)
+        if fitted is None:
+            return {h: None for h in horizons}
+        result, future = fitted
         path = np.asarray(result.forecast(steps=steps, exog=future))
         return {h: float(np.exp(path[h - 1])) for h in horizons}
+
+    def quantiles(self, history, inputs, horizons: Sequence[int], levels: Sequence[float]):
+        """The model's own prediction intervals: normal in log price, so exp(mean + z * se)."""
+        steps = max(horizons)
+        fitted = self._fit_at(history, inputs, steps)
+        if fitted is None:
+            return {h: None for h in horizons}
+        result, future = fitted
+        pred = result.get_forecast(steps=steps, exog=future)
+        mean, se = np.asarray(pred.predicted_mean), np.asarray(pred.se_mean)
+        z = norm.ppf(np.asarray(levels, dtype=float))
+        return {h: list(np.exp(mean[h - 1] + z * se[h - 1])) for h in horizons}
