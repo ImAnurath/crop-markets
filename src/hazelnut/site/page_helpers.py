@@ -151,6 +151,20 @@ def exchanges_phrase(exchanges) -> str:
     return f"{', '.join(names[:-1])} & {names[-1]} exchanges"
 
 
+EXCHANGE_SUFFIX = " Commodity Exchange"
+
+
+def sources_summary(sources) -> tuple[str, str]:
+    """("8 public datasets", "Giresun & Ordu exchanges, UN Comtrade, ...") from a crop's
+    ``WORKBOOK_SOURCES`` rows (provider name first). Commodity exchanges are grouped."""
+    names = [row[0] for row in sources]
+    cities = [n.removesuffix(EXCHANGE_SUFFIX) for n in names if n.endswith(EXCHANGE_SUFFIX)]
+    others = [n for n in names if not n.endswith(EXCHANGE_SUFFIX)]
+    listed = ([exchanges_phrase(cities)] if cities else []) + others
+    count = f"{len(names)} public dataset{'' if len(names) == 1 else 's'}"
+    return count, ", ".join(listed)
+
+
 def crop_cards_html(crops: Mapping[str, CropConfig], data_dir: Path) -> str:
     """One card per crop for the home page, each linking ``<slug>/index.qmd``.
 

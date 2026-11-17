@@ -200,3 +200,28 @@ def test_meta_row_carries_the_label_and_stamp():
     assert '<span class="eyebrow">The market this month</span>' in html
     assert "Data as of September 2026 · refreshed weekly (some sources from July 2026)" in html
     assert '<i aria-hidden="true"></i>' in html
+
+
+# --- sources byline ---------------------------------------------------------------------
+
+def _listed_providers(text):
+    """Count the providers named in the visible list ("A & B exchanges" names two)."""
+    n = 0
+    for item in text.split(", "):
+        n += len(item.removesuffix(" exchanges").removesuffix(" exchange").split(" & "))
+    return n
+
+
+def test_sources_summary_counts_and_names_every_provider():
+    from hazelnut.site.crops import crop_module
+
+    sources = crop_module("hazelnut").WORKBOOK_SOURCES
+    count, text = ph.sources_summary(sources)
+    assert count == f"{len(sources)} public datasets"
+    assert _listed_providers(text) == len(sources)
+    assert text == "Giresun & Ordu exchanges, UN Comtrade, FAOSTAT, TOBB, Open-Meteo, ECB, OECD"
+
+
+def test_sources_summary_singular_and_no_exchanges():
+    count, text = ph.sources_summary([("FAOSTAT", "x", "u", "l")])
+    assert (count, text) == ("1 public dataset", "FAOSTAT")

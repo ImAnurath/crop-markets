@@ -6,10 +6,12 @@ description: "Turkish hazelnut prices, exports, crop size and forecasts, from th
 ```{python}
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.crops import crop_module
 
 crop = load_crops()["hazelnut"]
 stats, manifest = ph.load_page_data(SITE_DIR / "data" / crop.slug)
 eyebrow = f"Crops / {crop.name} / {ph.exchanges_phrase(crop.exchanges)}"
+sources_count, sources_list = ph.sources_summary(crop_module(crop.slug).WORKBOOK_SOURCES)
 ```
 
 ::: {.hero}
@@ -33,7 +35,7 @@ Thirty years of exchange prices, where the exports go, how big the crop is, and 
 :::
 
 ::: {}
-[Sources]{.eyebrow} **8 public datasets** Commodity exchanges, TOBB, UN Comtrade, FAOSTAT, weather
+[Sources]{.eyebrow} **`{python} sources_count`** `{python} sources_list`
 :::
 :::
 :::
@@ -50,7 +52,10 @@ Thirty years of exchange prices, where the exports go, how big the crop is, and 
 ph.raw_html(
     ph.market_meta_html(manifest)
     + ph.market_strip_html(
-        stats, local_name="lira", local_unit=crop.local_currency.label, crop_source="Giresun"
+        stats,
+        local_name="lira",
+        local_unit=crop.local_currency.label,
+        crop_source=crop.exchanges[0],  # the crop estimate is the first exchange's (Giresun)
     )
 )
 ```
