@@ -4,12 +4,14 @@ from datetime import date, datetime, timezone
 import pandas as pd
 import pytest
 
-from hazelnut.site.config import CropConfig
+from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.site_data import write_site_data
 from hazelnut.site.validate import validate_site_data
 
 NOW = datetime(2026, 11, 17, 12, 0, tzinfo=timezone.utc)
-CROP = CropConfig("hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",))
+CROP = CropConfig(
+    "hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",), LocalCurrency("TL", "try_kg")
+)
 TODAY = date(2008, 2, 15)  # as_of in the fixture is 2007-12
 
 

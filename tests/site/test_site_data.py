@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import pandas as pd
 import pytest
 
-from hazelnut.site.config import CropConfig
+from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.hazelnut_data import BUILDERS, crop_by_year, prices_monthly
 from hazelnut.site.site_data import (
     CORE_OUTPUTS,
@@ -16,7 +16,9 @@ from hazelnut.site.site_data import (
 )
 
 NOW = datetime(2026, 11, 17, 12, 0, tzinfo=timezone.utc)
-CROP = CropConfig("hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",))
+CROP = CropConfig(
+    "hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",), LocalCurrency("TL", "try_kg")
+)
 
 
 def test_failed_source_keeps_last_good_and_marks_stale(tiny_tables, tmp_path):

@@ -33,7 +33,8 @@ prices = pd.read_csv(SITE_DIR / "data" / crop.slug / "prices_monthly.csv")
 [Theme check: neutral line, amber shock shading.]{.sub}
 
 ```{python}
-charts.show(charts.price_history(prices, SHOCK_PERIODS))
+local = crop.local_currency
+charts.show(charts.price_history(prices, SHOCK_PERIODS, local.column, local.label))
 ```
 :::
 

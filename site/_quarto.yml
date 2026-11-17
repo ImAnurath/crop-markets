@@ -47,6 +47,8 @@ format:
       dark: [theme/tokens.scss, theme/dark.scss]
       light: [theme/tokens.scss, theme/light.scss]
     page-layout: custom
+    filters:
+      - filters/main-landmark.lua   # one <main> landmark per page (custom layout has none)
     toc: false
     anchor-sections: false
     smooth-scroll: false

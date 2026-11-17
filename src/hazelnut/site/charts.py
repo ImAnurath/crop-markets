@@ -95,11 +95,18 @@ def _month_start(month: str) -> pd.Timestamp:
     return pd.Period(month, "M").start_time
 
 
-def price_history(prices: pd.DataFrame, shocks: Sequence[tuple[str, str]]) -> go.Figure:
-    """Monthly price line, USD shown and TL one click away, shock periods shaded amber.
+def price_history(
+    prices: pd.DataFrame,
+    shocks: Sequence[tuple[str, str]],
+    local_col: str,
+    local_label: str,
+) -> go.Figure:
+    """Monthly price line, USD shown and the local currency one click away, shock
+    periods shaded amber.
 
-    ``prices`` needs ``month`` (YYYY-MM), ``usd_kg`` and ``try_kg``; ``shocks`` is a
-    list of (first month, last month) pairs.
+    ``prices`` needs ``month`` (YYYY-MM), ``usd_kg`` and ``local_col``; ``shocks`` is a
+    list of (first month, last month) pairs. ``local_col``/``local_label`` come from the
+    crop's ``local_currency`` in ``site/crops.yml``.
     """
     x = pd.to_datetime(prices["month"].astype(str) + "-01")
     line = dict(color=FG, width=2)
@@ -108,9 +115,9 @@ def price_history(prices: pd.DataFrame, shocks: Sequence[tuple[str, str]]) -> go
             go.Scatter(x=x, y=prices["usd_kg"], name="USD", meta="fg", mode="lines",
                        line=line, visible=True,
                        hovertemplate="%{x|%b %Y}<br>$%{y:.2f} /kg<extra></extra>"),
-            go.Scatter(x=x, y=prices["try_kg"], name="TL", meta="fg", mode="lines",
+            go.Scatter(x=x, y=prices[local_col], name=local_label, meta="fg", mode="lines",
                        line=line, visible=False,
-                       hovertemplate="%{x|%b %Y}<br>%{y:,.2f} TL/kg<extra></extra>"),
+                       hovertemplate="%{x|%b %Y}<br>%{y:,.2f} " + local_label + "/kg<extra></extra>"),
         ]
     )
     shapes = [
@@ -150,7 +157,7 @@ def price_history(prices: pd.DataFrame, shocks: Sequence[tuple[str, str]]) -> go
                              args=[{"visible": [True, False]},
                                    {"yaxis.tickprefix": "$", "yaxis.tickformat": ".2f",
                                     "yaxis.autorange": True}]),
-                        dict(label="TL", method="update",
+                        dict(label=local_label, method="update",
                              args=[{"visible": [False, True]},
                                    {"yaxis.tickprefix": "", "yaxis.tickformat": ",.0f",
                                     "yaxis.autorange": True}]),
@@ -241,29 +248,33 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def crop_vs_price(crop: pd.DataFrame, x_col: str = "giresun_estimate_t") -> go.Figure:
+def crop_vs_price(crop: pd.DataFrame, x_col: str) -> go.Figure:
     """Crop estimate against the season's average USD price; latest season in amber.
 
     ``crop`` is ``crop_by_year.csv``. Rows missing either value are left out; the
     latest remaining season is highlighted (it may be a season still in progress).
+    ``x_col`` is the crop-size column to plot (per-crop builders own the names). With
+    no complete rows the figure has no traces; the page shows its empty state.
     """
     df = crop.dropna(subset=[x_col, "season_avg_usd"]).sort_values("year")
-    latest, rest = df.iloc[[-1]], df.iloc[:-1]
-    hover = "%{text}<br>%{x:,.0f} t crop<br>$%{y:.2f} /kg season average<extra></extra>"
-    fig = go.Figure(
-        [
-            go.Scatter(x=rest[x_col], y=rest["season_avg_usd"], mode="markers",
-                       name="Earlier seasons", meta="fg", text=rest["season"],
-                       marker=dict(color=FG, opacity=0.75, size=8),
-                       hovertemplate=hover),
-            go.Scatter(x=latest[x_col], y=latest["season_avg_usd"], mode="markers+text",
-                       name=str(latest["season"].iloc[0]), meta="accent",
-                       text=latest["season"], textposition="top center",
-                       textfont=dict(family=MONO, size=11, color=MUTED),
-                       marker=dict(color=ACCENT, size=12, line=dict(width=2, color=PANEL)),
-                       hovertemplate=hover),
-        ]
-    )
+    fig = go.Figure()
+    if not df.empty:
+        latest, rest = df.iloc[[-1]], df.iloc[:-1]
+        hover = "%{text}<br>%{x:,.0f} t crop<br>$%{y:.2f} /kg season average<extra></extra>"
+        fig.add_traces(
+            [
+                go.Scatter(x=rest[x_col], y=rest["season_avg_usd"], mode="markers",
+                           name="Earlier seasons", meta="fg", text=rest["season"],
+                           marker=dict(color=FG, opacity=0.75, size=8),
+                           hovertemplate=hover),
+                go.Scatter(x=latest[x_col], y=latest["season_avg_usd"], mode="markers+text",
+                           name=str(latest["season"].iloc[0]), meta="accent",
+                           text=latest["season"], textposition="top center",
+                           textfont=dict(family=MONO, size=11, color=MUTED),
+                           marker=dict(color=ACCENT, size=12, line=dict(width=2, color=PANEL)),
+                           hovertemplate=hover),
+            ]
+        )
     fig.update_layout(
         layout(
             height=300,

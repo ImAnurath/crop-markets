@@ -15,6 +15,5 @@ still lives under the same few pages.]{.lede}
 
 ::: {.btns}
 [Back to the start <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](index.qmd){.btn .pri}
-[Hazelnut overview](hazelnut/index.qmd){.btn}
 :::
 :::

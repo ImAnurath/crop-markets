@@ -39,6 +39,7 @@ at `/crop-markets/`.
 | `assets/icons.svg` | Line-icon sprite, inlined into every page: `<svg class="ico"><use href="#download"/></svg>` (`arrow-right`, `download`, `contrast`, `chevron-down`, `hexagon`). |
 | `assets/site.js` | Adds icons to the nav, loads plotly.js once (non-blocking) and draws every chart, recolouring charts from the CSS variables when the scheme toggles. |
 | `assets/CREDITS.md` | Licence and author of the hero photo (credited in the footer too). |
+| `filters/main-landmark.lua` | Wraps each page's content in one `role="main"` landmark (`#quarto-document-content`, the skip link's target); the custom layout has no `<main>` of its own. |
 | `404.qmd` | Not-found page. Quarto writes its links against the site path (`/crop-markets/...`) because GitHub Pages serves it at whatever URL was missing. |
 
 Charts: build figures with `hazelnut.site.charts` and display them with

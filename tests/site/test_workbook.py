@@ -4,12 +4,14 @@ import pandas as pd
 import pytest
 from openpyxl import load_workbook
 
-from hazelnut.site.config import CropConfig
+from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.site_data import write_site_data
 from hazelnut.site.workbook import build_workbook
 
 NOW = datetime(2026, 11, 17, 12, 0, tzinfo=timezone.utc)
-CROP = CropConfig("hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",))
+CROP = CropConfig(
+    "hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",), LocalCurrency("TL", "try_kg")
+)
 URL = "https://example.org/crop-markets/"
 SHEETS = ["README", "Prices", "Ordu", "Exports", "Top destinations", "Crop",
           "Forecast range", "Scoreboard", "Sources"]

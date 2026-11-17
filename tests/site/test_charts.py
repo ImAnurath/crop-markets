@@ -26,21 +26,30 @@ def _button_labels(menu) -> list[str]:
 
 
 def test_price_history_has_currency_buttons(prices):
-    fig = charts.price_history(prices, SHOCK_PERIODS)
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     assert len(fig.layout.updatemenus) == 1
     assert _button_labels(fig.layout.updatemenus[0]) == ["USD", "TL"]
     assert [t.name for t in fig.data] == ["USD", "TL"]
     assert [t.visible for t in fig.data] == [True, False]
 
 
+def test_price_history_takes_the_local_currency_from_the_caller(prices):
+    prices = prices.rename(columns={"try_kg": "eur_kg"})
+    fig = charts.price_history(prices, SHOCK_PERIODS, "eur_kg", "EUR")
+    assert _button_labels(fig.layout.updatemenus[0]) == ["USD", "EUR"]
+    assert [t.name for t in fig.data] == ["USD", "EUR"]
+    assert list(fig.data[1].y) == list(prices["eur_kg"])
+    assert "EUR/kg" in fig.data[1].hovertemplate
+
+
 def test_price_history_has_period_buttons(prices):
-    fig = charts.price_history(prices, SHOCK_PERIODS)
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     labels = [b.label for b in fig.layout.xaxis.rangeselector.buttons]
     assert labels == ["5y", "10y", "All"]
 
 
 def test_price_history_shades_each_shock(prices):
-    fig = charts.price_history(prices, SHOCK_PERIODS)
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     rects = [s for s in fig.layout.shapes if s.type == "rect"]
     assert len(rects) == len(SHOCK_PERIODS) == 3
     assert all(s.fillcolor == charts.ACCENT for s in rects)
@@ -100,7 +109,7 @@ def test_crop_vs_price_highlights_latest_year_in_accent():
             "season_avg_usd": [None, 3.2, 3.5, 6.0, 4.3],
         }
     )
-    fig = charts.crop_vs_price(crop)
+    fig = charts.crop_vs_price(crop, "giresun_estimate_t")
     accent = [t for t in fig.data if t.marker.color == charts.ACCENT]
     assert len(accent) == 1
     assert "2026" in accent[0].name
@@ -108,6 +117,22 @@ def test_crop_vs_price_highlights_latest_year_in_accent():
     # rows without a season price are dropped, the rest drawn in the neutral colour
     others = [t for t in fig.data if t is not accent[0]]
     assert sum(len(t.x) for t in others) == 3
+
+
+def test_crop_vs_price_with_no_complete_rows_is_an_empty_figure():
+    crop = pd.DataFrame(
+        {"year": [2025, 2026], "season": ["2025/26", "2026/27"],
+         "giresun_estimate_t": [60.0, None], "season_avg_usd": [None, 4.3]}
+    )
+    fig = charts.crop_vs_price(crop, "giresun_estimate_t")
+    assert len(fig.data) == 0
+    assert fig.layout.paper_bgcolor == "rgba(0,0,0,0)"
+
+
+def test_crop_vs_price_requires_the_crop_column():
+    import inspect
+
+    assert inspect.signature(charts.crop_vs_price).parameters["x_col"].default is inspect.Parameter.empty
 
 
 def test_charts_does_not_import_torch():
@@ -127,7 +152,7 @@ def test_to_html_embeds_figure_json_for_site_js(prices):
 
     from plotly.offline import get_plotlyjs_version
 
-    fig = charts.price_history(prices, SHOCK_PERIODS)
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     fig.update_layout(meta="</script><b>")  # must not end the JSON block early
     html = charts.to_html(fig)
     assert html.count("</script>") == 1
@@ -151,7 +176,7 @@ def test_show_emits_a_raw_html_block_not_text_html(prices, monkeypatch):
 
     shown = []
     monkeypatch.setattr(IPython.display, "display", lambda obj: shown.append(obj))
-    fig = charts.price_history(prices, SHOCK_PERIODS)
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     charts.show(fig)
     (obj,) = shown
     assert isinstance(obj, IPython.display.Markdown)

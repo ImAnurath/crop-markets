@@ -16,6 +16,14 @@ _LIST_KEYS = ("exchanges", "sections", "analyses", "range_currencies")
 
 
 @dataclass(frozen=True)
+class LocalCurrency:
+    """The crop country's own currency: button label and its price column in the site data."""
+
+    label: str
+    column: str
+
+
+@dataclass(frozen=True)
 class CropConfig:
     slug: str
     name: str
@@ -24,6 +32,7 @@ class CropConfig:
     sections: tuple[str, ...]
     analyses: tuple[str, ...]
     range_currencies: tuple[str, ...]
+    local_currency: LocalCurrency
 
 
 def load_crops(path: Path = CROPS_FILE) -> dict[str, CropConfig]:
@@ -34,7 +43,7 @@ def load_crops(path: Path = CROPS_FILE) -> dict[str, CropConfig]:
     for key, entry in raw.items():
         if not isinstance(entry, dict):
             raise ValueError(f"crop '{key}': expected a mapping")
-        for k in _STR_KEYS + _LIST_KEYS:
+        for k in _STR_KEYS + _LIST_KEYS + ("local_currency",):
             if k not in entry:
                 raise ValueError(f"crop '{key}': missing key '{k}'")
         for k in _STR_KEYS:
@@ -43,6 +52,16 @@ def load_crops(path: Path = CROPS_FILE) -> dict[str, CropConfig]:
         for k in _LIST_KEYS:
             if not isinstance(entry[k], list):
                 raise ValueError(f"crop '{key}': '{k}' must be a list")
+        local = entry["local_currency"]
+        if not (
+            isinstance(local, dict)
+            and set(local) == {"label", "column"}
+            and all(isinstance(v, str) and v for v in local.values())
+        ):
+            raise ValueError(
+                f"crop '{key}': 'local_currency' must be a mapping with non-empty "
+                "string 'label' and 'column'"
+            )
         if entry["slug"] != key:
             raise ValueError(
                 f"crop '{key}': slug '{entry['slug']}' does not match its key"
@@ -52,5 +71,6 @@ def load_crops(path: Path = CROPS_FILE) -> dict[str, CropConfig]:
             name=entry["name"],
             country=entry["country"],
             **{k: tuple(str(v) for v in entry[k]) for k in _LIST_KEYS},
+            local_currency=LocalCurrency(label=local["label"], column=local["column"]),
         )
     return crops

@@ -6,3 +6,4 @@ hazelnut:
   sections: [overview, dashboard, analyses, explorer]
   analyses: [seasonality, exports, crop-and-frost, exchanges, forecasting]
   range_currencies: [usd]
+  local_currency: {label: TL, column: try_kg}
