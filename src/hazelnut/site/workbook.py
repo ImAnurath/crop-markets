@@ -11,6 +11,7 @@ from openpyxl.utils import get_column_letter
 
 from hazelnut.site.config import SITE_URL, CropConfig
 from hazelnut.site.crops import crop_module
+from hazelnut.site.labels import METHOD_NAMES
 
 NOT_AVAILABLE = "Not available in this refresh."
 HOLDOUT_LABEL = "Holdout, scored once, never tuned on"
@@ -18,12 +19,6 @@ RATIO_NOTE = "Ratio to naive = MAE / naive MAE; below 1 beats naive."
 
 PRICE = RATIO = "0.00"
 
-
-METHOD_NAMES = {
-    "naive": "Naive", "seasonal_naive": "Seasonal naive", "sarima": "SARIMA",
-    "sarimax": "SARIMAX", "season_reg": "Season regression", "lightgbm": "LightGBM",
-    "chronos": "Chronos-Bolt",
-}
 
 def _readable_month(ym) -> str:
     try:

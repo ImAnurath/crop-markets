@@ -155,12 +155,14 @@ def price_history(
                     buttons=[
                         dict(label="USD", method="update",
                              args=[{"visible": [True, False]},
-                                   {"yaxis.tickprefix": "$", "yaxis.tickformat": ".2f",
-                                    "yaxis.autorange": True}]),
+                                   {"yaxis.type": "linear", "yaxis.tickprefix": "$",
+                                    "yaxis.tickformat": ".2f", "yaxis.autorange": True}]),
+                        # Log axis: a nominal local price can be flat for decades and then
+                        # explode with the currency's fall; on a log scale both stay readable.
                         dict(label=local_label, method="update",
                              args=[{"visible": [False, True]},
-                                   {"yaxis.tickprefix": "", "yaxis.tickformat": ",.0f",
-                                    "yaxis.autorange": True}]),
+                                   {"yaxis.type": "log", "yaxis.tickprefix": "",
+                                    "yaxis.tickformat": ",~r", "yaxis.autorange": True}]),
                     ],
                     **button_style,
                 )

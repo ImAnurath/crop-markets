@@ -1,0 +1,187 @@
+---
+title: "Hazelnut dashboard"
+description: "Giresun hazelnut prices, the six-month price range, export destinations, crop size against price, and how the forecasts scored against naive."
+---
+
+```{python}
+from hazelnut.forecast.dataset import SHOCK_PERIODS
+from hazelnut.site import charts
+from hazelnut.site import page_helpers as ph
+from hazelnut.site.config import SITE_DIR, load_crops
+
+crop = load_crops()["hazelnut"]
+data_dir = SITE_DIR / "data" / crop.slug
+local = crop.local_currency
+manifest = ph.read_json_or_none(data_dir / "manifest.json")
+
+prices = ph.read_csv_or_none(data_dir / "prices_monthly.csv",
+                             required=("month", "season", "usd_kg", local.column))
+price_range = ph.read_csv_or_none(data_dir / "price_range.csv",
+                                  required=("horizon", "target_month", "q05", "q10", "q50",
+                                            "q90", "q95", "from_month", "from_usd"))
+exports_top = ph.read_csv_or_none(data_dir / "exports_top.csv",
+                                  required=("partner", "net_kg", "fob_usd", "share"))
+CROP_COL = "giresun_estimate_t"  # the crop size plotted: Giresun exchange's estimate
+crop_by_year = ph.read_csv_or_none(data_dir / "crop_by_year.csv",
+                                   required=("year", "season", CROP_COL, "season_avg_usd"))
+scoreboard = ph.read_csv_or_none(data_dir / "results" / "scoreboard_dev.csv",
+                                 required=("method", "horizon", "n", "ratio"))
+holdout = ph.read_csv_or_none(data_dir / "results" / "scoreboard_holdout.csv",
+                              required=("method", "horizon", "ratio"))
+ranges = ph.read_csv_or_none(data_dir / "results" / "ranges.csv")
+
+# The shocks the price subtitle names (hazelnut copy); dates come from SHOCK_PERIODS.
+SHOCK_NAMES = {"2014": "the 2014 frost", "2025": "the 2025 short crop"}
+named_shocks = [(SHOCK_NAMES[a[:4]], (a, b)) for a, b in SHOCK_PERIODS if a[:4] in SHOCK_NAMES]
+RANGE_METHOD = "naive_emp"  # price_range.csv is the empirical-naive range (site_data.py)
+```
+
+```{python}
+stamp = ""
+if manifest is not None:
+    stamp = (f'<span class="live"><i aria-hidden="true"></i>'
+             f'{ph.escape(ph.as_of_stamp(manifest))}</span>')
+ph.raw_html(
+    '<div class="dash-head"><div>'
+    f'<span class="eyebrow">Crops / {ph.escape(crop.name)} / Dashboard</span>'
+    "<h1>The price, and what we can honestly say about it</h1></div>"
+    f"{stamp}</div>"
+)
+```
+
+::: {.dash}
+
+::: {#panel-price .panel .span-8}
+```{python}
+ph.raw_html(ph.panel_head_html(
+    "Giresun in-shell price",
+    ph.price_subtitle(prices, named_shocks) if prices is not None
+    else "Monthly exchange price; shaded periods are supply shocks.",
+))
+if prices is None:
+    ph.raw_html(ph.unavailable_html())
+else:
+    charts.show(charts.price_history(prices, SHOCK_PERIODS, local.column, local.label))
+    ph.raw_html(
+        f'<p class="foot">Shaded: the {ph.shock_years_label(SHOCK_PERIODS)} supply shocks. '
+        f"The {ph.escape(local.label)} view uses a log scale.</p>"
+    )
+```
+:::
+
+::: {#panel-range .panel .span-4}
+```{python}
+ph.raw_html(ph.panel_head_html(
+    "Where the price could be in 6 months",
+    ph.range_subtitle(price_range) if price_range is not None
+    else "The range past price moves of this size have covered.",
+))
+range_label = ph.range_currencies_label(crop.range_currencies)
+show_range = price_range is not None and "usd" in crop.range_currencies
+if not show_range:
+    ph.raw_html(ph.unavailable_html())
+```
+
+::: {.range-body}
+```{python}
+if show_range:
+    charts.show(charts.price_range_fig(price_range))
+    # Shown instead of the chart while the price chart is on a currency the range was
+    # not tested in (the script at the end of the page listens to its USD/TL buttons).
+    ph.raw_html(f'<div class="range-note" role="status" data-currencies="{range_label}">'
+                f"Range tested in {range_label} only</div>")
+```
+:::
+
+```{python}
+if show_range:
+    note = ph.range_coverage_note(ranges, RANGE_METHOD, int(price_range["horizon"].max()))
+    if note:
+        ph.raw_html(f'<p class="foot">{ph.escape(note)}</p>')
+```
+:::
+
+::: {#panel-exports .panel .span-4}
+```{python}
+period = None
+if manifest is not None and "exports_top" in manifest.get("outputs", {}):
+    period = ph.month_label(manifest["outputs"]["exports_top"]["as_of"])
+ph.raw_html(ph.panel_head_html(
+    "Where the exports go",
+    ph.exports_subtitle(exports_top, period) if exports_top is not None and period
+    else "Top destinations by volume, last 12 months.",
+))
+if exports_top is None:
+    ph.raw_html(ph.unavailable_html())
+else:
+    charts.show(charts.bar_top(exports_top))
+    ph.raw_html('<p class="foot">Share of export volume (net weight). Source: UN Comtrade.</p>')
+```
+:::
+
+::: {#panel-crop .panel .span-4}
+```{python}
+if crop_by_year is None:
+    ph.raw_html(ph.panel_head_html("Bigger crop, lower price?",
+                                   "Crop estimate against the season's average price."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    crop_df, crop_sub, crop_note = ph.crop_panel(crop_by_year, CROP_COL, prices)
+    ph.raw_html(ph.panel_head_html("Bigger crop, lower price?", crop_sub))
+    charts.show(charts.crop_vs_price(crop_df, CROP_COL))
+    ph.raw_html(
+        '<p class="foot">Giresun exchange crop estimate against the season\'s average USD '
+        f"price.{' ' + ph.escape(crop_note) if crop_note else ''}</p>"
+    )
+```
+:::
+
+::: {#panel-scoreboard .panel .span-4}
+```{python}
+if scoreboard is None:
+    ph.raw_html(ph.panel_head_html("Forecast scoreboard",
+                                   "Each method's error relative to naive."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html("Forecast scoreboard", ph.scoreboard_subtitle(scoreboard)))
+    ph.raw_html(ph.scoreboard_html(scoreboard, holdout, "analyses/forecasting.qmd"))
+```
+:::
+
+:::
+
+```{=html}
+<script>
+/* Panel 2 follows panel 1's currency buttons: when the price chart shows a currency the
+   range was not tested in, the range panel shows a note instead of the chart. */
+(function () {
+  "use strict";
+  var price = document.querySelector("#panel-price [data-plotly]");
+  var note = document.querySelector("#panel-range .range-note");
+  if (!price || !note) return;
+  var body = note.closest(".range-body");
+  var tested = (note.getAttribute("data-currencies") || "").split(", ");
+
+  function show(label) {
+    if (label) body.classList.toggle("is-untested", tested.indexOf(label) < 0);
+  }
+  function current() {
+    var menu = price.layout && price.layout.updatemenus && price.layout.updatemenus[0];
+    var btn = menu && menu.buttons && menu.buttons[menu.active || 0];
+    return btn && btn.label;
+  }
+  function hook() {
+    if (typeof price.on !== "function") return false;
+    price.on("plotly_buttonclicked", function (e) { show(e && e.button && e.button.label); });
+    price.on("plotly_afterplot", function () { show(current()); });
+    show(current());
+    return true;
+  }
+  // site.js draws the chart once plotly.js has loaded; hook in when it becomes a plot.
+  if (!hook()) {
+    new MutationObserver(function (_, obs) { if (hook()) obs.disconnect(); })
+      .observe(price, { attributes: true, attributeFilter: ["class"] });
+  }
+})();
+</script>
+```

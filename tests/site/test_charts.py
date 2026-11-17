@@ -42,6 +42,15 @@ def test_price_history_takes_the_local_currency_from_the_caller(prices):
     assert "EUR/kg" in fig.data[1].hovertemplate
 
 
+def test_price_history_local_view_uses_a_log_axis(prices):
+    # Nominal lira prices are flat for decades then explode; a log axis keeps both readable.
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
+    usd, local = fig.layout.updatemenus[0].buttons
+    assert usd.args[1]["yaxis.type"] == "linear"
+    assert local.args[1]["yaxis.type"] == "log"
+    assert fig.layout.yaxis.type in (None, "linear")
+
+
 def test_price_history_has_period_buttons(prices):
     fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     labels = [b.label for b in fig.layout.xaxis.rangeselector.buttons]

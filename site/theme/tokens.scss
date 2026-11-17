@@ -198,6 +198,30 @@ a:hover { color: var(--accent); }
 .panel { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); padding: var(--s5); min-width: 0; }
 .panel .sub { color: var(--muted); font-size: 14px; margin: var(--s1) 0 var(--s4); }
 .phead { display: flex; justify-content: space-between; align-items: start; gap: var(--s4); }
+.panel .ptitle { font-size: 16px; font-weight: 500; letter-spacing: 0; margin: 0; }
+.panel > p.foot:last-child { margin-bottom: 0; }
+
+/* Dashboard page head: eyebrow and title left, as-of stamp right */
+.dash-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--s3) var(--s5); margin: var(--s7) 0 var(--s6); }
+.dash-head h1 { font-size: clamp(28px, 3vw, 40px); max-width: none; margin: var(--s3) 0 0; }
+// The range panel swaps its chart for a note when the price chart is on an untested currency
+.range-body { position: relative; }
+.range-note { display: none; }
+.range-body.is-untested .chart { visibility: hidden; }
+.range-body.is-untested .range-note {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  inset: 0;
+  padding: var(--s5);
+  border: 1px dashed var(--line);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+.scoreboard tr.hl td { color: var(--accent); }
+.scoreboard .n { padding-left: var(--s3); white-space: nowrap; }
 
 /* One divided panel instead of separate boxes */
 .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
