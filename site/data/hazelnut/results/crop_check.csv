@@ -1,0 +1,13 @@
+method,horizon,crop_source,ratio
+lightgbm,1,giresun,1.0581849202194586
+lightgbm,3,giresun,1.108438152411334
+lightgbm,6,giresun,1.085514986917851
+lightgbm,1,national,1.0613033153869602
+lightgbm,3,national,1.1373122058735858
+lightgbm,6,national,1.1221357569587576
+sarimax,1,giresun,1.1202320635619434
+sarimax,3,giresun,1.015626190281819
+sarimax,6,giresun,1.039367609773026
+sarimax,1,national,1.131093776983197
+sarimax,3,national,1.0143316993080371
+sarimax,6,national,1.0321290252906619
