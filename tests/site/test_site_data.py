@@ -20,12 +20,16 @@ CROP = CropConfig("hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",))
 
 
 def test_failed_source_keeps_last_good_and_marks_stale(tiny_tables, tmp_path):
-    write_site_data(CROP, tiny_tables, tmp_path, NOW)
+    fresh = write_site_data(CROP, tiny_tables, tmp_path, NOW)
+    fresh_as_of = fresh["outputs"]["exports_top"]["as_of"]
+    assert fresh_as_of == "2007-12"
+    assert fresh["outputs"]["price_range"]["as_of"] == "2007-12"
     before = (tmp_path / "exports_top.csv").read_bytes()
     partial = {k: v for k, v in tiny_tables.items() if k != "comtrade"}
     manifest = write_site_data(CROP, partial, tmp_path, NOW)
     assert (tmp_path / "exports_top.csv").read_bytes() == before
     assert manifest["outputs"]["exports_top"]["stale"] is True
+    assert manifest["outputs"]["exports_top"]["as_of"] == fresh_as_of
     assert manifest["outputs"]["prices_monthly"]["stale"] is False
     assert json.loads((tmp_path / "manifest.json").read_text()) == manifest
     assert manifest["built_at"].startswith("2026-11-17T12:00:00")
@@ -58,14 +62,10 @@ def test_core_failure_on_fresh_dir_creates_nothing(tmp_path):
 
 
 def test_stats_skip_incomplete_latest_month(tiny_tables):
-    gp = tiny_tables["giresun_price"]
-    extra = gp.iloc[[-1]].copy()
-    extra["year"], extra["month"] = 2008, 1
-    extra["price_avg_usd"] = float("nan")
-    tables = {**tiny_tables, "giresun_price": pd.concat([gp, extra], ignore_index=True)}
-    prices = prices_monthly(tables)
-    stats = stat_strip(prices, crop_by_year(tables))
-    assert stats["as_of"] == "2007-12"
+    prices = prices_monthly(tiny_tables)
+    prices.loc[prices.index[-1], "usd_kg"] = float("nan")  # TRY still present
+    stats = stat_strip(prices, crop_by_year(tiny_tables))
+    assert stats["as_of"] == "2007-11"
     assert all(v == v for v in stats.values() if isinstance(v, float))
     json.dumps(stats, allow_nan=False)
 

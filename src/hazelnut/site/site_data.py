@@ -130,7 +130,17 @@ def stat_strip(prices: pd.DataFrame, crop: pd.DataFrame | None) -> dict:
     return stats
 
 
-def _as_of(df: pd.DataFrame) -> str | None:
+def _exports_top_as_of(tables: dict) -> str | None:
+    c = tables["comtrade"]
+    c = c[(c["product"] == "shelled") & (c["partner"] != "World")]
+    return str(c["month"].max()) if len(c) else None
+
+
+def _as_of(name: str, df: pd.DataFrame, tables: dict) -> str | None:
+    if name == "exports_top":
+        return _exports_top_as_of(tables)
+    if name == "price_range":
+        return str(df["from_month"].iloc[0]) if len(df) else None
     if "month" in df.columns and len(df):
         return str(df["month"].dropna().astype(str).max())
     if "year" in df.columns and len(df):
@@ -194,7 +204,7 @@ def write_site_data(crop: CropConfig, tables: dict, out_dir: Path, now: datetime
         for name, df in frames.items():
             df.to_csv(tmp / f"{name}.csv", index=False)
             written.append(f"{name}.csv")
-            entries[name] = {"as_of": _as_of(df), "rows": int(len(df)), "stale": False}
+            entries[name] = {"as_of": _as_of(name, df, tables), "rows": int(len(df)), "stale": False}
         (tmp / "stats.json").write_text(json.dumps(stats, indent=2, allow_nan=False), encoding="utf-8")
         written.append("stats.json")
         entries["stats"] = {"as_of": stats["as_of"], "rows": 1, "stale": False}
