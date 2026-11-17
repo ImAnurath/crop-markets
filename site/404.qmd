@@ -1,0 +1,20 @@
+---
+title: "Page not found"
+---
+
+<!-- Quarto writes this page's links against the site path (/crop-markets/), because
+     GitHub Pages serves it at whatever URL was missing. Keep links as .qmd/.html paths. -->
+
+::: {.notfound}
+<span class="eyebrow">Error 404</span>
+
+# This page is not here.
+
+[The link may be old, or the page may have moved when the site was reorganised. Everything
+still lives under the same few pages.]{.lede}
+
+::: {.btns}
+[Back to the start <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](index.qmd){.btn .pri}
+[Hazelnut overview](hazelnut/index.qmd){.btn}
+:::
+:::

@@ -1,0 +1,41 @@
+/*-- scss:defaults --*/
+// Dark scheme (the default). Exact tokens from the design constraints.
+$bg: #0b0a09;
+$panel: #121110;
+$line: #26231f;
+$fg: #eeeae4;
+$muted: #a39d94;
+$dim: #6f6a63;
+$accent: #c8913f;
+
+$body-bg: $bg;
+$body-color: $fg;
+$primary: $accent;
+$link-color: $fg;
+$border-color: $line;
+$text-muted: $muted;
+$navbar-bg: $panel;
+$navbar-fg: $muted;
+$navbar-hl: $fg;
+$footer-bg: transparent;
+$footer-fg: $dim;
+$code-block-bg: $panel;
+$code-color: $fg;
+$table-border-color: $line;
+$input-bg: $panel;
+$input-border-color: $line;
+
+/*-- scss:rules --*/
+:root {
+  color-scheme: dark;
+  --bg: #{$bg};
+  --panel: #{$panel};
+  --line: #{$line};
+  --fg: #{$fg};
+  --muted: #{$muted};
+  --dim: #{$dim};
+  --accent: #{$accent};
+  --accent-soft: rgba(200, 145, 63, 0.14);
+  --on-accent: #1a1209;
+  --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48.5' height='84' viewBox='0 0 48.5 84'%3E%3Cpath d='M24.25 0L48.5 14V42L24.25 56L0 42V14Z M24.25 56V84' fill='none' stroke='%23ffffff' stroke-opacity='.08' stroke-width='1'/%3E%3C/svg%3E");
+}

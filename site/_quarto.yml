@@ -1,0 +1,86 @@
+project:
+  type: website
+  output-dir: _site
+  # Only .qmd files are pages; README.md and assets/CREDITS.md are notes, not pages.
+  render:
+    - "*.qmd"
+    - "**/*.qmd"
+  # Copied into _site as-is: the explorer reads the CSVs client-side and the
+  # Downloads page and nav button link the workbook (built by scripts/build_workbook.py).
+  resources:
+    - "data/**"
+    - "downloads/*.xlsx"
+    - "assets/**"
+
+website:
+  title: "Crop Markets"
+  site-url: https://imanurath.github.io/crop-markets/
+  favicon: assets/favicon.svg
+  page-navigation: false
+  search: false
+  navbar:
+    pinned: true
+    right:
+      - text: Overview
+        href: hazelnut/index.qmd
+      - text: Dashboard
+        href: hazelnut/dashboard.qmd
+      - text: Analyses
+        href: hazelnut/analyses/index.qmd
+      - text: Data explorer
+        href: hazelnut/explorer.qmd
+      - text: Methods
+        href: methods.qmd
+      - text: Excel
+        href: downloads/hazelnut-market-data.xlsx
+        aria-label: Download the full Excel workbook
+  page-footer:
+    left: "Crop Markets · data refreshed weekly from public sources"
+    right: >-
+      Hero photo: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
+      [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons (cropped)
+
+format:
+  html:
+    # Dark is listed first, so it is the default; a visitor's stored choice wins.
+    theme:
+      dark: [theme/tokens.scss, theme/dark.scss]
+      light: [theme/tokens.scss, theme/light.scss]
+    page-layout: custom
+    toc: false
+    anchor-sections: false
+    smooth-scroll: false
+    link-external-newwindow: false
+    include-in-header:
+      - text: |
+          <script>
+          /* Keep Quarto's colour-scheme script working where storage is blocked
+             (it reads localStorage unguarded): swap in an in-memory store. */
+          (function () {
+            try { var s = window.localStorage, k = "__probe"; s.setItem(k, k); s.removeItem(k); }
+            catch (e) {
+              var m = {};
+              try {
+                Object.defineProperty(window, "localStorage", { configurable: true, value: {
+                  getItem: function (k) { return Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null; },
+                  setItem: function (k, v) { m[k] = String(v); },
+                  removeItem: function (k) { delete m[k]; }
+                } });
+              } catch (e2) {}
+            }
+          })();
+          </script>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+    include-before-body:
+      - assets/icons.svg
+    include-after-body:
+      # Quarto rewrites this root path to a page-relative one (and to the site path on 404.html).
+      - text: <script src="/assets/site.js"></script>
+
+execute:
+  echo: false
+  warning: false
+
+jupyter: python3

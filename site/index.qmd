@@ -1,0 +1,45 @@
+---
+title: "Crop Markets"
+---
+
+<!-- Temporary stub (Task 8): checks the theme, layout grid and chart helpers render.
+     Task 9 replaces it with the home page. -->
+
+```{python}
+import pandas as pd
+from hazelnut.forecast.dataset import SHOCK_PERIODS
+from hazelnut.site import charts
+from hazelnut.site.config import SITE_DIR, load_crops
+
+crop = next(iter(load_crops().values()))
+prices = pd.read_csv(SITE_DIR / "data" / crop.slug / "prices_monthly.csv")
+```
+
+<span class="eyebrow">Site skeleton</span>
+
+# Crop markets, <em>built in the open.</em>
+
+[This page is a placeholder while the site is being built.]{.lede}
+
+::: {.btns}
+[Open the overview <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](hazelnut/index.qmd){.btn .pri}
+[Download the workbook <svg class="ico" aria-hidden="true"><use href="#download"/></svg>](downloads/hazelnut-market-data.xlsx){.btn}
+:::
+
+::: {.dash}
+::: {.panel .span-8}
+### Price history
+
+[Theme check: neutral line, amber shock shading.]{.sub}
+
+```{python}
+charts.show(charts.price_history(prices, SHOCK_PERIODS))
+```
+:::
+
+::: {.panel .span-4}
+### Grid check
+
+[Spans 8 + 4 of 12 columns; collapses to one column under 900px.]{.sub}
+:::
+:::

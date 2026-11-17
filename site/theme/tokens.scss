@@ -1,0 +1,261 @@
+/*-- scss:defaults --*/
+// Shared tokens: fonts, one radius, the spacing scale. Colours live in dark.scss /
+// light.scss as CSS custom properties, so every rule below works in both schemes.
+$font-family-sans-serif: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+$font-family-monospace: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+$font-size-root: 16px;
+$font-size-base: 0.9375rem; // 15px
+$line-height-base: 1.55;
+$headings-font-weight: 600;
+$border-radius: 8px;
+$border-radius-sm: 8px;
+$border-radius-lg: 8px;
+$border-radius-xl: 8px;
+$border-radius-pill: 8px;
+$enable-shadows: false;
+$enable-gradients: false;
+
+/*-- scss:rules --*/
+:root {
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+  --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+  --r: 8px;
+  --content-max: 1840px;
+  --gutter: clamp(16px, 3vw, 48px);
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Page: faint honeycomb that fades out from the top */
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-feature-settings: "ss01";
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--hex);
+  -webkit-mask-image: radial-gradient(1600px 900px at 75% 0%, #000 10%, transparent 85%);
+  mask-image: radial-gradient(1600px 900px at 75% 0%, #000 10%, transparent 85%);
+}
+
+/* Wide layout: content up to 1840px with fluid gutters */
+#quarto-content.page-layout-custom,
+footer.footer .nav-footer {
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+#quarto-content.page-layout-custom {
+  padding-top: var(--s4);
+  padding-bottom: var(--s9);
+}
+// Pages write their own headings; the front-matter title is only the tab title.
+#title-block-header { display: none; }
+
+/* Nav: a floating, divided bar, as in the mockup */
+#quarto-header {
+  background: transparent;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding: var(--s3) var(--gutter) 0;
+  border: 0;
+  box-shadow: none;
+}
+#quarto-header .navbar {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--panel) 80%, transparent) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  padding: var(--s2) var(--s4);
+  box-shadow: none;
+}
+#quarto-header .navbar .navbar-container { padding: 0; max-width: none; }
+.navbar-brand-container { margin: 0 !important; }
+.navbar-brand { display: flex; align-items: center; gap: var(--s3); margin-right: var(--s6); }
+.navbar-brand .navbar-title { color: var(--fg); font-weight: 600; font-size: 15px; }
+.navbar-brand .navbar-title::before {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: var(--s3);
+  vertical-align: -5px;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 5v10l-9 5-9-5V7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 5v10l-9 5-9-5V7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.navbar-nav { gap: var(--s5); align-items: center; }
+.navbar .nav-link { color: var(--muted); font-size: 14px; padding-inline: 0 !important; }
+.navbar .nav-link:hover,
+.navbar .nav-link:focus-visible,
+.navbar .nav-link.active { color: var(--fg); }
+// The workbook link is the nav's one button
+.navbar .nav-link[href$=".xlsx"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 6px var(--s3) !important;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  color: var(--fg);
+}
+.quarto-navbar-tools { margin-left: var(--s4); gap: var(--s2); }
+.quarto-navbar-tools .quarto-color-scheme-toggle,
+.iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.quarto-navbar-tools .quarto-color-scheme-toggle:hover,
+.iconbtn:hover { color: var(--fg); }
+// Replace Quarto's toggle glyph with the sprite icon site.js inserts
+.quarto-color-scheme-toggle .bi { display: none; }
+.navbar-toggler { border-color: var(--line); }
+
+/* Type */
+h1, h2, h3, h4 { color: var(--fg); font-weight: 600; }
+h1 {
+  font-size: clamp(36px, 4.2vw, 60px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: var(--s4) 0 var(--s5);
+  max-width: 16ch;
+}
+h1 em { font-style: normal; color: var(--accent); }
+h2 { font-size: 30px; letter-spacing: -0.015em; margin: var(--s3) 0 0; }
+h3 { font-size: 16px; font-weight: 500; margin: 0; }
+p { max-width: 72ch; }
+a { color: var(--fg); text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+.lede { font-size: 18px; color: var(--muted); max-width: 56ch; margin: 0; }
+.prose { max-width: 68ch; }
+.eyebrow {
+  font: 500 11px/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+}
+.muted { color: var(--muted); }
+.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.down, .best, .hl { color: var(--accent); }
+.foot { color: var(--dim); font-size: 12px; margin-top: var(--s3); }
+
+/* Icons: <svg class="ico"><use href="#download"/></svg> */
+.ico {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -3px;
+  flex: none;
+}
+
+/* Buttons */
+.btns { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s6) 0; }
+.btn {
+  display: inline-flex;
+  gap: var(--s2);
+  align-items: center;
+  padding: 10px var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 14px;
+  text-decoration: none;
+}
+.btn:hover { color: var(--fg); border-color: var(--dim); }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+.btn.pri:hover { color: var(--on-accent); filter: brightness(1.08); }
+
+/* Section heads */
+.sect { display: flex; justify-content: space-between; align-items: end; gap: var(--s5); margin: var(--s9) 0 var(--s5); }
+.sect p { color: var(--muted); margin: var(--s2) 0 0; max-width: 60ch; }
+
+/* Panels and the 12-column dashboard grid: <div class="dash"><div class="panel span-8"> */
+.dash { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--s4); }
+@for $i from 1 through 12 {
+  .span-#{$i} { grid-column: span #{$i}; }
+}
+.panel { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); padding: var(--s5); min-width: 0; }
+.panel .sub { color: var(--muted); font-size: 14px; margin: var(--s1) 0 var(--s4); }
+.phead { display: flex; justify-content: space-between; align-items: start; gap: var(--s4); }
+
+/* One divided panel instead of separate boxes */
+.strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.stat { padding: var(--s5); }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat .v { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; margin: var(--s3) 0 var(--s1); font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 15px; color: var(--muted); font-weight: 400; }
+.stat .s { color: var(--muted); font-size: 13px; }
+
+/* A divided row of links instead of cards */
+.explore { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.explore a { padding: var(--s5) var(--s5) var(--s5) 0; color: inherit; text-decoration: none; }
+.explore a + a { padding-left: var(--s5); border-left: 1px solid var(--line); }
+.explore h3 { margin: 0 0 var(--s2); font-size: 17px; font-weight: 500; display: flex; justify-content: space-between; }
+.explore p { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* Small controls */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; font-size: 12px; }
+.seg > * { padding: 5px 10px; color: var(--muted); background: none; border: 0; }
+.seg > .on { background: var(--fg); color: var(--bg); }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: var(--r); padding: 2px var(--s2); font-size: 12px; color: var(--muted); }
+.pill.hl { border-color: var(--accent); color: var(--accent); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 500; color: var(--muted); padding: var(--s2) 0; border-bottom: 1px solid var(--line); }
+td { padding: var(--s3) 0; border-bottom: 1px solid var(--line); }
+
+/* Charts: charts.show() writes a sized placeholder; site.js draws and recolours it */
+.chart { width: 100%; }
+// Plotly paints the active/hovered menu button a fixed near-white (#F4FAFF) with no
+// option to change it; match the range selector's active colour instead.
+.js-plotly-plot .updatemenu-item-rect[style*="244, 250, 255"] { fill: var(--line) !important; }
+.chart-skeleton {
+  border-radius: var(--r);
+  background: linear-gradient(90deg, var(--panel), color-mix(in srgb, var(--line) 60%, var(--panel)), var(--panel));
+  background-size: 200% 100%;
+  animation: skeleton 1.6s ease-in-out infinite;
+}
+.chart-error {
+  display: grid;
+  place-items: center;
+  padding: var(--s5);
+  border: 1px dashed var(--line);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+@keyframes skeleton { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .chart-skeleton { animation: none; } }
+
+/* Footer */
+.nav-footer { border-top: 1px solid var(--line); color: var(--dim); font-size: 12px; }
+.nav-footer a { color: var(--muted); }
+
+/* Narrow screens: columns collapse, nav links fold into the menu */
+@media (max-width: 900px) {
+  .strip, .explore { grid-template-columns: 1fr 1fr; }
+  .dash > * { grid-column: 1 / -1 !important; }
+  .stat + .stat { border-left: 0; }
+  .explore a + a { border-left: 0; padding-left: 0; }
+}
