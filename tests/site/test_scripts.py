@@ -100,3 +100,42 @@ def test_results_written_under_results_subfolder(build_site_data, dirs):
     assert build_site_data.main(argv) == 0
     assert (dirs[2] / "hazelnut" / "results" / "scoreboard_dev.csv").exists()
     assert not (dirs[2] / "hazelnut" / "scoreboard_dev.csv").exists()
+
+
+def test_summary_lists_validation_problems(build_site_data, dirs, tmp_path, monkeypatch):
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    argv = _argv(dirs)
+    argv[argv.index("--today") + 1] = "2012-01-01"
+    assert build_site_data.main(argv) == 1
+    text = summary.read_text(encoding="utf-8")
+    assert "Problems" in text and ("old" in text or "stale" in text)
+
+
+def test_summary_says_none_when_clean(build_site_data, dirs, tmp_path, monkeypatch):
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    assert build_site_data.main(_argv(dirs)) == 0
+    assert "none" in summary.read_text(encoding="utf-8")
+
+
+def test_build_results_failure_is_reported_not_raised(build_site_data, dirs, tmp_path, monkeypatch, capsys):
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+
+    def boom(*a, **k):
+        raise RuntimeError("corrupt csv")
+
+    monkeypatch.setattr(build_site_data, "build_results", boom)
+    assert build_site_data.main(_argv(dirs)) == 1
+    out = capsys.readouterr().out
+    assert "prices_monthly: fresh" in out and "corrupt csv" in out
+    assert "corrupt csv" in summary.read_text(encoding="utf-8")
+
+
+def test_stale_output_prints_stale(build_site_data, dirs, capsys):
+    assert build_site_data.main(_argv(dirs)) == 0
+    (dirs[0] / "comtrade_monthly.csv").unlink()
+    capsys.readouterr()
+    build_site_data.main(_argv(dirs))
+    assert "exports_monthly: stale" in capsys.readouterr().out
