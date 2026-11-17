@@ -22,8 +22,7 @@ from hazelnut.forecast.dataset import (
 
 
 def season_label(month: pd.Period) -> str:
-    start = month.year if month.month >= 9 else month.year - 1
-    return f"{start}/{(start + 1) % 100:02d}"
+    return _label_of_start(month.year if month.month >= 9 else month.year - 1)
 
 
 def _season_start(months: pd.PeriodIndex) -> np.ndarray:
@@ -110,15 +109,20 @@ def crop_by_year(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     crop = tables["giresun_crop"]
     usd = target_series(tables["giresun_price"]).dropna()
     avg = usd.groupby(_season_start(usd.index)).mean()
-    national = tables["national_crop"].set_index("year")["estimate_t"]
     years = crop["year"].astype(int)
+    nat = tables.get("national_crop")
+    national = (
+        nat.set_index("year")["estimate_t"].astype(float).reindex(years)
+        if nat is not None
+        else pd.Series(np.nan, index=years)
+    )
     return pd.DataFrame(
         {
             "year": years.to_numpy(),
             "season": [_label_of_start(int(y)) for y in years],
             "giresun_estimate_t": crop["estimate_t"].astype(float).to_numpy(),
             "giresun_registered_t": crop["registered_t"].astype(float).to_numpy(),
-            "national_estimate_t": national.reindex(years).astype(float).to_numpy(),
+            "national_estimate_t": national.to_numpy(),
             "season_avg_usd": avg.reindex(years).to_numpy(),
         }
     )
@@ -138,6 +142,6 @@ BUILDERS: dict[str, tuple[Callable[[dict[str, pd.DataFrame]], pd.DataFrame], tup
     "exports_monthly": (exports_monthly, ("comtrade",)),
     "exports_top": (exports_top, ("comtrade",)),
     "export_unit_value": (export_unit_value, ("comtrade",)),
-    "crop_by_year": (crop_by_year, ("giresun_crop", "giresun_price", "national_crop")),
+    "crop_by_year": (crop_by_year, ("giresun_crop", "giresun_price")),
     "frost_by_year": (frost_by_year, ("weather",)),
 }

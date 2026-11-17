@@ -79,3 +79,10 @@ def test_builders_declare_required_tables(tiny_tables):
     for name, (fn, keys) in hd.BUILDERS.items():
         assert set(keys) <= known, name
         fn({k: tiny_tables[k] for k in keys})  # needs nothing beyond its declared tables
+
+
+def test_crop_by_year_works_without_national_crop(tiny_tables):
+    t = {k: v for k, v in tiny_tables.items() if k != "national_crop"}
+    c = hd.crop_by_year(t)
+    assert c["national_estimate_t"].isna().all()
+    assert len(c) == 3
