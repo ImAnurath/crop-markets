@@ -89,3 +89,12 @@ def test_missing_files_are_reported_not_raised(out):
 def test_corrupt_json_is_reported_not_raised(out):
     (out / "manifest.json").write_text("{nope")
     assert _problems(out)
+
+
+def test_manifest_with_null_outputs_is_reported_not_raised(out):
+    (out / "manifest.json").write_text(json.dumps({"as_of": "2007-12", "outputs": None}))
+    assert any("outputs" in x for x in _problems(out))
+
+
+def test_four_months_lag_fails(out):
+    assert any("as_of" in x for x in _problems(out, today=date(2008, 4, 1)))

@@ -115,7 +115,10 @@ def validate_site_data(out_dir: Path, today: date, max_lag_months: int = 3) -> l
             as_of = pd.Period(str(manifest["as_of"]), "M")
         except Exception:  # noqa: BLE001
             problems.append("manifest.json: as_of missing or unparseable")
-        outputs = manifest.get("outputs", {}) if isinstance(manifest, dict) else {}
+        outputs = manifest.get("outputs") if isinstance(manifest, dict) else None
+        if not isinstance(outputs, dict):
+            problems.append("manifest.json: outputs missing or not an object")
+            outputs = {}
         for name in CORE_OUTPUTS:
             if name not in outputs:
                 problems.append(f"manifest.json: no entry for core output {name}")
