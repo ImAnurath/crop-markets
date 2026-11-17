@@ -23,7 +23,7 @@ from hazelnut.forecast.dataset import DATA_DIR as INTERIM_DIR
 from hazelnut.forecast.intervals import LEVELS, column
 from hazelnut.forecast.methods.baselines import EmpiricalNaive
 from hazelnut.site.config import CropConfig
-from hazelnut.site.hazelnut_data import BUILDERS
+from hazelnut.site.crops import crop_module
 
 CORE_OUTPUTS = ("prices_monthly", "price_range", "stats")
 ORDU_FILE = "ordu_daily.csv"
@@ -162,12 +162,13 @@ def _stale_entry(prev: dict, name: str) -> dict:
 
 def write_site_data(crop: CropConfig, tables: dict, out_dir: Path, now: datetime) -> dict:
     out_dir = Path(out_dir)
+    builders = crop_module(crop.slug).BUILDERS
     prev = _previous_entries(out_dir)
     frames: dict[str, pd.DataFrame] = {}
     errors: dict[str, str] = {}
     stats: dict | None = None
 
-    for name, (builder, needs) in BUILDERS.items():
+    for name, (builder, needs) in builders.items():
         missing = [k for k in needs if k not in tables]
         try:
             if missing:
@@ -208,7 +209,7 @@ def write_site_data(crop: CropConfig, tables: dict, out_dir: Path, now: datetime
         (tmp / "stats.json").write_text(json.dumps(stats, indent=2, allow_nan=False), encoding="utf-8")
         written.append("stats.json")
         entries["stats"] = {"as_of": stats["as_of"], "rows": 1, "stale": False}
-        for name in BUILDERS:
+        for name in builders:
             if name not in entries:
                 entries[name] = _stale_entry(prev, name)
         manifest = {

@@ -9,8 +9,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
-from hazelnut.site import hazelnut_data
 from hazelnut.site.config import SITE_URL, CropConfig
+from hazelnut.site.crops import crop_module
 
 NOT_AVAILABLE = "Not available in this refresh."
 HOLDOUT_LABEL = "Holdout, scored once, never tuned on"
@@ -18,7 +18,6 @@ RATIO_NOTE = "Ratio to naive = MAE / naive MAE; below 1 beats naive."
 
 PRICE = RATIO = "0.00"
 
-CROP_MODULES = {"hazelnut": hazelnut_data}
 
 METHOD_NAMES = {
     "naive": "Naive", "seasonal_naive": "Seasonal naive", "sarima": "SARIMA",
@@ -152,7 +151,7 @@ def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig, site_url: s
     except Exception:
         manifest = {}
 
-    mod = CROP_MODULES[crop.slug]
+    mod = crop_module(crop.slug)
     sheets, sources = mod.WORKBOOK_SHEETS, mod.WORKBOOK_SOURCES
     notes = {**mod.WORKBOOK_SHEET_NOTES, **GENERIC_NOTES}
     output_sheets = {csv.removesuffix(".csv"): name for name, (csv, _) in sheets.items()}

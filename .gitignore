@@ -35,3 +35,6 @@ Thumbs.db
 site/_site/
 site/.quarto/
 site/downloads/*.xlsx
+
+# Site-data writer temp dir (left behind if a run is killed)
+site/data/.site-data-*/
