@@ -1,46 +1,31 @@
 ---
 title: "Crop Markets"
+description: "Prices, exports, crop sizes and tested forecasts for export crops, rebuilt every week from public data."
 ---
 
-<!-- Temporary stub (Task 8): checks the theme, layout grid and chart helpers render.
-     Task 9 replaces it with the home page. -->
-
 ```{python}
-import pandas as pd
-from hazelnut.forecast.dataset import SHOCK_PERIODS
-from hazelnut.site import charts
+from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
-
-crop = next(iter(load_crops().values()))
-prices = pd.read_csv(SITE_DIR / "data" / crop.slug / "prices_monthly.csv")
 ```
 
-<span class="eyebrow">Site skeleton</span>
+::: {.home}
+[Crop Markets]{.eyebrow}
 
-# Crop markets, <em>built in the open.</em>
+# Export crop markets, *built in the open.*
 
-[This page is a placeholder while the site is being built.]{.lede}
-
-::: {.btns}
-[Open the overview <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](hazelnut/index.qmd){.btn .pri}
-[Download the workbook <svg class="ico" aria-hidden="true"><use href="#download"/></svg>](downloads/hazelnut-market-data.xlsx){.btn}
+::: {.lede}
+Exchange prices, exports, crop sizes and weather, collected from public sources every week. Each crop gets an overview, a dashboard, analyses and a data explorer, and its forecasts are tested without hindsight.
 :::
 
-::: {.dash}
-::: {.panel .span-8}
-### Price history
+::: {.sect}
+::: {}
+[Crops]{.eyebrow}
 
-[Theme check: neutral line, amber shock shading.]{.sub}
+## Pick a crop
+:::
+:::
 
 ```{python}
-local = crop.local_currency
-charts.show(charts.price_history(prices, SHOCK_PERIODS, local.column, local.label))
+ph.raw_html(ph.crop_cards_html(load_crops(), data_dir=SITE_DIR / "data"))
 ```
-:::
-
-::: {.panel .span-4}
-### Grid check
-
-[Spans 8 + 4 of 12 columns; collapses to one column under 900px.]{.sub}
-:::
 :::

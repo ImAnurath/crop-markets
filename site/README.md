@@ -44,7 +44,8 @@ at `/crop-markets/`.
 
 Charts: build figures with `hazelnut.site.charts` and display them with
 `charts.show(fig)` in a Python cell. Give each chart panel a title and a one-line takeaway in
-the page; the helpers set no titles.
+the page; the helpers set no titles. Stat values, the as-of stamp and other page fragments come
+from `hazelnut.site.page_helpers` (emit HTML with `page_helpers.raw_html(html)`, for the same reason).
 
 Links: never write root-absolute links (`href="/..."`) in pages; use relative paths or
 `.qmd` links and let Quarto resolve them. Colour scheme: the visitor's stored choice if any,

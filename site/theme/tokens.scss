@@ -135,7 +135,7 @@ h1 {
   max-width: 16ch;
 }
 h1 em { font-style: normal; color: var(--accent); }
-h2 { font-size: 30px; letter-spacing: -0.015em; margin: var(--s3) 0 0; }
+h2 { font-size: 30px; letter-spacing: -0.015em; margin: var(--s3) 0 0; border-bottom: 0; padding-bottom: 0; }
 h3 { font-size: 16px; font-weight: 500; margin: 0; }
 p { max-width: 72ch; }
 a { color: var(--fg); text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 3px; }
@@ -168,6 +168,8 @@ a:hover { color: var(--accent); }
 
 /* Buttons */
 .btns { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s6) 0; }
+// Markdown puts the buttons in one <p>: let them sit on the row directly.
+.btns > p { display: contents; }
 .btn {
   display: inline-flex;
   gap: var(--s2);
@@ -204,6 +206,33 @@ a:hover { color: var(--accent); }
 .stat .v { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; margin: var(--s3) 0 var(--s1); font-variant-numeric: tabular-nums; }
 .stat .v small { font-size: 15px; color: var(--muted); font-weight: 400; }
 .stat .s { color: var(--muted); font-size: 13px; }
+/* The strip's heading row: section label left, as-of stamp right */
+.meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s2) var(--s4); margin: var(--s8) 0 var(--s3); }
+.live { display: inline-flex; gap: var(--s2); align-items: center; color: var(--muted); font-size: 13px; }
+.live i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+/* Overview hero: text left, photo right */
+// Top padding is the mockup's 96px less the ~30px the page wrappers already add above it.
+.hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--s8); padding: var(--s8) 0; align-items: center; }
+.home { padding: var(--s8) 0; }
+.home .sect { margin-top: var(--s8); }
+.hero > div > p:first-child, .home > p:first-child { margin: 0; } // the eyebrow line
+div.lede > p { margin: 0; }
+.byline { display: flex; flex-wrap: wrap; gap: var(--s5) var(--s7); color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: var(--s5); }
+.byline p { margin: 0; }
+.byline strong { display: block; color: var(--fg); font-weight: 500; margin-top: var(--s2); }
+.byline a { color: inherit; }
+.photo { position: relative; aspect-ratio: 4 / 3; border-radius: var(--r); border: 1px solid var(--line); overflow: hidden; margin: 0; }
+.photo img { display: block; width: 100%; height: 100%; object-fit: cover; margin: 0; }
+.photo::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(transparent, rgba(0, 0, 0, 0.5)); pointer-events: none; }
+.photo figcaption { position: absolute; left: var(--s3); bottom: var(--s3); z-index: 1; font-size: 12px; color: #efe3cf; }
+
+/* Home page: one card per crop */
+.crops { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--s4); }
+.crop-card { display: block; color: inherit; text-decoration: none; }
+.crop-card:hover { color: inherit; border-color: var(--dim); }
+.crop-card h3 { display: flex; justify-content: space-between; align-items: center; font-size: 20px; margin: var(--s3) 0 var(--s2); }
+.crop-card p { margin: 0; color: var(--muted); font-size: 14px; }
 
 /* A divided row of links instead of cards */
 .explore { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
@@ -256,6 +285,17 @@ td { padding: var(--s3) 0; border-bottom: 1px solid var(--line); }
 @media (max-width: 900px) {
   .strip, .explore { grid-template-columns: 1fr 1fr; }
   .dash > * { grid-column: 1 / -1 !important; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: var(--s6); padding: var(--s6) 0; }
+  .home { padding-top: var(--s6); }
   .stat + .stat { border-left: 0; }
+  .stat:nth-child(even) { border-left: 1px solid var(--line); }
+  .stat:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .stat .v { font-size: 28px; }
   .explore a + a { border-left: 0; padding-left: 0; }
+}
+/* Phones: keep each stat's value and unit on one line in the 2 x 2 strip */
+@media (max-width: 480px) {
+  .stat { padding: var(--s4); }
+  .stat .v { font-size: 24px; white-space: nowrap; }
+  .stat .v small { font-size: 13px; }
 }
