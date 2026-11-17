@@ -95,3 +95,17 @@ def test_other_tables(bt, tmp_path):
     b = pd.read_csv(out / "range_band_3m.csv")
     assert list(b.columns) == ["target_month", "actual", "q10", "q90"]
     assert len(b) == len(f)
+
+
+def test_lira_dm_p_uses_log_errors(bt, tmp_path):
+    from hazelnut.forecast.metrics import diebold_mariano
+
+    out = tmp_path / "out"
+    build_results(bt, out)
+    d = pd.read_csv(out / "lira.csv")
+    got = d[(d.method == "sarima") & (d.period == "all") & (d.horizon == 3)]["dm_p"].iloc[0]
+    r = pd.read_csv(bt / "dev_try" / "sarima.csv").query("horizon == 3").sort_values("origin")
+    n = pd.read_csv(bt / "dev_try" / "naive.csv").query("horizon == 3").sort_values("origin")
+    la = np.abs(np.log(r["forecast"] / r["actual"])).to_numpy()
+    lb = np.abs(np.log(n["forecast"] / n["actual"])).to_numpy()
+    assert got == pytest.approx(diebold_mariano(la, lb, 3)[1])

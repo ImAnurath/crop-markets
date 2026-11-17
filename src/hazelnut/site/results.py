@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from hazelnut.forecast.metrics import (
@@ -50,9 +51,8 @@ def _shocks(results: pd.DataFrame) -> pd.DataFrame:
 
 
 def _dm_p(r: pd.DataFrame, method: str, horizon: int) -> float:
-    """DM p-value vs lira naive on absolute percent errors, on the shared (origin) rows."""
-    loss = (100 * (r["forecast"] - r["actual"]).abs() / r["actual"].abs()).rename("loss")
-    g = r.assign(loss=loss)
+    """DM p-value vs lira naive on |log error| (as scripts/lira_findings.py), shared origins."""
+    g = r.assign(loss=np.abs(np.log(r["forecast"] / r["actual"])))
     g = g[g["horizon"] == horizon].sort_values("origin")
     a = g[g["method"] == method].set_index("origin")["loss"]
     b = g[g["method"] == "naive"].set_index("origin")["loss"]
@@ -63,6 +63,7 @@ def _dm_p(r: pd.DataFrame, method: str, horizon: int) -> float:
 
 
 def _lira(r: pd.DataFrame) -> pd.DataFrame:
+    # calm/crisis dm_p are approximate: the subsets have non-consecutive origins.
     crisis = r["target_month"].map(is_lira_crisis)
     parts = {"all": r, "calm": r[~crisis], "crisis": r[crisis]}
     rows = []
