@@ -1,0 +1,8 @@
+hazelnut:
+  slug: hazelnut
+  name: Hazelnut
+  country: Turkey
+  exchanges: [Giresun, Ordu]
+  sections: [overview, dashboard, analyses, explorer]
+  analyses: [seasonality, exports, crop-and-frost, exchanges, forecasting]
+  range_currencies: [usd]

@@ -27,7 +27,11 @@ docs/superpowers/
 .idea/
 Thumbs.db
 .DS_Store
-reports/backtest/
 
 # Brainstorm mockups
 .superpowers/
+
+# Quarto site build output
+site/_site/
+site/.quarto/
+site/downloads/*.xlsx
