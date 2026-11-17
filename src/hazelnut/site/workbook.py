@@ -9,79 +9,22 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
+from hazelnut.site import hazelnut_data
 from hazelnut.site.config import SITE_URL, CropConfig
 
 NOT_AVAILABLE = "Not available in this refresh."
 HOLDOUT_LABEL = "Holdout, scored once, never tuned on"
 RATIO_NOTE = "Ratio to naive = MAE / naive MAE; below 1 beats naive."
 
-PRICE, KG, SHARE, TONNES, RATIO = "0.00", "#,##0", "0.0%", "#,##0", "0.00"
+PRICE = RATIO = "0.00"
+
+CROP_MODULES = {"hazelnut": hazelnut_data}
 
 METHOD_NAMES = {
     "naive": "Naive", "seasonal_naive": "Seasonal naive", "sarima": "SARIMA",
     "sarimax": "SARIMAX", "season_reg": "Season regression", "lightgbm": "LightGBM",
     "chronos": "Chronos-Bolt",
 }
-
-# sheet -> (csv name, {column: (header, number format or None)})
-SHEETS = {
-    "Prices": ("prices_monthly.csv", {
-        "month": ("Month", None), "season": ("Season", None), "usd_kg": ("USD/kg", PRICE),
-        "try_kg": ("TL/kg", PRICE), "usd_try": ("TL per USD", "0.0000")}),
-    "Ordu": ("ordu_monthly.csv", {
-        "month": ("Month", None), "season": ("Season", None), "try_kg": ("TL/kg", PRICE),
-        "usd_kg": ("USD/kg", PRICE), "trade_days": ("Trading days", "0")}),
-    "Exports": ("exports_monthly.csv", {
-        "month": ("Month", None), "product": ("Product", None), "partner": ("Destination", None),
-        "net_kg": ("Net weight (kg)", KG), "fob_usd": ("FOB value (USD)", KG)}),
-    "Top destinations": ("exports_top.csv", {
-        "partner": ("Destination", None), "net_kg": ("Net weight (kg)", KG),
-        "fob_usd": ("FOB value (USD)", KG), "share": ("Share of exports", SHARE)}),
-    "Crop": ("crop_by_year.csv", {
-        "year": ("Year", "0"), "season": ("Season", None),
-        "giresun_estimate_t": ("Giresun estimate (t)", TONNES),
-        "giresun_registered_t": ("Giresun registered (t)", TONNES),
-        "national_estimate_t": ("National estimate (t)", TONNES),
-        "season_avg_usd": ("Season average (USD/kg)", PRICE)}),
-    "Forecast range": ("price_range.csv", {
-        "horizon": ("Horizon (months)", "0"), "target_month": ("Target month", None),
-        "q05": ("5th percentile (USD/kg)", PRICE), "q10": ("10th percentile (USD/kg)", PRICE),
-        "q50": ("Median (USD/kg)", PRICE), "q90": ("90th percentile (USD/kg)", PRICE),
-        "q95": ("95th percentile (USD/kg)", PRICE), "from_month": ("Forecast from month", None),
-        "from_usd": ("Price at forecast origin (USD/kg)", PRICE)}),
-}
-
-SHEET_NOTES = {
-    "Prices": "Monthly Giresun price, USD/kg and TL/kg",
-    "Ordu": "Monthly Ordu exchange price",
-    "Exports": "Monthly exports by destination",
-    "Top destinations": "Largest export destinations",
-    "Crop": "Crop size by year and season average price",
-    "Forecast range": "Empirical price range by horizon, in USD/kg",
-    "Scoreboard": "Backtest accuracy by method; holdout table scored once, never tuned on",
-    "Sources": "Data providers, what we use and credit",
-}
-
-SOURCES = [
-    ("UN Comtrade", "Monthly export volumes and values by destination (HS 080221, 080222)",
-     "https://comtradeplus.un.org/", "Credit the source; see provider terms"),
-    ("FAOSTAT", "Annual national production statistics",
-     "https://www.fao.org/faostat/", "CC BY 4.0"),
-    ("TOBB", "Commodity exchange price records (TOBB exchange price query)",
-     "https://borsa.tobb.org.tr/", "Credit the source; see provider terms"),
-    ("Giresun Commodity Exchange", "Monthly prices, crop estimates and trade volumes",
-     "https://www.giresuntb.org.tr/", "Credit the source; see provider terms"),
-    ("Ordu Commodity Exchange", "Daily prices, published by the exchange as a public Google Sheet",
-     "https://docs.google.com/spreadsheets/d/1aeIzaRkKD4XvKZMRu5A4ZJywzNNUn6Ww/htmlview",
-     "Credit the source; see provider terms"),
-    ("Open-Meteo", "Historical daily weather (frost days)",
-     "https://open-meteo.com/", "CC BY 4.0"),
-    ("ECB", "Daily euro foreign-exchange reference rates",
-     "https://data.ecb.europa.eu/", "Free reuse with the source acknowledged"),
-    ("OECD", "Consumer price index",
-     "https://data-explorer.oecd.org/", "CC BY 4.0"),
-]
-
 
 def _readable_month(ym) -> str:
     try:
@@ -156,7 +99,13 @@ def _scoreboard(ws, data_dir: Path) -> bool:
     return True
 
 
-def _readme(ws, crop, site_url, manifest, sheet_ok) -> None:
+GENERIC_NOTES = {
+    "Scoreboard": "Backtest accuracy by method; holdout table scored once, never tuned on",
+    "Sources": "Data providers, what we use and credit",
+}
+
+
+def _readme(ws, crop, site_url, manifest, sheet_ok, notes, output_sheets) -> None:
     ws["A1"] = f"{crop.name} market data ({crop.country})"
     ws["A1"].font = Font(bold=True, size=14)
     ws["A2"] = f"Data as of {_readable_month(manifest.get('as_of'))}"
@@ -164,7 +113,7 @@ def _readme(ws, crop, site_url, manifest, sheet_ok) -> None:
     row = 5
     ws.cell(row, 1, "Sheet").font = Font(bold=True)
     ws.cell(row, 2, "Contents").font = Font(bold=True)
-    for name, note in SHEET_NOTES.items():
+    for name, note in notes.items():
         row += 1
         ws.cell(row, 1, name)
         ws.cell(row, 2, note if sheet_ok.get(name, True) else f"{note} (not available in this refresh)")
@@ -176,16 +125,16 @@ def _readme(ws, crop, site_url, manifest, sheet_ok) -> None:
         for n, o in stale:
             row += 1
             as_of = _readable_month(o["as_of"]) if o.get("as_of") else "no data"
-            ws.cell(row, 1, n)
+            ws.cell(row, 1, output_sheets.get(n, n))
             ws.cell(row, 2, f"stale, as of {as_of}")
     ws.column_dimensions["A"].width = 44
     ws.column_dimensions["B"].width = 80
 
 
-def _sources(ws) -> None:
+def _sources(ws, sources) -> None:
     ws.append(["Provider", "What we use", "URL", "Credit and terms"])
     _bold_row(ws, 1)
-    for s in SOURCES:
+    for s in sources:
         ws.append(list(s))
     ws.freeze_panes = "A2"
     _autowidth(ws)
@@ -203,11 +152,16 @@ def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig, site_url: s
     except Exception:
         manifest = {}
 
+    mod = CROP_MODULES[crop.slug]
+    sheets, sources = mod.WORKBOOK_SHEETS, mod.WORKBOOK_SOURCES
+    notes = {**mod.WORKBOOK_SHEET_NOTES, **GENERIC_NOTES}
+    output_sheets = {csv.removesuffix(".csv"): name for name, (csv, _) in sheets.items()}
+
     wb = Workbook()
     readme = wb.active
     readme.title = "README"
     sheet_ok: dict[str, bool] = {}
-    for sheet, (csv, spec) in SHEETS.items():
+    for sheet, (csv, spec) in sheets.items():
         ws = wb.create_sheet(sheet)
         df = _read(data_dir / csv)
         sheet_ok[sheet] = df is not None
@@ -220,8 +174,8 @@ def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig, site_url: s
     ws = wb.create_sheet("Scoreboard")
     sheet_ok["Scoreboard"] = _scoreboard(ws, data_dir)
     _autowidth(ws)
-    _sources(wb.create_sheet("Sources"))
-    _readme(readme, crop, site_url, manifest, sheet_ok)
+    _sources(wb.create_sheet("Sources"), sources)
+    _readme(readme, crop, site_url, manifest, sheet_ok, notes, output_sheets)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)

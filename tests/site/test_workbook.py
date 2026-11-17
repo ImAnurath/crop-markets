@@ -86,7 +86,7 @@ def test_missing_output_gives_placeholder_sheet(tiny_tables, tmp_path):
     assert wb["Scoreboard"]["A1"].value == "Not available in this refresh."
     assert wb["Prices"]["A1"].value != "Not available in this refresh."
     readme = "\n".join(str(c.value) for r in wb["README"].iter_rows() for c in r if c.value)
-    assert "exports_top" in readme or "Top destinations" in readme
+    assert "Top destinations" in readme and "(not available in this refresh)" in readme
 
 
 def test_stale_output_listed_in_readme(tiny_tables, tmp_path):
@@ -97,4 +97,5 @@ def test_stale_output_listed_in_readme(tiny_tables, tmp_path):
     wb = _wb(d, tmp_path)
     assert wb["Top destinations"].max_row > 1
     readme = "\n".join(str(c.value) for r in wb["README"].iter_rows() for c in r if c.value)
-    assert "stale" in readme.lower() and "December 2007" in readme
+    assert "stale, as of December 2007" in readme
+    assert "exports_top" not in readme

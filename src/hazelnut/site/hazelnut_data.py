@@ -145,3 +145,67 @@ BUILDERS: dict[str, tuple[Callable[[dict[str, pd.DataFrame]], pd.DataFrame], tup
     "crop_by_year": (crop_by_year, ("giresun_crop", "giresun_price")),
     "frost_by_year": (frost_by_year, ("weather",)),
 }
+
+
+# --- Excel workbook content for this crop ---------------------------------------------
+
+PRICE, KG, SHARE, TONNES = "0.00", "#,##0", "0.0%", "#,##0"
+
+# sheet -> (csv name, {column: (header, number format or None)})
+WORKBOOK_SHEETS = {
+    "Prices": ("prices_monthly.csv", {
+        "month": ("Month", None), "season": ("Season", None), "usd_kg": ("USD/kg", PRICE),
+        "try_kg": ("TL/kg", PRICE), "usd_try": ("TL per USD", "0.0000")}),
+    "Ordu": ("ordu_monthly.csv", {
+        "month": ("Month", None), "season": ("Season", None), "try_kg": ("TL/kg", PRICE),
+        "usd_kg": ("USD/kg", PRICE), "trade_days": ("Trading days", "0")}),
+    "Exports": ("exports_monthly.csv", {
+        "month": ("Month", None), "product": ("Product", None), "partner": ("Destination", None),
+        "net_kg": ("Net weight (kg)", KG), "fob_usd": ("FOB value (USD)", KG)}),
+    "Top destinations": ("exports_top.csv", {
+        "partner": ("Destination", None), "net_kg": ("Net weight (kg)", KG),
+        "fob_usd": ("FOB value (USD)", KG), "share": ("Share of exports", SHARE)}),
+    "Crop": ("crop_by_year.csv", {
+        "year": ("Year", "0"), "season": ("Season", None),
+        "giresun_estimate_t": ("Giresun estimate (t)", TONNES),
+        "giresun_registered_t": ("Giresun registered (t)", TONNES),
+        "national_estimate_t": ("National estimate (t)", TONNES),
+        "season_avg_usd": ("Season average (USD/kg)", PRICE)}),
+    "Forecast range": ("price_range.csv", {
+        "horizon": ("Horizon (months)", "0"), "target_month": ("Target month", None),
+        "q05": ("5th percentile (USD/kg)", PRICE), "q10": ("10th percentile (USD/kg)", PRICE),
+        "q50": ("Median (USD/kg)", PRICE), "q90": ("90th percentile (USD/kg)", PRICE),
+        "q95": ("95th percentile (USD/kg)", PRICE), "from_month": ("Forecast from month", None),
+        "from_usd": ("Price at forecast origin (USD/kg)", PRICE)}),
+}
+
+WORKBOOK_SHEET_NOTES = {
+    "Prices": "Monthly Giresun price, USD/kg and TL/kg",
+    "Ordu": "Monthly Ordu exchange price",
+    "Exports": "Monthly exports by destination",
+    "Top destinations": "Largest export destinations",
+    "Crop": "Crop size by year and season average price",
+    "Forecast range": "Empirical price range by horizon, in USD/kg",
+}
+
+WORKBOOK_SOURCES = [
+    ("UN Comtrade", "Monthly export volumes and values by destination (HS 080221, 080222)",
+     "https://comtradeplus.un.org/", "Credit the source; see provider terms"),
+    ("FAOSTAT", "Annual national production statistics",
+     "https://www.fao.org/faostat/", "CC BY 4.0"),
+    ("TOBB", "Commodity exchange price records (TOBB exchange price query)",
+     "https://borsa.tobb.org.tr/", "Credit the source; see provider terms"),
+    ("Giresun Commodity Exchange", "Monthly prices, crop estimates and trade volumes",
+     "https://www.giresuntb.org.tr/", "Credit the source; see provider terms"),
+    ("Ordu Commodity Exchange", "Daily prices, published by the exchange as a public Google Sheet",
+     "https://docs.google.com/spreadsheets/d/1aeIzaRkKD4XvKZMRu5A4ZJywzNNUn6Ww/htmlview",
+     "Credit the source; see provider terms"),
+    ("Open-Meteo", "Historical daily weather (frost days)",
+     "https://open-meteo.com/", "CC BY 4.0"),
+    ("ECB", "Daily euro foreign-exchange reference rates",
+     "https://data.ecb.europa.eu/", "Free reuse with the source acknowledged"),
+    ("OECD", "Consumer price index",
+     "https://data-explorer.oecd.org/", "CC BY 4.0"),
+]
+
+
