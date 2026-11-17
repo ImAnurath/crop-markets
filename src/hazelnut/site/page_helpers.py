@@ -18,7 +18,7 @@ from typing import Mapping
 import pandas as pd
 
 from hazelnut.site.config import CropConfig
-from hazelnut.site.labels import method_name
+from hazelnut.site.labels import OTHER_PARTNER, method_name
 
 NA = "n/a"
 MINUS = "−"
@@ -325,9 +325,6 @@ def range_coverage_note(ranges: pd.DataFrame | None, method: str, horizon: int) 
 def range_currencies_label(currencies: Sequence[str]) -> str:
     """crops.yml ``range_currencies`` as shown on the page: ("usd",) -> "USD"."""
     return ", ".join(c.upper() for c in currencies)
-
-
-OTHER_PARTNER = "Other"
 
 
 def exports_subtitle(top: pd.DataFrame, period_end: str, n: int = 2) -> str:

@@ -172,7 +172,9 @@ else:
   }
   function hook() {
     if (typeof price.on !== "function") return false;
-    price.on("plotly_buttonclicked", function (e) { show(e && e.button && e.button.label); });
+    // The period buttons fire this too, so read the currency menu's state (menu 0)
+    // rather than the clicked button's label.
+    price.on("plotly_buttonclicked", function () { show(current()); });
     price.on("plotly_afterplot", function () { show(current()); });
     show(current());
     return true;

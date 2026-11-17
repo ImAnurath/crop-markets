@@ -27,7 +27,7 @@ def _button_labels(menu) -> list[str]:
 
 def test_price_history_has_currency_buttons(prices):
     fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
-    assert len(fig.layout.updatemenus) == 1
+    assert len(fig.layout.updatemenus) == 2  # currency, then period
     assert _button_labels(fig.layout.updatemenus[0]) == ["USD", "TL"]
     assert [t.name for t in fig.data] == ["USD", "TL"]
     assert [t.visible for t in fig.data] == [True, False]
@@ -44,17 +44,69 @@ def test_price_history_takes_the_local_currency_from_the_caller(prices):
 
 def test_price_history_local_view_uses_a_log_axis(prices):
     # Nominal lira prices are flat for decades then explode; a log axis keeps both readable.
+    # USD sits on yaxis (linear), the local currency on yaxis2 (log); the currency buttons
+    # only swap which trace and axis are visible.
     fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
+    assert [t.yaxis for t in fig.data] == ["y", "y2"]
+    assert fig.layout.yaxis.type == "linear" and fig.layout.yaxis2.type == "log"
+    assert fig.layout.yaxis2.overlaying == "y" and fig.layout.yaxis2.visible is False
+    # its own round log ticks (1, 2, 5 x 10^n), not synced to the USD axis
+    assert fig.layout.yaxis2.tickmode == "linear" and fig.layout.yaxis2.dtick == "D2"
     usd, local = fig.layout.updatemenus[0].buttons
-    assert usd.args[1]["yaxis.type"] == "linear"
-    assert local.args[1]["yaxis.type"] == "log"
-    assert fig.layout.yaxis.type in (None, "linear")
+    assert list(usd.args) == [{"visible": [True, False]}, {"yaxis.visible": True, "yaxis2.visible": False}]
+    assert list(local.args) == [{"visible": [False, True]}, {"yaxis.visible": False, "yaxis2.visible": True}]
+
+
+def test_price_history_hover_shows_the_date_once(prices):
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
+    assert fig.layout.hovermode == "x unified"  # the month is the hover box's title
+    assert fig.layout.xaxis.hoverformat == "%b %Y"
+    assert all("%{x" not in t.hovertemplate for t in fig.data)
 
 
 def test_price_history_has_period_buttons(prices):
     fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
-    labels = [b.label for b in fig.layout.xaxis.rangeselector.buttons]
-    assert labels == ["5y", "10y", "All"]
+    menu = fig.layout.updatemenus[1]
+    assert _button_labels(menu) == ["5y", "10y", "All"]
+    assert menu.active == 2
+    assert fig.layout.xaxis.rangeselector.buttons == ()  # no rangeselector: it can't set y
+
+
+def test_price_history_period_buttons_rescale_y_to_the_window():
+    # USD: 10 everywhere except one early spike of 50; local: 1 rising to 1000.
+    months = pd.period_range("2000-01", "2020-12", freq="M").astype(str)
+    n = len(months)
+    usd = [10.0] * n
+    usd[12] = 50.0  # 2001-01, outside the 5y and 10y windows
+    usd[-1] = 12.0  # 2020-12
+    local = [10 ** (3 * i / (n - 1)) for i in range(n)]  # 1 .. 1000, log-linear
+    prices = pd.DataFrame({"month": months, "usd_kg": usd, "try_kg": local})
+    fig = charts.price_history(prices, [], "try_kg", "TL")
+    ranges = {b.label: b.args[0] for b in fig.layout.updatemenus[1].buttons}
+    assert all(b.method == "relayout" for b in fig.layout.updatemenus[1].buttons)
+
+    assert ranges["5y"]["xaxis.range"] == ["2015-12-01", "2020-12-01"]
+    assert ranges["All"]["xaxis.range"] == ["2000-01-01", "2020-12-01"]
+    # USD: 10..12 inside 5y (padded 5% of the span), 10..50 for All
+    assert ranges["5y"]["yaxis.range"] == pytest.approx([9.9, 12.1])
+    assert ranges["All"]["yaxis.range"] == pytest.approx([8.0, 52.0])
+    # local: log10 units; All spans 0..3, 5y covers only the last 61 months
+    assert ranges["All"]["yaxis2.range"] == pytest.approx([-0.15, 3.15])
+    lo5 = 3 * (n - 61) / (n - 1)
+    assert ranges["5y"]["yaxis2.range"] == pytest.approx([lo5 - (3 - lo5) * 0.05, 3 + (3 - lo5) * 0.05])
+    assert ranges["10y"]["yaxis2.range"][0] < ranges["5y"]["yaxis2.range"][0]
+    # the chart opens on All
+    assert list(fig.layout.yaxis.range) == pytest.approx(ranges["All"]["yaxis.range"])
+    assert list(fig.layout.yaxis2.range) == pytest.approx(ranges["All"]["yaxis2.range"])
+    assert list(fig.layout.xaxis.range) == ranges["All"]["xaxis.range"]
+
+
+def test_price_windows_ignore_gaps_and_non_positive_log_values():
+    x = pd.to_datetime(["2020-01-01", "2020-02-01", "2020-03-01"])
+    out = charts.price_windows(x, pd.Series([1.0, None, 3.0]), pd.Series([0.0, 10.0, 100.0]))
+    label, xr, yr, y2r = out[-1]
+    assert label == "All" and yr == pytest.approx([0.9, 3.1])
+    assert y2r == pytest.approx([0.95, 2.05])  # the 0 is left out of the log range
 
 
 def test_price_history_shades_each_shock(prices):
@@ -105,6 +157,17 @@ def test_bar_top_is_sorted_horizontal_bars():
     assert bar.orientation == "h"
     # largest at the top: plotly draws categories bottom-up, so reverse order
     assert list(bar.y) == ["France", "Germany", "Italy"]
+
+
+def test_bar_top_puts_other_last_even_when_it_is_large():
+    top = pd.DataFrame(
+        {"partner": ["Italy", "Other", "Germany", "France"], "net_kg": [3.0, 2.5, 2.0, 1.0],
+         "fob_usd": [30.0, 25.0, 20.0, 10.0], "share": [0.35, 0.3, 0.23, 0.12]}
+    )
+    bar = charts.bar_top(top).data[0]
+    # bottom-up: "Other" is drawn last (at the bottom), the rest largest at the top
+    assert list(bar.y) == ["Other", "France", "Germany", "Italy"]
+    assert list(bar.x) == [0.3, 0.12, 0.23, 0.35]
 
 
 def test_crop_vs_price_highlights_latest_year_in_accent():

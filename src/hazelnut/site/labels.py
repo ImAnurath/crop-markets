@@ -8,6 +8,10 @@ METHOD_NAMES = {
 }
 
 
+# The exports table's bucket for every partner outside the top ten.
+OTHER_PARTNER = "Other"
+
+
 def method_name(method: str) -> str:
     """Readable forecasting-method name; unknown methods keep their code name."""
     return METHOD_NAMES.get(method, method)

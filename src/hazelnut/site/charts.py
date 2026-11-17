@@ -19,12 +19,15 @@ import base64
 import copy
 import hashlib
 import html
+import math
 from collections.abc import Sequence
 from functools import lru_cache
 
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
+
+from hazelnut.site.labels import OTHER_PARTNER
 
 # Dark-theme tokens (global constraints). site.js swaps in the light ones.
 FG = "#eeeae4"
@@ -95,6 +98,44 @@ def _month_start(month: str) -> pd.Timestamp:
     return pd.Period(month, "M").start_time
 
 
+PRICE_WINDOWS = (("5y", 5), ("10y", 10), ("All", None))
+_Y_PAD = 0.05  # share of the visible span added above and below the line
+
+
+def _y_range(values: pd.Series, log: bool) -> list[float] | None:
+    """Padded [min, max] of ``values``; in log10 units for a log axis (Plotly's
+    convention for log ranges). None when nothing is plottable."""
+    v = values.dropna()
+    if log:
+        v = v[v > 0].map(math.log10)
+    if v.empty:
+        return None
+    lo, hi = float(v.min()), float(v.max())
+    if hi > lo:
+        pad = (hi - lo) * _Y_PAD
+    else:  # a flat window: give it some height
+        pad = 0.05 if log else max(abs(hi) * _Y_PAD, 0.01)
+    return [lo - pad, hi + pad]
+
+
+def price_windows(x: pd.Series, usd: pd.Series, local: pd.Series):
+    """For each of 5y, 10y and All: (label, x range, USD y range, local log10 y range).
+
+    Plotly's y autorange ignores the x range, so the y ranges are computed here from the
+    points inside each window (ending at the last month)."""
+    x = pd.to_datetime(pd.Series(x)).reset_index(drop=True)
+    usd, local = pd.Series(usd).reset_index(drop=True), pd.Series(local).reset_index(drop=True)
+    last, first = x.max(), x.min()
+    out = []
+    for label, years in PRICE_WINDOWS:
+        start = first if years is None else max(first, last - pd.DateOffset(years=years))
+        inside = (x >= start) & (x <= last)
+        xr = [start.strftime("%Y-%m-%d"), last.strftime("%Y-%m-%d")]
+        out.append((label, xr, _y_range(usd[inside], log=False),
+                    _y_range(local[inside], log=True)))
+    return out
+
+
 def price_history(
     prices: pd.DataFrame,
     shocks: Sequence[tuple[str, str]],
@@ -108,18 +149,25 @@ def price_history(
     list of (first month, last month) pairs. ``local_col``/``local_label`` come from the
     crop's ``local_currency`` in ``site/crops.yml``.
     """
-    x = pd.to_datetime(prices["month"].astype(str) + "-01")
+    x = pd.to_datetime(prices["month"].astype(str) + "-01").reset_index(drop=True)
+    usd = prices["usd_kg"].astype(float).reset_index(drop=True)
+    loc = prices[local_col].astype(float).reset_index(drop=True)
     line = dict(color=FG, width=2)
+    # USD on yaxis (linear), the local currency on yaxis2 (log, overlaying it). The
+    # currency buttons only switch which trace and axis are visible, the period buttons
+    # only set ranges, so the two menus never need to know each other's state.
     fig = go.Figure(
         [
-            go.Scatter(x=x, y=prices["usd_kg"], name="USD", meta="fg", mode="lines",
-                       line=line, visible=True,
-                       hovertemplate="%{x|%b %Y}<br>$%{y:.2f} /kg<extra></extra>"),
-            go.Scatter(x=x, y=prices[local_col], name=local_label, meta="fg", mode="lines",
-                       line=line, visible=False,
-                       hovertemplate="%{x|%b %Y}<br>%{y:,.2f} " + local_label + "/kg<extra></extra>"),
+            go.Scatter(x=x, y=usd, name="USD", meta="fg", mode="lines",
+                       line=line, visible=True, yaxis="y",
+                       hovertemplate="$%{y:.2f} /kg<extra></extra>"),
+            go.Scatter(x=x, y=loc, name=local_label, meta="fg", mode="lines",
+                       line=line, visible=False, yaxis="y2",
+                       hovertemplate="%{y:,.2f} " + local_label + "/kg<extra></extra>"),
         ]
     )
+    windows = price_windows(x, usd, loc)
+    _, all_x, all_usd, all_loc = windows[-1]
     shapes = [
         dict(type="rect", name="shock", xref="x", yref="paper",
              x0=_month_start(a), x1=pd.Period(b, "M").end_time.normalize() + pd.Timedelta(days=1),
@@ -133,21 +181,18 @@ def price_history(
         layout(
             height=360,
             margin=dict(t=48),
-            hovermode="x",
-            yaxis=dict(tickprefix="$", tickformat=".2f"),
-            xaxis=dict(
-                type="date",
-                hoverformat="%b %Y",
-                rangeselector=dict(
-                    buttons=[
-                        dict(count=5, label="5y", step="year", stepmode="backward"),
-                        dict(count=10, label="10y", step="year", stepmode="backward"),
-                        dict(label="All", step="all"),
-                    ],
-                    x=1, xanchor="right", y=1.02, yanchor="bottom",
-                    activecolor=LINE, **button_style,
-                ),
-            ),
+            # One hover box with the month as its title (the date shows once).
+            hovermode="x unified",
+            yaxis=dict(type="linear", tickprefix="$", tickformat=".2f",
+                       autorange=False, range=all_usd),
+            # Log axis: a nominal local price can be flat for decades and then explode
+            # with the currency's fall; on a log scale both stay readable.
+            # Explicit ticks at 1, 2 and 5 x 10^n ("D2"): an overlaying axis would otherwise
+            # sync its ticks to yaxis (values like 35.44), and D1 crowds short windows.
+            yaxis2=_axis(showgrid=True, overlaying="y", side="left", type="log",
+                         tickmode="linear", dtick="D2", tickformat=",~r",
+                         autorange=False, range=all_loc, visible=False),
+            xaxis=dict(type="date", hoverformat="%b %Y", autorange=False, range=all_x),
             updatemenus=[
                 dict(
                     type="buttons", direction="right", showactive=True, active=0,
@@ -155,17 +200,25 @@ def price_history(
                     buttons=[
                         dict(label="USD", method="update",
                              args=[{"visible": [True, False]},
-                                   {"yaxis.type": "linear", "yaxis.tickprefix": "$",
-                                    "yaxis.tickformat": ".2f", "yaxis.autorange": True}]),
-                        # Log axis: a nominal local price can be flat for decades and then
-                        # explode with the currency's fall; on a log scale both stay readable.
+                                   {"yaxis.visible": True, "yaxis2.visible": False}]),
                         dict(label=local_label, method="update",
                              args=[{"visible": [False, True]},
-                                   {"yaxis.type": "log", "yaxis.tickprefix": "",
-                                    "yaxis.tickformat": ",~r", "yaxis.autorange": True}]),
+                                   {"yaxis.visible": False, "yaxis2.visible": True}]),
                     ],
                     **button_style,
-                )
+                ),
+                dict(
+                    type="buttons", direction="right", showactive=True,
+                    active=len(windows) - 1,
+                    x=1, xanchor="right", y=1.02, yanchor="bottom", pad=dict(t=0, r=0, b=0, l=0),
+                    buttons=[
+                        dict(label=label, method="relayout",
+                             args=[{"xaxis.range": xr, "yaxis.range": yr,
+                                    "yaxis2.range": y2r}])
+                        for label, xr, yr, y2r in windows
+                    ],
+                    **button_style,
+                ),
             ],
             shapes=shapes,
         )
@@ -223,11 +276,14 @@ def price_range_fig(rng: pd.DataFrame) -> go.Figure:
 
 
 def bar_top(top: pd.DataFrame) -> go.Figure:
-    """Horizontal bars of export share by destination, largest at the top.
+    """Horizontal bars of export share by destination, largest at the top and the
+    "Other" bucket always last.
 
     ``top`` is ``exports_top.csv``: ``partner, net_kg, fob_usd, share`` (share of net_kg).
     """
-    top = top.sort_values("share", ascending=True)
+    # Plotly draws the first category at the bottom: "Other" first, then smallest to largest.
+    is_other = top["partner"] == OTHER_PARTNER
+    top = pd.concat([top[is_other], top[~is_other].sort_values("share", ascending=True)])
     fig = go.Figure(
         go.Bar(
             x=top["share"], y=top["partner"], orientation="h", meta="fg",
