@@ -9,8 +9,8 @@ MAPE is the fair measure here: lira MAE is dominated by 2021-24, when prices wer
 | method (h = 1 / 3 / 6)            | MAPE ratio          | MAE ratio           |
 |-----------------------------------|---------------------|---------------------|
 | lira naive (MAPE %, MAE TRY/kg)   | 5.8 / 12.8 / 21.8 % | 1.05 / 2.45 / 4.43  |
-| lira drift, 36 m                  | 1.07 / 1.12 / 1.17  | 1.08 / 1.00 / 0.86  |
-| lira drift, 12 m                  | 1.14 / 1.23 / 1.30  | 1.17 / 1.10 / 0.93  |
+| lira drift, 36 m                  | 1.07 / 1.12 / 1.17  | 1.08 / 0.99 / 0.86  |
+| lira drift, 12 m                  | 1.14 / 1.22 / 1.30  | 1.17 / 1.10 / 0.93  |
 | USD naive x FX drift, 36 m        | 1.00 / 0.97 / 0.93  | 1.02 / 0.90 / 0.75  |
 | USD naive x FX drift, 12 m        | 1.01 / 0.98 / 0.96  | 1.01 / 0.89 / 0.78  |
 | USD naive x FX infl. differential | 1.01 / 0.97 / 0.94  | 1.04 / 0.91 / 0.74  |
