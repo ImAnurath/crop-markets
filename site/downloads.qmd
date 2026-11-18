@@ -17,7 +17,7 @@ ph.raw_html(
 ```
 
 ::: {.lede .explorer-lede}
-Each crop's workbook holds every table on this site in one formatted Excel file: a README sheet, the monthly prices, exports, crop sizes, the forecast range and the forecast scores. It is rebuilt on every weekly refresh. To take only some months, filter them in the crop's data explorer and download that view.
+Each crop's workbook holds the site's main tables in one formatted Excel file; its sheets are listed below. It is rebuilt on every weekly refresh. To take only some months, filter them in the crop's data explorer and download that view.
 :::
 
 ```{python}
@@ -40,7 +40,8 @@ for crop in crops.values():
         f'<section class="panel span-8" aria-labelledby="wb-{ph.escape(crop.slug)}">'
         f'<span class="eyebrow">{ph.escape(crop.name)} · {ph.escape(crop.country)}</span>'
         f'<h2 class="ptitle" id="wb-{ph.escape(crop.slug)}">{ph.escape(crop.name)} market data workbook</h2>'
-        '<div class="sub">Every table on the site, formatted, with a README and the source credits.</div>'
+        "<div class=\"sub\">The site's main tables, formatted, with a README and the source credits; "
+        "the sheets are listed below.</div>"
         f'<div class="dl-meta">{ph.workbook_download_html(f"downloads/{name}", size)}{explorer}{stamp}</div>'
         f"{ph.sheet_list_html(workbook.sheet_list(crop.slug))}"
         "</section>"
