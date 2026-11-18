@@ -1,31 +1,16 @@
 {
   "crop": "hazelnut",
-  "built_at": "2026-11-17T14:19:25.815967+00:00",
-  "as_of": "2026-09",
+  "built_at": "2026-11-18T20:41:01.935558+00:00",
+  "as_of": "2026-10",
   "outputs": {
     "prices_monthly": {
-      "as_of": "2026-09",
-      "rows": 381,
+      "as_of": "2026-10",
+      "rows": 382,
       "stale": false
     },
     "ordu_monthly": {
       "as_of": "2026-10",
       "rows": 309,
-      "stale": false
-    },
-    "exports_monthly": {
-      "as_of": "2025-12",
-      "rows": 18500,
-      "stale": false
-    },
-    "exports_top": {
-      "as_of": "2025-12",
-      "rows": 11,
-      "stale": false
-    },
-    "export_unit_value": {
-      "as_of": "2025-12",
-      "rows": 620,
       "stale": false
     },
     "crop_by_year": {
@@ -39,14 +24,29 @@
       "stale": false
     },
     "price_range": {
-      "as_of": "2026-09",
+      "as_of": "2026-10",
       "rows": 3,
       "stale": false
     },
     "stats": {
-      "as_of": "2026-09",
+      "as_of": "2026-10",
       "rows": 1,
       "stale": false
+    },
+    "exports_monthly": {
+      "as_of": "2025-12",
+      "rows": 18500,
+      "stale": true
+    },
+    "exports_top": {
+      "as_of": "2025-12",
+      "rows": 11,
+      "stale": true
+    },
+    "export_unit_value": {
+      "as_of": "2025-12",
+      "rows": 620,
+      "stale": true
     }
   }
 }
