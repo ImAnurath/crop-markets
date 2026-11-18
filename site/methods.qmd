@@ -12,6 +12,10 @@ from hazelnut.site.crops import crop_module
 crops = load_crops()
 first_month = ph.month_label(str(validate.FIRST_CONTIGUOUS))
 max_lag = validate.MAX_LAG_MONTHS
+holdout_text = ph.holdout_glossary_sentence(
+    [(c.name, crop_module(c.slug).HOLDOUT_PERIOD) for c in crops.values()
+     if getattr(crop_module(c.slug), "HOLDOUT_PERIOD", None)]
+)
 ph.raw_html(
     '<div class="dash-head"><div><span class="eyebrow">Methods</span>'
     "<h1>How every number is made</h1></div></div>"
@@ -22,7 +26,8 @@ ph.raw_html(
 The terms used across the site in plain words, what the forecast tests found, and how the weekly refresh keeps the data current without publishing broken numbers.
 :::
 
-```{=html}
+```{python}
+ph.raw_html(f"""
 <div class="sect analysis-sect"><div><span class="eyebrow">Glossary</span><h2>The words, in plain language</h2></div></div>
 <div class="glossary">
   <section class="panel" id="naive">
@@ -51,7 +56,7 @@ The terms used across the site in plain words, what the forecast tests found, an
   </section>
   <section class="panel" id="holdout">
     <h3>Holdout, scored once</h3>
-    <p>The most recent 24 months were set aside before any method was built. Methods were developed and compared on the earlier months only. The holdout was then scored once, at the end, and nothing was changed afterwards: hence the label "scored once, never tuned on".</p>
+    <p>{ph.escape(holdout_text)} Methods were developed and compared on the earlier months only. The holdout was then scored once, at the end, and nothing was changed afterwards: hence the label "scored once, never tuned on".</p>
     <p>With so few months it is a sanity check, not a new ranking.</p>
   </section>
   <section class="panel" id="range">
@@ -71,6 +76,7 @@ The terms used across the site in plain words, what the forecast tests found, an
     <p>Lira prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.</p>
   </section>
 </div>
+""")
 ```
 
 ```{python}

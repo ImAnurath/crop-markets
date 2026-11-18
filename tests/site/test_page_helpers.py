@@ -255,3 +255,21 @@ def test_sources_summary_counts_and_names_every_provider():
 def test_sources_summary_singular_and_no_exchanges():
     count, text = ph.sources_summary([("FAOSTAT", "x", "u", "l")])
     assert (count, text) == ("1 public dataset", "FAOSTAT")
+
+
+# --- Methods: holdout glossary --------------------------------------------------------
+
+def test_holdout_glossary_names_the_period():
+    assert ph.holdout_glossary_sentence([("Hazelnut", ("2024-10", "2026-09"))]) == (
+        "For hazelnut the holdout is October 2024 to September 2026 (24 months). "
+        "It was set aside before any method was built."
+    )
+
+
+def test_holdout_glossary_with_two_crops_and_none():
+    two = ph.holdout_glossary_sentence([("Hazelnut", ("2024-10", "2026-09")), ("Fig", ("2025-01", "2025-12"))])
+    assert two == ("For hazelnut the holdout is October 2024 to September 2026 (24 months); for fig, "
+                   "January 2025 to December 2025 (12 months). Each was set aside before any method was built.")
+    assert ph.holdout_glossary_sentence([]) == (
+        "The final months of the backtest were set aside before any method was built."
+    )

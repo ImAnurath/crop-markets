@@ -1226,3 +1226,21 @@ def methods_facts(dev: pd.DataFrame | None, holdout: pd.DataFrame | None,
                      f"{range_held_text(ranges, range_method)} of the time in the backtest, "
                      f"at {hs} months ahead.")
     return facts
+
+
+def holdout_glossary_sentence(periods: Sequence[tuple[str, tuple[str, str]]]) -> str:
+    """The Methods glossary's holdout period, named from each crop's ``HOLDOUT_PERIOD``.
+
+    ``periods`` is ``[(crop name, (first month, last month)), ...]``.
+    """
+    if not periods:
+        return "The final months of the backtest were set aside before any method was built."
+    spans = []
+    for name, (a, b) in periods:
+        n = (pd.Period(b, "M") - pd.Period(a, "M")).n + 1
+        spans.append((name.lower(), f"{month_label(a)} to {month_label(b)} ({n} months)"))
+    first, rest = spans[0], spans[1:]
+    text = f"For {first[0]} the holdout is {first[1]}"
+    text += "".join(f"; for {name}, {span}" for name, span in rest)
+    who = "It was" if not rest else "Each was"
+    return f"{text}. {who} set aside before any method was built."
