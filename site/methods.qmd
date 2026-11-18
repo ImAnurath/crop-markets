@@ -127,7 +127,7 @@ ph.raw_html(f"""
   <div class="sub">Nothing reaches the site until it has passed the checks.</div>
   <ol class="steps">
     <li><strong>Fetch.</strong> An automated job downloads every source again. Each source is fetched on its own, so one that fails does not stop the others.</li>
-    <li><strong>Build, with fallback.</strong> The site's tables are rebuilt from the fresh data. A table whose source failed keeps its last good version from the previous refresh and is marked stale. The core tables (the monthly price series, the price range and the headline numbers) have no fallback: if they cannot be rebuilt, the run stops.</li>
+    <li><strong>Build, with fallback.</strong> The site's tables are rebuilt from the fresh data. A table whose source failed, or that came out more than 10% shorter than last time (a sign of a partial download), keeps its last good version from the previous refresh and is marked stale. The core tables (the monthly price series, the price range and the headline numbers) have no fallback: if they cannot be rebuilt, the run stops.</li>
     <li><strong>Validate.</strong> A gate checks the data before anything is published: the monthly price series has every month from {ph.escape(first_month)} to the latest, with no duplicates, and every price and exchange rate is above zero; the price range is positive and in order; the headline numbers are all valid numbers; and the latest month is no more than {max_lag} months old. If any check fails, the run stops and the site already online stays as it was.</li>
     <li><strong>Publish.</strong> The pages, charts and Excel workbook are rebuilt from the checked data. The forecast models are not re-run each week: the scoreboards come from the saved backtest results, and only the price range, which is cheap to compute, is recalculated from the latest prices.</li>
   </ol>
@@ -137,7 +137,7 @@ ph.raw_html(f"""
   <div class="sub">How fresh the numbers are, on every page.</div>
   <p class="muted"><span class="live"><i aria-hidden="true"></i>Data as of &lt;month&gt; · refreshed weekly</span></p>
   <p class="muted">The month is the latest month of the crop's exchange price series.</p>
-  <p class="muted">If a table is running on an older copy because its source failed, the stamp adds "(some sources from &lt;month&gt;)", naming the oldest such month. The workbook's README sheet lists each stale table and its date.</p>
+  <p class="muted">If a table is running on an older copy because its source failed, the stamp adds "(some sources from &lt;month&gt;)", naming the oldest such month, or "(some sources unavailable)" if a table has no earlier copy yet. The workbook's README sheet lists each stale table and its date.</p>
 </section>
 </div>
 """)
