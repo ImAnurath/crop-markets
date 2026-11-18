@@ -1,0 +1,134 @@
+# Weekly data refresh and GitHub Pages deploy for the portfolio site (site/).
+#
+# Failure behaviour:
+# - fetch_raw.py: never stops the job. A source that fails has its partial raw snapshot
+#   deleted, so its tables are not rebuilt and the site keeps that source's last good
+#   files from the committed site/data/ (marked stale in the manifest).
+# - build_tables.py: never stops the job (each table is built on its own).
+# - build_site_data.py: the gate. It fails when a core output (monthly prices, price range,
+#   headline stats) cannot be rebuilt or validation finds a problem; the job stops and the
+#   site already online stays as it was.
+# - Everything after that (workbook, tests, render, link check, commit) also stops the job.
+# Only the default branch commits data and deploys; a run on another ref only builds.
+
+name: Refresh and deploy site
+
+on:
+  schedule:
+    - cron: "0 5 * * 1" # Mondays 05:00 UTC
+  workflow_dispatch:
+
+concurrency: refresh-site
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+defaults:
+  run:
+    shell: bash # bash -eo pipefail
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONUTF8: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120 # the fetch alone takes tens of minutes (rate-limited APIs)
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-site.txt
+
+      - name: Install site requirements (no torch / chronos)
+        run: pip install -r requirements-site.txt && pip install -e .
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.11.9 # pinned in site/README.md
+
+      - name: Fetch raw data
+        run: |
+          python scripts/fetch_raw.py 2>&1 | tee "$RUNNER_TEMP/fetch.log" || echo "some sources failed"
+          failed=$(sed -n 's/^failed sources: //p' "$RUNNER_TEMP/fetch.log" | tr -d ',')
+          # fetch_raw.py source name -> data/raw/ folder it writes
+          declare -A RAW=([ordu]=ordu_sheet [tobb]=tobb [giresun]=giresun [comtrade]=comtrade
+                          [faostat]=faostat [weather]=open_meteo [fx]=ecb_fx [cpi]=oecd_cpi)
+          for s in $failed; do
+            # Drop the partial snapshot so a half-fetched source is not published as fresh.
+            rm -rf "data/raw/${RAW[$s]:-$s}"
+            echo "::warning::fetch failed for $s; its site data keeps the last good copy"
+          done
+          {
+            echo "### Fetch"
+            echo
+            if [ -n "$failed" ]; then echo "Failed sources: ${failed}"; else echo "All sources fetched."; fi
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build interim tables
+        run: python scripts/build_tables.py
+
+      - name: Build site data (gate; writes the run summary)
+        run: python scripts/build_site_data.py
+
+      - name: Build workbook
+        run: python scripts/build_workbook.py
+
+      - name: Site tests
+        run: pytest tests/site -q
+
+      - name: Render site
+        run: |
+          QUARTO_PYTHON="$(command -v python)"
+          export QUARTO_PYTHON
+          quarto render site
+
+      - name: Check rendered links
+        run: pytest tests/site/test_rendered_links.py -q
+
+      - name: Commit refreshed site data
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git add -- site/data
+          if git diff --cached --quiet -- site/data; then
+            echo "site/data unchanged; nothing to commit"
+            exit 0
+          fi
+          as_of=$(python - <<'EOF'
+          import json
+          from pathlib import Path
+          paths = sorted(Path("site/data").glob("*/manifest.json"))
+          print(", ".join(sorted({json.loads(p.read_text(encoding="utf-8"))["as_of"] for p in paths})))
+          EOF
+          )
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh site data (${as_of})"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || {
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          }
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/_site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
