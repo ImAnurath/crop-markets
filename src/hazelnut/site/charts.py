@@ -8,7 +8,8 @@ CSS variables on load and whenever the colour scheme toggles.
 Colours here are the dark-theme design tokens; site.js finds the colours to swap by
 the ``meta`` role on each trace (``"fg"`` neutral
 marks, ``"accent"`` emphasis marks, ``"accent-fill"`` amber bands) and by the
-``name`` of each shape (``"shock"``), so keep those roles when adding charts.
+``name`` of each shape (``"shock"`` amber bands, ``"ref"`` dim reference lines), so keep
+those roles when adding charts.
 
 Helpers set no titles: every chart panel's title and takeaway subtitle are page HTML.
 Must not import torch or any forecasting method (CI installs requirements-site.txt).
@@ -16,6 +17,7 @@ Must not import torch or any forecasting method (CI installs requirements-site.t
 from __future__ import annotations
 
 import base64
+import calendar
 import copy
 import hashlib
 import html
@@ -27,7 +29,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
-from hazelnut.site.labels import OTHER_PARTNER
+from hazelnut.site.labels import OTHER_PARTNER, method_name
 
 # Dark-theme tokens (global constraints). site.js swaps in the light ones.
 FG = "#eeeae4"
@@ -96,6 +98,28 @@ def layout(**overrides) -> dict:
 
 def _month_start(month: str) -> pd.Timestamp:
     return pd.Period(month, "M").start_time
+
+
+def _shock_shapes(shocks: Sequence[tuple[str, str]]) -> list[dict]:
+    """Amber bands over each (first month, last month) shock period, behind the data."""
+    return [
+        dict(type="rect", name="shock", xref="x", yref="paper",
+             x0=_month_start(a), x1=pd.Period(b, "M").end_time.normalize() + pd.Timedelta(days=1),
+             y0=0, y1=1, fillcolor=ACCENT, opacity=_SHOCK_OPACITY,
+             line=dict(width=0), layer="below")
+        for a, b in shocks
+    ]
+
+
+def _ref_shape(y: float) -> dict:
+    """A thin full-width reference line at ``y`` (site.js gives shapes named "ref" the
+    dim colour)."""
+    return dict(type="line", name="ref", xref="paper", x0=0, x1=1, yref="y", y0=y, y1=y,
+                line=dict(color=DIM, width=1, dash="dash"), layer="below")
+
+
+def _dates(months) -> pd.Series:
+    return pd.to_datetime(pd.Series(months).astype(str) + "-01").reset_index(drop=True)
 
 
 PRICE_WINDOWS = (("5y", 5), ("10y", 10), ("All", None))
@@ -168,13 +192,7 @@ def price_history(
     )
     windows = price_windows(x, usd, loc)
     _, all_x, all_usd, all_loc = windows[-1]
-    shapes = [
-        dict(type="rect", name="shock", xref="x", yref="paper",
-             x0=_month_start(a), x1=pd.Period(b, "M").end_time.normalize() + pd.Timedelta(days=1),
-             y0=0, y1=1, fillcolor=ACCENT, opacity=_SHOCK_OPACITY,
-             line=dict(width=0), layer="below")
-        for a, b in shocks
-    ]
+    shapes = _shock_shapes(shocks)
     button_style = dict(bgcolor=TRANSPARENT, bordercolor=LINE, borderwidth=1,
                         font=dict(family=FONT, size=12, color=MUTED))
     fig.update_layout(
@@ -342,6 +360,219 @@ def crop_vs_price(crop: pd.DataFrame, x_col: str) -> go.Figure:
                        title=dict(text="Season average")),
         )
     )
+    return fig
+
+
+# --- Analyses pages ---------------------------------------------------------------------
+
+def season_profile(profile: pd.DataFrame) -> go.Figure:
+    """Average change from the season's mean by month (bars), with a thin whisker over the
+    middle half of seasons. ``profile`` is ``page_helpers.seasonal_profile``'s output."""
+    labels = [calendar.month_abbr[int(m)] for m in profile["month"]]
+    wx, wy = [], []
+    for lab, lo, hi in zip(labels, profile["q25"], profile["q75"]):
+        wx += [lab, lab, None]
+        wy += [float(lo), float(hi), None]
+    fig = go.Figure([
+        go.Bar(x=labels, y=[float(v) for v in profile["mean"]], name="Average month",
+               meta="fg", marker=dict(color=FG, opacity=0.8),
+               customdata=list(zip(profile["label"], profile["q25"], profile["q75"])),
+               hovertemplate=("%{customdata[0]}<br>average %{y:+.1%}<br>middle half of seasons "
+                              "%{customdata[1]:+.1%} to %{customdata[2]:+.1%}<extra></extra>")),
+        go.Scatter(x=wx, y=wy, mode="lines", name="Middle half of seasons", meta="fg",
+                   line=dict(color=FG, width=1.5), opacity=0.45, hoverinfo="skip"),
+    ])
+    fig.update_layout(layout(
+        height=320, showlegend=True, bargap=0.45, margin=dict(t=40),
+        xaxis=dict(type="category"),
+        yaxis=dict(tickformat="+.0%", showgrid=True),
+    ))
+    return fig
+
+
+def share_lines(shares: pd.DataFrame, highlight: str | None = None) -> go.Figure:
+    """One line per column (a partner's share by year), labelled at its last point;
+    ``highlight`` is drawn in amber."""
+    x = [int(y) for y in shares.index]
+    traces = []
+    for col in shares.columns:
+        hl = col == highlight
+        traces.append(go.Scatter(
+            x=x, y=[float(v) for v in shares[col]], name=str(col), mode="lines+text",
+            text=[""] * (len(x) - 1) + [str(col)], textposition="middle right",
+            textfont=dict(family=FONT, size=12, color=MUTED), cliponaxis=False,
+            meta="accent" if hl else "fg", opacity=1 if hl else 0.75,
+            line=dict(color=ACCENT if hl else FG, width=2 if hl else 1.5),
+            hovertemplate=f"{html.escape(str(col))} %{{y:.0%}}<extra></extra>",
+        ))
+    fig = go.Figure(traces)
+    fig.update_layout(layout(
+        height=340, hovermode="x unified", margin=dict(r=96),
+        xaxis=dict(tickformat="d"),
+        yaxis=dict(tickformat=".0%", rangemode="tozero"),
+    ))
+    return fig
+
+
+def compare_lines(x, a, b, a_name: str, b_name: str, *, prefix: str = "$",
+                  suffix: str = " /kg", shocks: Sequence[tuple[str, str]] = ()) -> go.Figure:
+    """Two monthly series on one axis: ``a`` solid, ``b`` dotted and fainter. Gaps (NaN)
+    stay gaps. ``x`` is YYYY-MM months; ``shocks`` are shaded amber."""
+    xs = _dates(x)
+
+    def hover(name: str) -> str:
+        return f"{html.escape(name)} {prefix}%{{y:,.2f}}{suffix}<extra></extra>"
+
+    fig = go.Figure([
+        go.Scatter(x=xs, y=list(a), name=a_name, mode="lines", meta="fg",
+                   line=dict(color=FG, width=2), connectgaps=False, hovertemplate=hover(a_name)),
+        go.Scatter(x=xs, y=list(b), name=b_name, mode="lines", meta="fg", opacity=0.75,
+                   line=dict(color=FG, width=1.5, dash="dot"), connectgaps=False,
+                   hovertemplate=hover(b_name)),
+    ])
+    fig.update_layout(layout(
+        height=340, showlegend=True, hovermode="x unified", margin=dict(t=40),
+        xaxis=dict(type="date", hoverformat="%b %Y"),
+        yaxis=dict(tickprefix=prefix, tickformat=".2f"),
+        shapes=_shock_shapes(shocks),
+    ))
+    return fig
+
+
+def gap_line(x, gap, median: float) -> go.Figure:
+    """A monthly percent gap as a line, with a zero line and its median dashed in amber.
+    Months missing from ``x`` stay gaps in the line."""
+    s = pd.Series(list(gap), index=pd.PeriodIndex(pd.Series(x).astype(str), freq="M"), dtype=float)
+    s = s.reindex(pd.period_range(s.index.min(), s.index.max(), freq="M"))
+    xs = pd.Series(s.index.to_timestamp())
+    ys = [None if pd.isna(v) else float(v) for v in s]
+    label = f"Median {median:+.1%}".replace("-", "−")
+    fig = go.Figure([
+        go.Scatter(x=xs, y=ys, name="Gap", mode="lines", meta="fg",
+                   line=dict(color=FG, width=1.5), connectgaps=False,
+                   hovertemplate="%{y:+.1%}<extra></extra>"),
+        go.Scatter(x=[xs.min(), xs.max()], y=[median, median], name=label, mode="lines",
+                   meta="accent", line=dict(color=ACCENT, width=1.5, dash="dash"),
+                   hoverinfo="skip"),
+    ])
+    fig.update_layout(layout(
+        height=280, showlegend=True, hovermode="x unified", margin=dict(t=40),
+        xaxis=dict(type="date", hoverformat="%b %Y"),
+        yaxis=dict(tickformat="+.0%"),
+        shapes=[_ref_shape(0)],
+    ))
+    return fig
+
+
+def labeled_scatter(df: pd.DataFrame, x: str, y: str, label: str, highlight: Sequence = (),
+                    *, x_title: str = "", y_title: str = "", x_hover: str = ",.1f",
+                    y_hover: str = ",.0f", y_suffix: str = "") -> go.Figure:
+    """Points of ``y`` against ``x``; rows whose ``label`` is in ``highlight`` are amber and
+    labelled. Rows missing either value are left out."""
+    d = df.dropna(subset=[x, y])
+    is_hl = d[label].isin(list(highlight))
+    hover = (f"%{{text}}<br>{html.escape(x_title)} %{{x:{x_hover}}}<br>"
+             f"{html.escape(y_title)} %{{y:{y_hover}}}{html.escape(y_suffix)}<extra></extra>")
+
+    def trace(part: pd.DataFrame, hl: bool) -> go.Scatter:
+        return go.Scatter(
+            x=list(part[x]), y=list(part[y]), text=[str(v) for v in part[label]],
+            mode="markers+text" if hl else "markers", meta="accent" if hl else "fg",
+            name="Highlighted" if hl else "Other years", textposition="top center",
+            textfont=dict(family=MONO, size=11, color=MUTED),
+            marker=(dict(color=ACCENT, size=11, line=dict(width=2, color=PANEL)) if hl
+                    else dict(color=FG, size=8, opacity=0.7)),
+            hovertemplate=hover,
+        )
+
+    fig = go.Figure([trace(d[~is_hl], False), trace(d[is_hl], True)])
+    fig.update_layout(layout(
+        height=320,
+        xaxis=dict(title=dict(text=x_title), showgrid=False),
+        yaxis=dict(title=dict(text=y_title), tickformat="~s", ticksuffix=y_suffix),
+    ))
+    return fig
+
+
+def forecast_vs_actual(f: pd.DataFrame, other_name: str,
+                       shocks: Sequence[tuple[str, str]] = ()) -> go.Figure:
+    """The actual price, naive's forecast (amber) and one challenger's (dotted), by target
+    month. ``f`` is ``forecast_3m.csv``: ``target_month, actual, naive, best_other``."""
+    xs = _dates(f["target_month"])
+    naive = method_name("naive")
+
+    def line(col: str, name: str, meta: str, **style) -> go.Scatter:
+        return go.Scatter(x=xs, y=[float(v) for v in f[col]], name=name, mode="lines",
+                          meta=meta, hovertemplate=f"{html.escape(name)} $%{{y:.2f}}<extra></extra>",
+                          **style)
+
+    fig = go.Figure([
+        line("actual", "Actual", "fg", line=dict(color=FG, width=2)),
+        line("naive", naive, "accent", line=dict(color=ACCENT, width=1.5)),
+        line("best_other", other_name, "fg", opacity=0.6,
+             line=dict(color=FG, width=1.5, dash="dot")),
+    ])
+    fig.update_layout(layout(
+        height=360, showlegend=True, hovermode="x unified", margin=dict(t=40),
+        xaxis=dict(type="date", hoverformat="%b %Y"),
+        yaxis=dict(tickprefix="$", tickformat=".2f"),
+        shapes=_shock_shapes(shocks),
+    ))
+    return fig
+
+
+def range_band(band: pd.DataFrame) -> go.Figure:
+    """A backtest's 8-in-10 range (q10..q90, amber band) against the actual price, with the
+    months that fell outside it marked. ``band`` is ``range_band_3m.csv``."""
+    xs = _dates(band["target_month"])
+    actual = band["actual"].astype(float).reset_index(drop=True)
+    lo = band["q10"].astype(float).reset_index(drop=True)
+    hi = band["q90"].astype(float).reset_index(drop=True)
+    out = (actual < lo) | (actual > hi)
+    fig = go.Figure([
+        go.Scatter(x=xs, y=list(lo), mode="lines", line=dict(width=0), meta="accent-fill",
+                   showlegend=False, hoverinfo="skip", name="Range low"),
+        go.Scatter(x=xs, y=list(hi), mode="lines", line=dict(width=0), meta="accent-fill",
+                   fill="tonexty", fillcolor=ACCENT_SOFT, name="8-in-10 range",
+                   customdata=list(lo),
+                   hovertemplate="range $%{customdata:.2f} to $%{y:.2f}<extra></extra>"),
+        go.Scatter(x=xs, y=list(actual), mode="lines", name="Actual", meta="fg",
+                   line=dict(color=FG, width=1.5), hovertemplate="actual $%{y:.2f}<extra></extra>"),
+        go.Scatter(x=list(xs[out]), y=list(actual[out]), mode="markers",
+                   name="Outside the range", meta="accent",
+                   marker=dict(color=ACCENT, size=6), hoverinfo="skip"),
+    ])
+    fig.update_layout(layout(
+        height=340, showlegend=True, hovermode="x unified", margin=dict(t=40),
+        xaxis=dict(type="date", hoverformat="%b %Y"),
+        yaxis=dict(tickprefix="$", tickformat=".2f"),
+    ))
+    return fig
+
+
+def ratio_bars(wide: pd.DataFrame, highlight: str | None = None) -> go.Figure:
+    """Grouped bars of error ratios by horizon (index, months), one bar per column, with a
+    dashed line at 1 (naive). ``highlight`` is amber."""
+    x = [f"{int(h)} mo" for h in wide.index]
+    bars = []
+    for col in wide.columns:
+        hl = col == highlight
+        bars.append(go.Bar(
+            x=x, y=[float(v) for v in wide[col]], name=str(col),
+            meta="accent" if hl else "fg",
+            marker=dict(color=ACCENT if hl else FG, opacity=1 if hl else 0.55),
+            texttemplate="%{y:.2f}", textposition="outside", cliponaxis=False,
+            textfont=dict(family=MONO, size=11, color=MUTED),
+            hovertemplate=f"{html.escape(str(col))} %{{y:.2f}}<extra></extra>",
+        ))
+    top = max(1.0, float(wide.max().max()))
+    fig = go.Figure(bars)
+    fig.update_layout(layout(
+        height=300, showlegend=True, barmode="group", bargap=0.3, margin=dict(t=40),
+        xaxis=dict(type="category"),
+        yaxis=dict(range=[0, top * 1.15], tickformat=".1f"),
+        shapes=[_ref_shape(1)],
+    ))
     return fig
 
 

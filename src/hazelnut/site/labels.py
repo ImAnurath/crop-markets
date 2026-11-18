@@ -5,6 +5,9 @@ METHOD_NAMES = {
     "naive": "Naive", "seasonal_naive": "Seasonal naive", "sarima": "SARIMA",
     "sarimax": "SARIMAX", "season_reg": "Season regression", "lightgbm": "LightGBM",
     "chronos": "Chronos-Bolt",
+    # Range (quantile) forecasts
+    "naive_emp": "Naive range (past moves)", "naive_vol": "Naive range, volatility-scaled",
+    "lightgbm_q": "LightGBM quantiles",
 }
 
 

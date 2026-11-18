@@ -1,0 +1,312 @@
+---
+title: "Hazelnut price forecasting"
+description: "Every forecasting method we tried against naive (the price stays where it is): the development scoreboard, calm and shock months, the holdout, ranges, crop estimates and the lira."
+---
+
+```{python}
+from hazelnut.forecast.dataset import LIRA_CRISES, SHOCK_PERIODS
+from hazelnut.site import charts
+from hazelnut.site import page_helpers as ph
+from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.labels import method_name
+
+crop = load_crops()["hazelnut"]
+res = SITE_DIR / "data" / crop.slug / "results"
+manifest = ph.read_json_or_none(SITE_DIR / "data" / crop.slug / "manifest.json")
+stamp = ph.as_of_stamp(manifest) if manifest is not None else None
+
+dev = ph.read_csv_or_none(res / "scoreboard_dev.csv",
+                          required=("method", "horizon", "n", "mae", "ratio"))
+holdout = ph.read_csv_or_none(res / "scoreboard_holdout.csv",
+                              required=("method", "horizon", "n", "ratio"))
+shocks = ph.read_csv_or_none(res / "scoreboard_shocks.csv",
+                             required=("method", "horizon", "period", "mae", "ratio"))
+f3 = ph.read_csv_or_none(res / "forecast_3m.csv",
+                         required=("target_month", "actual", "naive", "best_other",
+                                   "best_other_method"))
+ranges = ph.read_csv_or_none(res / "ranges.csv",
+                             required=("method", "horizon", "cov80", "width80", "cov90", "skill"))
+band = ph.read_csv_or_none(res / "range_band_3m.csv",
+                           required=("target_month", "actual", "q10", "q90"))
+check = ph.read_csv_or_none(res / "crop_check.csv",
+                            required=("method", "horizon", "crop_source", "ratio"))
+lira = ph.read_csv_or_none(res / "lira.csv",
+                           required=("method", "horizon", "period", "mape_ratio", "mae_ratio",
+                                     "dm_p"))
+
+# Hazelnut-specific choices -------------------------------------------------------------
+NOT_IN_MULTIPLE = ("season_reg",)  # its errors are already large in calm months
+CROP_SOURCE = "giresun"            # the crop estimate the standard inputs use
+RANGE_BASE = "naive_emp"           # the range the dashboard shows
+BAND_HORIZON = 3                   # range_band_3m.csv / forecast_3m.csv
+LIRA_TREND = "composed_fx_drift_36"
+LIRA_TRENDS = {"composed_fx_drift_36": "FX drift, 36 m",
+               "composed_fx_infl": "inflation rule"}
+# The rows of the lira report's table, in its order (the sixth FX variant, spot + 12-month
+# drift, is not in the report's table; it stays in results/lira.csv).
+LIRA_NAMES = {
+    "naive": "Lira naive",
+    "try_drift_36": "Lira drift, 36 m",
+    "try_drift_12": "Lira drift, 12 m",
+    "composed_fx_drift_36": "USD naive × FX drift, 36 m",
+    "composed_fx_drift_12": "USD naive × FX drift, 12 m",
+    "composed_fx_infl": "USD naive × inflation gap",
+    "composed_fx_spot": "USD naive × FX spot",
+    "composed_fx_spot_drift_36": "USD naive × spot + drift, 36 m",
+    "try_sarima": "SARIMA on lira",
+    "try_lightgbm": "LightGBM on lira",
+}
+
+order = [m for m, _, _ in ph.scoreboard_rows(dev)] if dev is not None else None
+RATIO3 = ph.fmt_ratio(3)
+```
+
+```{python}
+parts = []
+if dev is not None:
+    others = dev[dev["method"] != ph.NAIVE]
+    if (others["ratio"] >= 1).all():
+        parts.append("Nothing we tried beat naive, the forecast that next month's price is "
+                     "this month's, at 1, 3 or 6 months ahead in the development period.")
+    else:
+        parts.append(ph.dev_subtitle(dev))
+if holdout is not None:
+    winners = [n for m, n, r in ph.scoreboard_rows(holdout)
+               if m != ph.NAIVE and all(v < 1 for v in r.values())]
+    if not winners:
+        parts.append("On the holdout (scored once, never tuned on) no method beat it at "
+                     "every horizon.")
+if shocks is not None:
+    lo, hi = ph.shock_multiple(shocks, NOT_IN_MULTIPLE)
+    parts.append(f"In supply shocks the errors grew {lo:.1f} to {hi:.1f} times, naive's included.")
+if band is not None:
+    share, _, _ = ph.band_held(band)
+    parts.append(f"What can honestly be offered is a range: the spread of past moves gave an "
+                 f"8-in-10 range that held {ph.fmt_pct(share)} of the time "
+                 f"{BAND_HORIZON} months ahead.")
+found = " ".join(parts) or "How the forecasting methods scored against naive."
+ph.raw_html(ph.analysis_head_html(crop.name, "Forecasting",
+                                  "Can anything beat \"the price stays where it is\"?",
+                                  found, stamp))
+```
+
+```{=html}
+<div class="sect analysis-sect"><div><span class="eyebrow">Point forecasts, USD</span><h2>The scoreboard</h2></div></div>
+```
+
+::: {.dash}
+
+::: {#panel-dev .panel .span-6}
+```{python}
+TITLE = "Development period: error against naive"
+if dev is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Each method's error divided by naive's."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.dev_subtitle(dev)))
+    ph.raw_html(ph.metric_table_html(dev, [("Error ÷ naive's", "ratio", RATIO3)],
+                                     caption="Development-period error divided by naive's, "
+                                             "by months ahead", order=order))
+    naive = dev[dev["method"] == ph.NAIVE].sort_values("horizon")
+    ph.raw_html(
+        '<p class="foot">Mean absolute error divided by naive\'s on the same forecasts; above '
+        f"1 is worse. {ph.count_text(dev['n'])} monthly forecasts per horizon. Naive's own "
+        f"error: {' / '.join(ph.fmt_usd(v) for v in naive['mae'])} per kg at "
+        f"{' / '.join(str(int(h)) for h in naive['horizon'])} months.</p>"
+    )
+```
+:::
+
+::: {#panel-shocks .panel .span-6}
+```{python}
+TITLE = "Calm months against shock months"
+if shocks is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Error divided by naive's, in calm and shock months."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.shock_subtitle(shocks, NOT_IN_MULTIPLE)))
+    ph.raw_html(ph.metric_table_html(
+        ph.shock_table(shocks),
+        [("Calm months", "calm", RATIO3), ("Shock months", "shock", RATIO3)],
+        caption="Error divided by naive's in calm and shock months, by months ahead",
+        order=order))
+    ph.raw_html(
+        f'<p class="foot">Shock periods by target month: {ph.shock_years_label(SHOCK_PERIODS)}. '
+        "Each period is scored against naive on its own months. The season regression is "
+        "left out of the error multiple above: its errors are already large in calm "
+        "months.</p>"
+    )
+```
+:::
+
+::: {#panel-forecast-3m .panel .span-12}
+```{python}
+TITLE = f"{BAND_HORIZON} months ahead: forecasts against the price"
+if f3 is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Naive and the closest challenger against the actual price."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    other = method_name(str(f3["best_other_method"].iloc[0]))
+    ph.raw_html(ph.panel_head_html(TITLE, ph.forecast_3m_subtitle(f3, BAND_HORIZON)))
+    # Only the shock periods that start inside the chart's months are shaded.
+    shaded = [s for s in SHOCK_PERIODS if s[0] <= str(f3["target_month"].max())]
+    charts.show(charts.forecast_vs_actual(f3, other, shaded))
+    ph.raw_html(
+        f'<p class="foot">Development period, target months {ph.month_label(f3["target_month"].min())} '
+        f"to {ph.month_label(f3['target_month'].max())}, USD per kg. {other} is the method "
+        f"other than naive with the lowest {BAND_HORIZON}-month error. Both forecasts trail "
+        "the turns. Shaded: supply shocks.</p>"
+    )
+```
+:::
+
+::: {#panel-holdout .panel .span-6}
+```{python}
+TITLE = "Holdout: scored once, never tuned on"
+if holdout is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "The final holdout, scored once."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.holdout_subtitle(holdout)))
+    ph.raw_html(ph.metric_table_html(holdout, [("Error ÷ naive's", "ratio", RATIO3)],
+                                     caption="Holdout error divided by naive's, scored once, "
+                                             "never tuned on", order=order))
+    notes = []
+    if dev is not None:
+        notes.append(ph.holdout_dev_note(holdout, dev) or "")
+    notes.append("Many of these months fall in the 2025 price spike, so one or two big misses "
+                 "move every number: read it as a sanity check, not a new ranking.")
+    ph.raw_html(f'<p class="foot">{ph.escape(" ".join(n for n in notes if n))}</p>')
+```
+:::
+
+::: {#panel-crop-check .panel .span-6}
+```{python}
+TITLE = "Crop estimates: national instead of Giresun, and a month later"
+if check is None or dev is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Error divided by naive's with other crop inputs."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.crop_check_subtitle(dev, check, CROP_SOURCE)))
+    ph.raw_html(ph.metric_table_html(
+        ph.crop_check_table(dev, check, CROP_SOURCE), [("Error ÷ naive's", "ratio", RATIO3)],
+        caption="Error divided by naive's with the crop estimate on time and a month late",
+        row="row", names=lambda r: r, highlight=None, row_head="Method and crop input"))
+    ph.raw_html(
+        '<p class="foot">Development period. "On time" is the standard rule: a year\'s crop '
+        'estimate is used from August of that year. "A month late" uses every estimate one '
+        "month later (the 2018 Giresun estimate from November), to test that rule for a "
+        "leak; the national rows use that late timing too. At the standard timing, the "
+        "crop-estimate report also found the national estimate worse than Giresun's.</p>"
+    )
+```
+:::
+
+:::
+
+```{=html}
+<div class="sect analysis-sect"><div><span class="eyebrow">Ranges, USD</span><h2>How wide the honest range is</h2></div></div>
+```
+
+::: {.dash}
+
+::: {#panel-band .panel .span-7}
+```{python}
+TITLE = f"The 8-in-10 range, {BAND_HORIZON} months ahead"
+if band is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "The backtest's 8-in-10 range against the actual price."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.band_subtitle(band, SHOCK_PERIODS, BAND_HORIZON)))
+    charts.show(charts.range_band(band))
+    ph.raw_html(
+        f'<p class="foot">{ph.escape(method_name(RANGE_BASE))}: the price {BAND_HORIZON} months '
+        f"earlier times the 10th and 90th percentiles of all earlier {BAND_HORIZON}-month moves. "
+        "Development period, USD per kg; marked months fell outside the range.</p>"
+    )
+```
+:::
+
+::: {#panel-ranges .panel .span-5}
+```{python}
+TITLE = "Range methods compared"
+if ranges is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Coverage, width and skill of each range method."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.ranges_subtitle(ranges, RANGE_BASE)))
+    ph.raw_html(ph.metric_table_html(
+        ranges,
+        [("8 in 10 held", "cov80", ph.fmt_pct), ("9 in 10 held", "cov90", ph.fmt_pct),
+         ("8-in-10 width", "width80", ph.fmt_usd), ("Skill", "skill", ph.fmt_signed)],
+        caption="Range forecasts: coverage, width and skill by months ahead",
+        order=ph.ranges_order(ranges, RANGE_BASE), highlight=RANGE_BASE))
+    ph.raw_html(
+        '<p class="foot">Held: share of months the actual price fell inside the range. '
+        "Width: the average 8-in-10 range, USD per kg. Skill: 1 minus the method's pinball "
+        "loss (averaged over five quantiles) divided by the first row's; above 0 would beat "
+        "it. Development period.</p>"
+    )
+```
+:::
+
+:::
+
+```{=html}
+<div class="sect analysis-sect"><div><span class="eyebrow">Lira prices</span><h2>Forecasting in lira</h2></div></div>
+```
+
+::: {.dash}
+
+::: {#panel-lira-split .panel .span-5}
+```{python}
+TITLE = "Last USD price × the lira's depreciation trend"
+if lira is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Error divided by lira naive's, crisis and calm months."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.lira_split_subtitle(lira, LIRA_TREND)))
+    wide = ph.lira_split(lira, LIRA_TREND, ("calm", "crisis"))
+    wide.columns = ["Calm months", "Lira crises"]
+    charts.show(charts.ratio_bars(wide, highlight="Lira crises"))
+    ph.raw_html(
+        '<p class="foot">MAPE divided by lira naive\'s, development period (36-month trend). '
+        f"Lira crises: {ph.periods_label(LIRA_CRISES)}. This is the lira's own depreciation "
+        "trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no "
+        "hazelnut-market signal.</p>"
+    )
+```
+:::
+
+::: {#panel-lira .panel .span-7}
+```{python}
+TITLE = "Lira forecasts against lira naive"
+if lira is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Error divided by lira naive's, all months."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.lira_subtitle(
+        lira, list(LIRA_TRENDS), "the depreciation-trend forecasts")))
+    allm = lira[(lira["period"] == "all") & lira["method"].isin(list(LIRA_NAMES))]
+    ph.raw_html(ph.metric_table_html(
+        allm, [("MAPE ÷ naive's", "mape_ratio", ph.fmt_ratio(2)),
+               ("MAE ÷ naive's", "mae_ratio", ph.fmt_ratio(2))],
+        caption="Lira forecasts: error divided by lira naive's, all months",
+        names=LIRA_NAMES.get, order=list(LIRA_NAMES)))
+    ph.raw_html(
+        '<p class="foot">Development period, all months. MAPE is the fair measure here; MAE is '
+        "dominated by the high-inflation years. Diebold-Mariano test on |log error| against "
+        f"lira naive, all months: {ph.escape(ph.lira_p_note(lira, LIRA_TRENDS))} Six FX "
+        "variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for "
+        "the calm or crisis months alone would be approximate (their months are not "
+        "consecutive) and are not shown. The sixth variant, spot plus 12-month drift, is in "
+        f'<a href="../../data/{crop.slug}/results/lira.csv">lira.csv</a>.</p>'
+    )
+```
+:::
+
+:::
+
+```{=html}
+<p class="back"><a href="index.qmd">All analyses</a></p>
+```

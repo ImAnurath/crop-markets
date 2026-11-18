@@ -1,0 +1,45 @@
+---
+title: "Hazelnut analyses"
+description: "Seasons, export markets, crop size and frost, the Giresun and Ordu exchanges, and how the price forecasts scored."
+---
+
+```{python}
+from hazelnut.site import page_helpers as ph
+from hazelnut.site.config import SITE_DIR, load_crops
+
+crop = load_crops()["hazelnut"]
+manifest = ph.read_json_or_none(SITE_DIR / "data" / crop.slug / "manifest.json")
+
+# Title and one-line summary per analysis (hazelnut copy); the list and its order come
+# from crops.yml `analyses`.
+ENTRIES = {
+    "seasonality": ("Seasonality",
+                    "Does the price follow the harvest calendar? A little, and less than you might think."),
+    "exports": ("Exports",
+                "Where the shelled nuts go, how that has shifted, and what a kilo of kernels earns."),
+    "crop-and-frost": ("Crop and frost",
+                       "Bigger crops, lower prices, and how much a count of spring frost days explains."),
+    "exchanges": ("Giresun and Ordu",
+                  "Two exchanges, one market: how far apart their prices run."),
+    "forecasting": ("Forecasting",
+                    "Every method we tried against \"the price stays where it is\", and an honest range."),
+}
+
+stamp = ""
+if manifest is not None:
+    stamp = (f'<span class="live"><i aria-hidden="true"></i>'
+             f'{ph.escape(ph.as_of_stamp(manifest))}</span>')
+ph.raw_html(
+    '<div class="dash-head"><div>'
+    f'<span class="eyebrow">Crops / {ph.escape(crop.name)} / Analyses</span>'
+    "<h1>What the data says, and how sure we are</h1></div>"
+    f"{stamp}</div>"
+    '<p class="lede">Each analysis opens with what we found in plain words, then shows the '
+    "charts and tables behind it. Every number on these pages is computed from the same "
+    "data the dashboard uses.</p>"
+)
+```
+
+```{python}
+ph.raw_html(ph.analyses_list_html(crop.analyses, ENTRIES))
+```

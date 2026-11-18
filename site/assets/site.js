@@ -54,7 +54,8 @@
 
   /* Returns themed copies of a figure's data and layout. Colours are found by role:
      trace.meta "fg" (neutral marks), "accent" (emphasis), "accent-fill" (amber bands),
-     and shape.name "shock". Trace arrays are shared, not copied. */
+     and shape.name "shock" (amber band) or "ref" (dim line). Trace arrays are shared,
+     not copied. */
   function themed(data, layout, t) {
     var lay = Object.assign({}, layout);
     set(lay, "font", { color: t.fg });
@@ -75,7 +76,9 @@
       return Object.assign({}, u, { bordercolor: t.line, font: Object.assign({}, u.font, { color: t.muted }) });
     });
     if (lay.shapes) lay.shapes = lay.shapes.map(function (s) {
-      return s.name === "shock" ? Object.assign({}, s, { fillcolor: t.accent }) : s;
+      if (s.name === "shock") return Object.assign({}, s, { fillcolor: t.accent });
+      if (s.name === "ref") return Object.assign({}, s, { line: Object.assign({}, s.line, { color: t.dim }) });
+      return s;
     });
 
     var out = (data || []).map(function (d) {

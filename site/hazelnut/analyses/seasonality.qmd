@@ -1,0 +1,77 @@
+---
+title: "Hazelnut seasonality"
+description: "Does the Giresun hazelnut price follow the harvest calendar? Average price by month of the season, as a change from the season's mean."
+---
+
+```{python}
+from hazelnut.site import charts
+from hazelnut.site import page_helpers as ph
+from hazelnut.site.config import SITE_DIR, load_crops
+
+crop = load_crops()["hazelnut"]
+data_dir = SITE_DIR / "data" / crop.slug
+local = crop.local_currency
+manifest = ph.read_json_or_none(data_dir / "manifest.json")
+stamp = ph.as_of_stamp(manifest) if manifest is not None else None
+
+prices = ph.read_csv_or_none(data_dir / "prices_monthly.csv",
+                             required=("month", "season", "usd_kg", local.column))
+profile = ph.seasonal_profile(prices, "usd_kg") if prices is not None else None
+if profile is not None and profile.empty:
+    profile = None
+```
+
+```{python}
+if profile is None:
+    found = ("The price follows the harvest calendar only weakly; the chart below shows "
+             "the average month against its season's mean.")
+else:
+    lo = profile.loc[profile["mean"].idxmin()]
+    hi = profile.loc[profile["mean"].idxmax()]
+    spread = round(float((profile["q75"] - profile["q25"]).median()) * 100)
+    found = (
+        f"The price does follow the season, but only just. Averaged over "
+        f"{int(profile['seasons'].max())} seasons it is lowest in {lo['label']} "
+        f"({ph.fmt_change(lo['mean'])} from the season's mean) and highest in {hi['label']} "
+        f"({ph.fmt_change(hi['mean'])}). One season's own ups and downs are far bigger: in a "
+        f"typical month the middle half of seasons spans {spread} points, so the calendar "
+        "alone is a weak guide to next month's price."
+    )
+ph.raw_html(ph.analysis_head_html(crop.name, "Seasonality",
+                                  "Does the price follow the harvest calendar?", found, stamp))
+```
+
+::: {.dash}
+
+::: {#panel-season .panel .span-12}
+```{python}
+TITLE = "Average price by month of the season"
+if profile is None:
+    ph.raw_html(ph.panel_head_html(TITLE, "Each month's price as a change from its season's mean."))
+    ph.raw_html(ph.unavailable_html())
+else:
+    ph.raw_html(ph.panel_head_html(TITLE, ph.seasonality_subtitle(profile)))
+    charts.show(charts.season_profile(profile))
+    # The same profile in the local currency, for the footnote (its slide tilts every season).
+    local_profile = ph.seasonal_profile(prices, local.column)
+    local_note = ""
+    if not local_profile.empty:
+        local_note = (
+            f" In {local.label} the averages run from "
+            f"{ph.fmt_change(local_profile['mean'].min())} to "
+            f"{ph.fmt_change(local_profile['mean'].max())}, because the currency's slide "
+            "lifts prices through every season."
+        )
+    ph.raw_html(
+        '<p class="foot">Giresun exchange monthly average, USD per kg. Seasons run September '
+        "to August; only complete seasons are counted. Bars: the average across seasons; "
+        f"whiskers: the middle half of seasons.{ph.escape(local_note)}</p>"
+    )
+```
+:::
+
+:::
+
+```{=html}
+<p class="back"><a href="index.qmd">All analyses</a></p>
+```

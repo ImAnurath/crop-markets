@@ -223,6 +223,27 @@ a:hover { color: var(--accent); }
 .scoreboard tr.hl td { color: var(--accent); }
 .scoreboard .n { padding-left: var(--s3); white-space: nowrap; }
 
+/* Analyses pages */
+.found { max-width: 72ch; margin: 0 0 var(--s7); }
+.found p { font-size: 17px; color: var(--muted); margin: var(--s2) 0 0; }
+.dash-head .eyebrow a { color: inherit; }
+.dash-head + .lede { margin: 0 0 var(--s7); }
+.analyses { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--s4); margin-bottom: var(--s8); }
+.analysis-card { display: block; color: inherit; text-decoration: none; }
+.analysis-card:hover { color: inherit; border-color: var(--dim); }
+.analysis-card h3 { display: flex; justify-content: space-between; align-items: center; font-size: 18px; margin: 0 0 var(--s2); }
+.analysis-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.sect.analysis-sect { margin: var(--s8) 0 var(--s4); }
+.dash + .dash { margin-top: var(--s4); }
+// Wide tables scroll inside their panel on narrow screens, never the page
+.table-wrap { overflow-x: auto; }
+table.metric { font-size: 13px; }
+table.metric .n { padding-left: var(--s3); white-space: nowrap; }
+table.metric th.grp { text-align: right; color: var(--fg); font-weight: 500; padding-left: var(--s3); }
+table.metric td:first-child { padding-right: var(--s3); }
+table.metric tr.hl td { color: var(--accent); }
+.back { margin: var(--s7) 0 0; font-size: 14px; }
+
 /* One divided panel instead of separate boxes */
 .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
 .stat { padding: var(--s5); }
