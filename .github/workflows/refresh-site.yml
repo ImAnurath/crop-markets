@@ -20,10 +20,8 @@ on:
 
 concurrency: refresh-site
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+# Nothing by default; each job asks for what it needs.
+permissions: {}
 
 defaults:
   run:
@@ -36,6 +34,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the site/data bot commit
+      pages: read # configure-pages reads the Pages settings (GET /repos/{owner}/{repo}/pages)
     timeout-minutes: 120 # the fetch alone takes tens of minutes (rate-limited APIs)
     steps:
       - uses: actions/checkout@v7
@@ -49,7 +50,7 @@ jobs:
       - name: Install site requirements (no torch / chronos)
         run: pip install -r requirements-site.txt && pip install -e .
 
-      - uses: quarto-dev/quarto-actions/setup@v2
+      - uses: quarto-dev/quarto-actions/setup@8a96df13519ee81fd526f2dfca5962811136661b # v2.2.0
         with:
           version: 1.11.9 # pinned in site/README.md
 
@@ -126,6 +127,9 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
