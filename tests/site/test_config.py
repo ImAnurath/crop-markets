@@ -54,3 +54,8 @@ def test_load_crops_rejects_malformed_local_currency(tmp_path, value):
     p.write_text(_BASE + f"  local_currency: {value}\n")
     with pytest.raises(ValueError, match="local_currency"):
         load_crops(p)
+
+
+def test_local_currency_mom_key_follows_the_column():
+    assert LocalCurrency("TL", "try_kg").mom_key == "try_mom"
+    assert LocalCurrency("Rs", "inr_kg").mom_key == "inr_mom"

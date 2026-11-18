@@ -13,12 +13,38 @@ import numpy as np
 import pandas as pd
 
 from hazelnut.forecast.dataset import (
+    _FILES,
+    NATIONAL_CROP_FILE,
     OLD_LIRA_FACTOR,
     frost_feature,
     fx_feature,
     target_series,
     target_series_try,
 )
+from hazelnut.site.config import REPO_ROOT
+
+# --- Crop hooks read by the shared site layer (site_data, validate, results, scripts) ---
+
+ORDU_FILE = "ordu_daily.csv"
+# Input tables: {table key: (folder, file name)}; folder is "interim" or "manual".
+INPUT_FILES: dict[str, tuple[str, str]] = {
+    **{key: ("interim", name) for key, name in _FILES.items()},
+    "ordu_daily": ("interim", ORDU_FILE),
+    "national_crop": ("manual", NATIONAL_CROP_FILE),
+}
+# prices_monthly columns the validation gate checks for gaps and non-positive values.
+PRICE_COLUMNS = ("usd_kg", "try_kg", "usd_try")
+# crop_by_year column the stat strip shows as the crop estimate: Giresun exchange's estimate.
+STATS_CROP_COL = "giresun_estimate_t"
+# Comtrade product the destination ranking covers: the bulk of the trade is shelled.
+EXPORT_PRODUCT = "shelled"
+# Committed backtest results the forecasting tables are scored from (never re-run here).
+BACKTEST_DIR = REPO_ROOT / "reports" / "backtest"
+# Crop-estimate check: backtest method -> (method shown, whose crop estimate it used).
+CROP_CHECK_METHODS = {
+    "sarimax": ("sarimax", "giresun"), "lightgbm": ("lightgbm", "giresun"),
+    "sarimax_nat": ("sarimax", "national"), "lightgbm_nat": ("lightgbm", "national"),
+}
 
 
 def season_label(month: pd.Period) -> str:
@@ -78,10 +104,14 @@ def exports_monthly(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return c[["month", "product", "partner", "net_kg", "fob_usd"]].reset_index(drop=True)
 
 
+def _top_product_by_partner(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    c = tables["comtrade"]
+    return c[(c["product"] == EXPORT_PRODUCT) & (c["partner"] != "World")]
+
+
 def exports_top(tables: dict[str, pd.DataFrame], months: int = 12, top: int = 10) -> pd.DataFrame:
     """Shelled exports by partner over the last ``months`` months with data; share is of net_kg."""
-    c = tables["comtrade"]
-    c = c[(c["product"] == "shelled") & (c["partner"] != "World")]
+    c = _top_product_by_partner(tables)
     recent = sorted(c["month"].unique())[-months:]
     by_partner = (
         c[c["month"].isin(recent)]
@@ -94,6 +124,12 @@ def exports_top(tables: dict[str, pd.DataFrame], months: int = 12, top: int = 10
         head = pd.concat([head, rest.sum().to_frame("Other").T])
     head = head.assign(share=head["net_kg"] / head["net_kg"].sum())
     return head.rename_axis("partner").reset_index()
+
+
+def exports_top_as_of(tables: dict[str, pd.DataFrame]) -> str | None:
+    """The last month in the destination ranking (the table itself has no month column)."""
+    c = _top_product_by_partner(tables)
+    return str(c["month"].max()) if len(c) else None
 
 
 def export_unit_value(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -145,6 +181,8 @@ BUILDERS: dict[str, tuple[Callable[[dict[str, pd.DataFrame]], pd.DataFrame], tup
     "crop_by_year": (crop_by_year, ("giresun_crop", "giresun_price")),
     "frost_by_year": (frost_by_year, ("weather",)),
 }
+# Outputs whose manifest "as of" is not their latest month/year column: {output: fn(tables)}.
+AS_OF = {"exports_top": exports_top_as_of}
 
 
 # --- Excel workbook content for this crop ---------------------------------------------

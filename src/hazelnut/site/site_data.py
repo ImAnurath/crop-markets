@@ -1,5 +1,7 @@
 """Site data writer: builds the site tables, the price range and the stat strip, with fallback.
 
+Everything crop-specific (input files, the local price column, the crop-estimate column, "as of"
+overrides) comes from the crop's config and its module in ``hazelnut.site.crops``.
 Each output is built fresh when its source tables are present and its builder succeeds.
 Otherwise the last good file in ``out_dir`` is kept and marked ``stale`` in the manifest.
 An output whose row count falls more than ``MAX_ROW_DROP`` below the previous build's counts
@@ -20,15 +22,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from hazelnut.forecast.dataset import _FILES, MANUAL_DIR, NATIONAL_CROP_FILE
 from hazelnut.forecast.dataset import DATA_DIR as INTERIM_DIR
+from hazelnut.forecast.dataset import MANUAL_DIR
 from hazelnut.forecast.intervals import LEVELS, column
 from hazelnut.forecast.methods.baselines import EmpiricalNaive
-from hazelnut.site.config import CropConfig
+from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.crops import crop_module
 
 CORE_OUTPUTS = ("prices_monthly", "price_range", "stats")
-ORDU_FILE = "ordu_daily.csv"
 HORIZONS = (1, 3, 6)
 MAX_ROW_DROP = 0.10  # a fresh output this much smaller than the last build is treated as failed
 
@@ -38,12 +39,11 @@ class SiteDataError(Exception):
 
 
 def load_interim_tables(
-    interim_dir: Path = INTERIM_DIR, manual_dir: Path = MANUAL_DIR
+    crop: CropConfig, interim_dir: Path = INTERIM_DIR, manual_dir: Path = MANUAL_DIR
 ) -> dict[str, pd.DataFrame]:
-    """Read every interim/manual table that exists and parses; never raises."""
-    files = {key: Path(interim_dir) / name for key, name in _FILES.items()}
-    files["ordu_daily"] = Path(interim_dir) / ORDU_FILE
-    files["national_crop"] = Path(manual_dir) / NATIONAL_CROP_FILE
+    """Read every input table of the crop (its ``INPUT_FILES``) that exists and parses; never raises."""
+    folders = {"interim": Path(interim_dir), "manual": Path(manual_dir)}
+    files = {key: folders[folder] / name for key, (folder, name) in crop_module(crop.slug).INPUT_FILES.items()}
     tables: dict[str, pd.DataFrame] = {}
     for key, path in files.items():
         try:
@@ -54,15 +54,15 @@ def load_interim_tables(
     return tables
 
 
-def _both(prices: pd.DataFrame) -> pd.DataFrame:
-    return prices.dropna(subset=["usd_kg", "try_kg"]).sort_values("month")
+def _both(prices: pd.DataFrame, local_column: str) -> pd.DataFrame:
+    return prices.dropna(subset=["usd_kg", local_column]).sort_values("month")
 
 
-def price_range(prices: pd.DataFrame, horizons=HORIZONS) -> pd.DataFrame:
-    """USD/kg quantiles (empirical naive) from the last month with both USD and TRY prices."""
-    both = _both(prices)
+def price_range(prices: pd.DataFrame, local_column: str, horizons=HORIZONS) -> pd.DataFrame:
+    """USD/kg quantiles (empirical naive) from the last month with both USD and local prices."""
+    both = _both(prices, local_column)
     if both.empty:
-        raise ValueError("no month with both USD and TRY prices")
+        raise ValueError("no month with both USD and local prices")
     last = pd.Period(both["month"].iloc[-1], "M")
     usd = prices.dropna(subset=["usd_kg"])
     hist = pd.Series(
@@ -97,14 +97,20 @@ def _mom(series: pd.Series, month: pd.Period) -> float | None:
     return float(series[month] / series[prev] - 1)
 
 
-def stat_strip(prices: pd.DataFrame, crop: pd.DataFrame | None) -> dict:
-    both = _both(prices)
+def stat_strip(
+    prices: pd.DataFrame, crop: pd.DataFrame | None, *, local: LocalCurrency, crop_col: str | None
+) -> dict:
+    """The stat strip. The local price keys follow the column: ``local.column``, ``local.mom_key``.
+
+    ``crop_col`` is the ``crop`` column holding the crop estimate (None: no estimate).
+    """
+    both = _both(prices, local.column)
     if both.empty:
-        raise ValueError("no month with both USD and TRY prices")
+        raise ValueError("no month with both USD and local prices")
     month = pd.Period(both["month"].iloc[-1], "M")
     idx = pd.PeriodIndex(prices["month"], freq="M")
     usd = pd.Series(prices["usd_kg"].to_numpy(dtype=float), index=idx)
-    tr = pd.Series(prices["try_kg"].to_numpy(dtype=float), index=idx)
+    tr = pd.Series(prices[local.column].to_numpy(dtype=float), index=idx)
     usd_now = float(usd[month])
     peak_month = usd[usd.index <= month].idxmax()
     peak = float(usd[peak_month])
@@ -112,8 +118,8 @@ def stat_strip(prices: pd.DataFrame, crop: pd.DataFrame | None) -> dict:
         "as_of": str(month),
         "usd_kg": usd_now,
         "usd_mom": _mom(usd, month),
-        "try_kg": float(tr[month]),
-        "try_mom": _mom(tr, month),
+        local.column: float(tr[month]),
+        local.mom_key: _mom(tr, month),
         "peak_usd": peak,
         "peak_month": str(peak_month),
         "from_peak": usd_now / peak - 1,
@@ -121,27 +127,21 @@ def stat_strip(prices: pd.DataFrame, crop: pd.DataFrame | None) -> dict:
         "crop_yoy": None,
         "crop_year": None,
     }
-    if crop is not None and len(crop):
-        est = crop.dropna(subset=["giresun_estimate_t"]).sort_values("year")
+    if crop_col and crop is not None and len(crop):
+        est = crop.dropna(subset=[crop_col]).sort_values("year")
         if len(est):
             year = int(est["year"].iloc[-1])
-            value = float(est["giresun_estimate_t"].iloc[-1])
+            value = float(est[crop_col].iloc[-1])
             stats["crop_year"], stats["crop_estimate_t"] = year, value
             prev = est[est["year"] == year - 1]
-            if len(prev) and prev["giresun_estimate_t"].iloc[0] > 0:
-                stats["crop_yoy"] = value / float(prev["giresun_estimate_t"].iloc[0]) - 1
+            if len(prev) and prev[crop_col].iloc[0] > 0:
+                stats["crop_yoy"] = value / float(prev[crop_col].iloc[0]) - 1
     return stats
 
 
-def _exports_top_as_of(tables: dict) -> str | None:
-    c = tables["comtrade"]
-    c = c[(c["product"] == "shelled") & (c["partner"] != "World")]
-    return str(c["month"].max()) if len(c) else None
-
-
-def _as_of(name: str, df: pd.DataFrame, tables: dict) -> str | None:
-    if name == "exports_top":
-        return _exports_top_as_of(tables)
+def _as_of(name: str, df: pd.DataFrame, tables: dict, overrides: dict) -> str | None:
+    if name in overrides:
+        return overrides[name](tables)
     if name == "price_range":
         return str(df["from_month"].iloc[0]) if len(df) else None
     if "month" in df.columns and len(df):
@@ -179,7 +179,8 @@ def write_site_data(
     ``notes``, if given, receives one line per output kept stale, with the reason.
     """
     out_dir = Path(out_dir)
-    builders = crop_module(crop.slug).BUILDERS
+    mod = crop_module(crop.slug)
+    builders = mod.BUILDERS
     prev = _previous_entries(out_dir)
     frames: dict[str, pd.DataFrame] = {}
     errors: dict[str, str] = {}
@@ -196,11 +197,12 @@ def write_site_data(
 
     if "prices_monthly" in frames:
         try:
-            frames["price_range"] = price_range(frames["prices_monthly"])
+            frames["price_range"] = price_range(frames["prices_monthly"], crop.local_currency.column)
         except Exception as exc:
             errors["price_range"] = f"{type(exc).__name__}: {exc}"
         try:
-            stats = stat_strip(frames["prices_monthly"], frames.get("crop_by_year"))
+            stats = stat_strip(frames["prices_monthly"], frames.get("crop_by_year"),
+                               local=crop.local_currency, crop_col=getattr(mod, "STATS_CROP_COL", None))
         except Exception as exc:
             errors["stats"] = f"{type(exc).__name__}: {exc}"
     else:
@@ -228,7 +230,7 @@ def write_site_data(
         for name, df in frames.items():
             df.to_csv(tmp / f"{name}.csv", index=False)
             written.append(f"{name}.csv")
-            entries[name] = {"as_of": _as_of(name, df, tables), "rows": int(len(df)), "stale": False}
+            entries[name] = {"as_of": _as_of(name, df, tables, getattr(mod, "AS_OF", {})), "rows": int(len(df)), "stale": False}
         (tmp / "stats.json").write_text(json.dumps(stats, indent=2, allow_nan=False), encoding="utf-8")
         written.append("stats.json")
         entries["stats"] = {"as_of": stats["as_of"], "rows": 1, "stale": False}

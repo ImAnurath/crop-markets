@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from hazelnut.site.hazelnut_data import CROP_CHECK_METHODS
 from hazelnut.site.results import build_results
 
 MONTHS = pd.period_range("2017-01", "2019-12", freq="M")  # spans the 2018 lira crisis
@@ -83,12 +84,13 @@ def test_lira_has_all_calm_crisis_periods(bt, tmp_path):
 
 def test_other_tables(bt, tmp_path):
     out = tmp_path / "out"
-    build_results(bt, out)
+    build_results(bt, out, CROP_CHECK_METHODS)
     assert set(pd.read_csv(out / "scoreboard_shocks.csv")["period"]) <= {"calm", "shock"}
     r = pd.read_csv(out / "ranges.csv")
     assert list(r.columns) == ["method", "horizon", "cov80", "width80", "cov90", "width90", "skill"]
     c = pd.read_csv(out / "crop_check.csv")
     assert set(c["crop_source"]) == {"giresun", "national"}
+    assert set(c["method"]) == {"lightgbm"}
     f = pd.read_csv(out / "forecast_3m.csv")
     assert list(f.columns) == ["target_month", "actual", "naive", "best_other", "best_other_method"]
     assert (f["best_other_method"] == "sarima").all()
@@ -109,3 +111,8 @@ def test_lira_dm_p_uses_log_errors(bt, tmp_path):
     la = np.abs(np.log(r["forecast"] / r["actual"])).to_numpy()
     lb = np.abs(np.log(n["forecast"] / n["actual"])).to_numpy()
     assert got == pytest.approx(diebold_mariano(la, lb, 3)[1])
+
+
+def test_no_crop_check_without_the_crops_methods(bt, tmp_path):
+    written = build_results(bt, tmp_path / "out")
+    assert "crop_check.csv" not in written and "scoreboard_dev.csv" in written

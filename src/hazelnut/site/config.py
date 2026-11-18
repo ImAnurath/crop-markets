@@ -22,6 +22,11 @@ class LocalCurrency:
     label: str
     column: str
 
+    @property
+    def mom_key(self) -> str:
+        """The stats.json key of its month-on-month change: ``"try_kg"`` -> ``"try_mom"``."""
+        return self.column.rsplit("_", 1)[0] + "_mom"
+
 
 @dataclass(frozen=True)
 class CropConfig:

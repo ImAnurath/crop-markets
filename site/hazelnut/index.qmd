@@ -54,7 +54,7 @@ ph.raw_html(
     + ph.market_strip_html(
         stats,
         local_name="lira",
-        local_unit=crop.local_currency.label,
+        local=crop.local_currency,
         crop_source=crop.exchanges[0],  # the crop estimate is the first exchange's (Giresun)
     )
 )

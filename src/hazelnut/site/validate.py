@@ -9,11 +9,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from hazelnut.site.config import CropConfig
+from hazelnut.site.crops import crop_module
 from hazelnut.site.site_data import CORE_OUTPUTS
 
 FIRST_CONTIGUOUS = pd.Period("2005-01", "M")
 NULLABLE_STATS = {"crop_estimate_t", "crop_yoy", "crop_year"}
-PRICE_COLS = ("usd_kg", "try_kg", "usd_try")
 RANGE_COLS = ("q05", "q10", "q50", "q90", "q95")
 MAX_LAG_MONTHS = 3  # the as-of month may be at most this many months before today
 
@@ -44,8 +45,10 @@ def _load_csv(path: Path, problems: list[str]) -> pd.DataFrame | None:
         return None
 
 
-def _check_prices(df: pd.DataFrame, as_of: pd.Period | None, problems: list[str]) -> None:
-    missing = [c for c in ("month", *PRICE_COLS) if c not in df.columns]
+def _check_prices(
+    df: pd.DataFrame, as_of: pd.Period | None, price_cols: tuple[str, ...], problems: list[str]
+) -> None:
+    missing = [c for c in ("month", *price_cols) if c not in df.columns]
     if missing:
         problems.append(f"prices_monthly.csv: missing columns {missing}")
         return
@@ -64,7 +67,7 @@ def _check_prices(df: pd.DataFrame, as_of: pd.Period | None, problems: list[str]
         problems.append(f"prices_monthly.csv: missing months {', '.join(absent[:6])}")
     if span["_m"].duplicated().any():
         problems.append("prices_monthly.csv: duplicate months")
-    for col in PRICE_COLS:
+    for col in price_cols:
         vals = pd.to_numeric(span[col], errors="coerce")
         bad = span.loc[~(vals > 0) | ~vals.map(_finite_number), "_m"]
         if len(bad):
@@ -100,8 +103,13 @@ def _check_stats(stats, problems: list[str]) -> None:
             problems.append(f"stats.json: {key} is not a finite number ({val!r})")
 
 
-def validate_site_data(out_dir: Path, today: date, max_lag_months: int = MAX_LAG_MONTHS) -> list[str]:
-    """Return human-readable problems with the site data in `out_dir`; empty means OK."""
+def validate_site_data(
+    crop: CropConfig, out_dir: Path, today: date, max_lag_months: int = MAX_LAG_MONTHS
+) -> list[str]:
+    """Return human-readable problems with the crop's site data in `out_dir`; empty means OK.
+
+    The price columns checked are the crop module's ``PRICE_COLUMNS``.
+    """
     out_dir = Path(out_dir)
     problems: list[str] = []
 
@@ -129,7 +137,7 @@ def validate_site_data(out_dir: Path, today: date, max_lag_months: int = MAX_LAG
             problems.append(f"manifest.json: as_of {as_of} is older than {max_lag_months} months before {today}")
 
     if prices is not None:
-        _check_prices(prices, as_of, problems)
+        _check_prices(prices, as_of, tuple(crop_module(crop.slug).PRICE_COLUMNS), problems)
     if prange is not None:
         _check_range(prange, problems)
     if stats is not None:

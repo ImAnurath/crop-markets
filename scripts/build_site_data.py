@@ -1,6 +1,8 @@
 """Build the public site's data tables for one crop (the weekly refresh runs this).
 
 Writes <out>/<slug>/ (tables, stats.json, manifest.json, results/), then validates it.
+results/ is scored from the crop's own committed backtest folder (its module's BACKTEST_DIR,
+or --backtest); a crop without one gets no results tables.
 Exit code: 0 ok, 1 if a core output cannot be built or validation finds problems.
 
 Usage:
@@ -15,6 +17,7 @@ from pathlib import Path
 
 from hazelnut.forecast.dataset import MANUAL_DIR
 from hazelnut.site.config import REPO_ROOT, SITE_DIR, load_crops
+from hazelnut.site.crops import crop_module
 from hazelnut.site.results import build_results
 from hazelnut.site.site_data import SiteDataError, load_interim_tables, write_site_data
 from hazelnut.site.validate import validate_site_data
@@ -46,7 +49,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--interim", type=Path, default=REPO_ROOT / "data" / "interim")
     p.add_argument("--manual", type=Path, default=MANUAL_DIR)
     p.add_argument("--out", type=Path, default=SITE_DIR / "data")
-    p.add_argument("--backtest", type=Path, default=REPO_ROOT / "reports" / "backtest")
+    p.add_argument("--backtest", type=Path, default=None,
+                   help="backtest results folder (default: the crop module's BACKTEST_DIR)")
     p.add_argument("--today", type=date.fromisoformat, default=None, help="override today's date (tests)")
     args = p.parse_args(argv)
 
@@ -55,9 +59,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"unknown crop: {args.crop}")
         return 1
     crop = crops[args.crop]
+    mod = crop_module(crop.slug)
     out_dir = args.out / crop.slug
 
-    tables = load_interim_tables(args.interim, args.manual)
+    tables = load_interim_tables(crop, args.interim, args.manual)
     notes: list[str] = []
     try:
         manifest = write_site_data(crop, tables, out_dir, datetime.now(timezone.utc), notes=notes)
@@ -65,10 +70,14 @@ def main(argv: list[str] | None = None) -> int:
         print(exc)
         return 1
     problems: list[str] = []
-    try:
-        build_results(args.backtest, out_dir / "results")
-    except Exception as exc:
-        problems.append(f"results build failed: {type(exc).__name__}: {exc}")
+    backtest = args.backtest or getattr(mod, "BACKTEST_DIR", None)
+    if backtest is None:
+        print(f"results: {crop.slug} has no backtest folder, no results tables")
+    else:
+        try:
+            build_results(backtest, out_dir / "results", getattr(mod, "CROP_CHECK_METHODS", None))
+        except Exception as exc:
+            problems.append(f"results build failed: {type(exc).__name__}: {exc}")
 
     rows = [(n, status(e), str(e.get("as_of") or "")) for n, e in manifest["outputs"].items()]
     for name, st, as_of in rows:
@@ -76,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     for note in notes:
         print(f"NOTE: {note}")
 
-    problems += validate_site_data(out_dir, args.today or datetime.now(timezone.utc).date())
+    problems += validate_site_data(crop, out_dir, args.today or datetime.now(timezone.utc).date())
     for problem in problems:
         print(f"PROBLEM: {problem}")
     _write_summary(rows, problems, notes)

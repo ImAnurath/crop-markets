@@ -138,7 +138,7 @@ def test_output_month_label():
 # --- stat strip -------------------------------------------------------------------------
 
 def strip(stats=STATS):
-    return ph.market_strip_html(stats, local_name="lira", local_unit="TL", crop_source="Giresun")
+    return ph.market_strip_html(stats, local_name="lira", local=LocalCurrency("TL", "try_kg"), crop_source="Giresun")
 
 
 def test_strip_shows_the_four_stats_from_stats_json():
@@ -181,7 +181,7 @@ def test_strip_with_missing_changes_and_peak():
 
 
 def test_strip_escapes_text():
-    html = ph.market_strip_html(STATS, local_name="<b>", local_unit="T&L", crop_source="G<x>")
+    html = ph.market_strip_html(STATS, local_name="<b>", local=LocalCurrency("T&L", "try_kg"), crop_source="G<x>")
     assert "<b>" not in html and "G<x>" not in html
     assert "T&amp;L/kg" in html
 

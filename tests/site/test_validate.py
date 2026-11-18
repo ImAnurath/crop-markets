@@ -28,7 +28,7 @@ def _edit_csv(path, fn):
 
 
 def _problems(out, **kw):
-    return validate_site_data(out, kw.pop("today", TODAY), **kw)
+    return validate_site_data(CROP, out, kw.pop("today", TODAY), **kw)
 
 
 def test_good_output_passes(out):

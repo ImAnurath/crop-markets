@@ -90,8 +90,17 @@ still hazelnut-only and gets refactored when a second crop is added.
    the range panel may show) and `local_currency: {label, column}`.
 2. **Builders module** `src/hazelnut/site/<slug>_data.py`, defining:
    - `BUILDERS`: `{output name: (function(tables) -> DataFrame, needed table keys)}`.
-     `prices_monthly` is core (`month`, `usd_kg`, `try_kg`; the price range and stat strip read
-     these by name). An output whose tables are missing keeps its last good file, marked stale.
+     `prices_monthly` is core (`month`, `usd_kg` and the `local_currency.column`; the price
+     range and stat strip read these, and the stat strip's local keys follow that column, e.g.
+     `try_kg`/`try_mom`). An output whose tables are missing keeps its last good file, marked
+     stale.
+   - `INPUT_FILES`: `{table key: ("interim" or "manual", file name)}`, the tables the
+     builders read; and `PRICE_COLUMNS`, the `prices_monthly` columns validation checks.
+   - Optional: `STATS_CROP_COL` (the `crop_by_year` column shown as the crop estimate),
+     `AS_OF` (`{output: function(tables) -> "as of"}` for outputs without a month or year
+     column), `BACKTEST_DIR` (the crop's committed backtest results; without it the crop gets
+     no forecasting tables and those panels show as unavailable) and `CROP_CHECK_METHODS`
+     (`{backtest method: (method shown, crop-estimate source)}` for the crop-estimate check).
    - `WORKBOOK_SHEETS`, `WORKBOOK_SHEET_NOTES`, `WORKBOOK_SOURCES` (workbook, Downloads page,
      source count on the overview) and `EXPLORER_SHEETS` (which sheet each exchange shows).
    - Optional `HOLDOUT_PERIOD` and `TIMING_NOTE` for the Methods page.
@@ -101,4 +110,6 @@ still hazelnut-only and gets refactored when a second crop is added.
    crop-specific copy. Home, Methods and Downloads pick the crop up from `crops.yml`; the navbar
    in `site/_quarto.yml` is hazelnut-only for now.
 5. **Data**: run `build_site_data.py --crop <slug>` and `build_workbook.py --crop <slug>`, and
-   add the same two calls to the workflow (it runs the default crop only).
+   add the same two calls to the workflow (it runs the default crop only). The results tables
+   come from the crop's own `BACKTEST_DIR` (hazelnut: `reports/backtest`); `--backtest <dir>`
+   overrides it for one run.

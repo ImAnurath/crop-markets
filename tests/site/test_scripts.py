@@ -1,13 +1,15 @@
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
-from hazelnut.forecast.dataset import _FILES
-from hazelnut.forecast.dataset import NATIONAL_CROP_FILE
-from hazelnut.site.site_data import ORDU_FILE
+from hazelnut.site import crops
+from hazelnut.site import hazelnut_data as hd
+from hazelnut.site.config import CropConfig, LocalCurrency
+from hazelnut.site.hazelnut_data import INPUT_FILES
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 
@@ -34,10 +36,8 @@ def dirs(tiny_tables, tmp_path):
     interim, manual = tmp_path / "interim", tmp_path / "manual"
     interim.mkdir()
     manual.mkdir()
-    for key, name in _FILES.items():
-        tiny_tables[key].to_csv(interim / name, index=False)
-    tiny_tables["ordu_daily"].to_csv(interim / ORDU_FILE, index=False)
-    tiny_tables["national_crop"].to_csv(manual / NATIONAL_CROP_FILE, index=False)
+    for key, (folder, name) in INPUT_FILES.items():
+        tiny_tables[key].to_csv((interim if folder == "interim" else manual) / name, index=False)
     return interim, manual, tmp_path / "out", tmp_path / "backtest"
 
 
@@ -156,3 +156,38 @@ def test_row_drop_is_printed_and_summarised(build_site_data, dirs, tmp_path, mon
     assert "NOTE: exports_monthly: row count fell" in out
     text = summary.read_text(encoding="utf-8")
     assert "### Not refreshed" in text and "exports_monthly: row count fell" in text
+
+
+def _argv_no_backtest(dirs, *extra):
+    argv = _argv(dirs, *extra)
+    i = argv.index("--backtest")
+    return argv[:i] + argv[i + 2:]
+
+
+def test_backtest_defaults_to_the_crops_folder(build_site_data, dirs, monkeypatch):
+    real = SCRIPTS.parent / "reports" / "backtest"
+    assert hd.BACKTEST_DIR == real
+    assert build_site_data.main(_argv_no_backtest(dirs)) == 0
+    assert (dirs[2] / "hazelnut" / "results" / "crop_check.csv").exists()
+
+
+def test_second_crop_uses_its_own_columns_and_gets_no_results(build_site_data, dirs, monkeypatch, capsys):
+    def prices(tables):
+        return hd.prices_monthly(tables).rename(columns={"try_kg": "inr_kg", "usd_try": "usd_inr"})
+
+    module = SimpleNamespace(
+        BUILDERS={"prices_monthly": (prices, ("giresun_price",))},
+        INPUT_FILES={"giresun_price": hd.INPUT_FILES["giresun_price"]},
+        PRICE_COLUMNS=("usd_kg", "inr_kg", "usd_inr"),
+    )
+    crop = CropConfig("pepper", "Pepper", "India", (), (), (), ("usd",), LocalCurrency("Rs", "inr_kg"))
+    monkeypatch.setitem(crops.CROP_MODULES, "pepper", module)
+    monkeypatch.setattr(build_site_data, "load_crops", lambda: {"pepper": crop})
+    assert build_site_data.main(_argv_no_backtest(dirs, "--crop", "pepper")) == 0
+    out = dirs[2] / "pepper"
+    stats = json.loads((out / "stats.json").read_text())
+    assert {"inr_kg", "inr_mom"} <= set(stats) and "try_kg" not in stats
+    assert stats["crop_estimate_t"] is None
+    assert not (out / "results").exists()
+    assert "no backtest folder" in capsys.readouterr().out
+    assert not (dirs[2] / "hazelnut").exists()

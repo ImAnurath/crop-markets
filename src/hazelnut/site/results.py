@@ -2,12 +2,14 @@
 
 Reads ``<backtest_dir>/{dev,holdout,dev_try,dev_ranges,dev_late}/<method>.csv`` (file stem =
 method name) and writes small tables into ``out_dir``. A missing folder just skips its tables.
+Each crop names its own folder (its module's ``BACKTEST_DIR``) and crop-estimate check methods.
 Scoring mirrors scripts/run_backtest.py, run_intervals.py, lira_findings.py and
 crop_estimate_check.py by calling the same ``hazelnut.forecast.metrics`` functions.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -23,8 +25,6 @@ from hazelnut.forecast.metrics import (
 )
 
 HOLDOUT_NOTE = "scored once, never tuned on"
-CROP_SOURCES = {"sarimax": "giresun", "lightgbm": "giresun",
-                "sarimax_nat": "national", "lightgbm_nat": "national"}
 
 
 def _load(folder: Path) -> pd.DataFrame:
@@ -78,11 +78,12 @@ def _lira(r: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=cols)
 
 
-def _crop_check(r: pd.DataFrame) -> pd.DataFrame:
+def _crop_check(r: pd.DataFrame, methods: Mapping[str, tuple[str, str]]) -> pd.DataFrame:
+    """``methods``: backtest method -> (method shown, crop-estimate source)."""
     s = score(r).reset_index()
-    s = s[s["method"].isin(CROP_SOURCES)].copy()
-    s["crop_source"] = s["method"].map(CROP_SOURCES)
-    s["method"] = s["method"].str.replace("_nat", "", regex=False)
+    s = s[s["method"].isin(methods)].copy()
+    s["crop_source"] = s["method"].map(lambda m: methods[m][1])
+    s["method"] = s["method"].map(lambda m: methods[m][0])
     s["ratio"] = 1 - s["skill"]
     return s[["method", "horizon", "crop_source", "ratio"]]
 
@@ -115,8 +116,14 @@ def _range_band_3m(ranges: pd.DataFrame) -> pd.DataFrame | None:
     return out
 
 
-def build_results(backtest_dir: Path, out_dir: Path) -> list[str]:
-    """Write the results tables into ``out_dir``; return the file names written."""
+def build_results(
+    backtest_dir: Path, out_dir: Path, crop_check_methods: Mapping[str, tuple[str, str]] | None = None
+) -> list[str]:
+    """Write the results tables into ``out_dir``; return the file names written.
+
+    ``crop_check_methods`` (the crop module's ``CROP_CHECK_METHODS``) maps each crop-estimate
+    check method to (method shown, crop-estimate source); without it there is no crop check.
+    """
     backtest_dir, out_dir = Path(backtest_dir), Path(out_dir)
     dev, holdout = _load(backtest_dir / "dev"), _load(backtest_dir / "holdout")
     lira, ranges = _load(backtest_dir / "dev_try"), _load(backtest_dir / "dev_ranges")
@@ -135,8 +142,8 @@ def build_results(backtest_dir: Path, out_dir: Path) -> list[str]:
         s = score_quantiles(ranges).reset_index()
         tables["ranges.csv"] = s[["method", "horizon", "cov80", "width80", "cov90", "width90", "skill"]]
         tables["range_band_3m.csv"] = _range_band_3m(ranges)
-    if not late.empty:
-        tables["crop_check.csv"] = _crop_check(late)
+    if not late.empty and crop_check_methods:
+        tables["crop_check.csv"] = _crop_check(late, crop_check_methods)
 
     written = []
     out_dir.mkdir(parents=True, exist_ok=True)

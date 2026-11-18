@@ -18,7 +18,7 @@ from typing import Mapping
 
 import pandas as pd
 
-from hazelnut.site.config import CropConfig
+from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.labels import OTHER_PARTNER, method_name
 
 NA = "n/a"
@@ -124,13 +124,14 @@ def _stat(label: str, value_html: str, sub_html: str) -> str:
     )
 
 
-def market_strip_html(stats: Mapping, *, local_name: str, local_unit: str, crop_source: str) -> str:
+def market_strip_html(stats: Mapping, *, local_name: str, local: LocalCurrency, crop_source: str) -> str:
     """The four-stat "market this month" strip.
 
-    ``local_name`` names the local currency in the label ("Price, lira"), ``local_unit``
-    is its unit ("TL" -> "TL/kg"), ``crop_source`` says whose crop estimate it is.
+    ``local_name`` names the local currency in the label ("Price, lira"), ``local`` is the
+    crop's local currency (its label is the unit, "TL" -> "TL/kg", and its column names the
+    stats keys), ``crop_source`` says whose crop estimate it is.
     """
-    name, unit, source = escape(local_name), escape(local_unit), escape(crop_source)
+    name, unit, source = escape(local_name), escape(local.label), escape(crop_source)
     prev = previous_month_name(stats["as_of"])
 
     if _missing(stats.get("from_peak")) or _missing(stats.get("peak_usd")) or not stats.get("peak_month"):
@@ -151,12 +152,12 @@ def market_strip_html(stats: Mapping, *, local_name: str, local_unit: str, crop_
     crop_label = "Crop estimate" if _missing(year) else f"{int(year)} crop estimate"
 
     usd = fmt_usd(stats.get("usd_kg"))
-    local = fmt_number(stats.get("try_kg"))
+    local_price = fmt_number(stats.get(local.column))
     stats_html = [
         _stat("Price, USD", usd + ("" if usd == NA else "<small> /kg</small>"),
               f"{_change_span(stats.get('usd_mom'))} on {prev}"),
-        _stat(f"Price, {name}", local + ("" if local == NA else f"<small> {unit}/kg</small>"),
-              f"{_change_span(stats.get('try_mom'))} on {prev}"),
+        _stat(f"Price, {name}", local_price + ("" if local_price == NA else f"<small> {unit}/kg</small>"),
+              f"{_change_span(stats.get(local.mom_key))} on {prev}"),
         _stat("From the peak", fmt_change(stats.get("from_peak")), peak_sub),
         _stat(crop_label, crop_value, crop_sub),
     ]

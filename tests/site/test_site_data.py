@@ -19,6 +19,7 @@ NOW = datetime(2026, 11, 17, 12, 0, tzinfo=timezone.utc)
 CROP = CropConfig(
     "hazelnut", "Hazelnut", "Turkey", (), (), (), ("usd",), LocalCurrency("TL", "try_kg")
 )
+STRIP = {"local": CROP.local_currency, "crop_col": "giresun_estimate_t"}
 
 
 def test_failed_source_keeps_last_good_and_marks_stale(tiny_tables, tmp_path):
@@ -66,26 +67,26 @@ def test_core_failure_on_fresh_dir_creates_nothing(tmp_path):
 def test_stats_skip_incomplete_latest_month(tiny_tables):
     prices = prices_monthly(tiny_tables)
     prices.loc[prices.index[-1], "usd_kg"] = float("nan")  # TRY still present
-    stats = stat_strip(prices, crop_by_year(tiny_tables))
+    stats = stat_strip(prices, crop_by_year(tiny_tables), **STRIP)
     assert stats["as_of"] == "2007-11"
     assert all(v == v for v in stats.values() if isinstance(v, float))
     json.dumps(stats, allow_nan=False)
 
 
 def test_stats_without_crop_have_null_crop_keys(tiny_tables):
-    stats = stat_strip(prices_monthly(tiny_tables), None)
+    stats = stat_strip(prices_monthly(tiny_tables), None, **STRIP)
     assert stats["crop_estimate_t"] is None and stats["crop_yoy"] is None
     assert stats["crop_year"] is None and stats["usd_kg"] > 0
 
 
 def test_stats_crop_values(tiny_tables):
-    stats = stat_strip(prices_monthly(tiny_tables), crop_by_year(tiny_tables))
+    stats = stat_strip(prices_monthly(tiny_tables), crop_by_year(tiny_tables), **STRIP)
     assert stats["crop_year"] == 2006 and stats["crop_estimate_t"] == 520000
     assert stats["crop_yoy"] == pytest.approx(520000 / 450000 - 1)
 
 
 def test_price_range_is_ordered_and_positive(tiny_tables):
-    pr = price_range(prices_monthly(tiny_tables))
+    pr = price_range(prices_monthly(tiny_tables), "try_kg")
     assert list(pr["horizon"]) == [1, 3, 6]
     cols = ["q05", "q10", "q50", "q90", "q95"]
     assert (pr[cols] > 0).all().all()
@@ -97,17 +98,17 @@ def test_price_range_is_ordered_and_positive(tiny_tables):
 def test_price_range_uses_last_month_with_both_prices(tiny_tables):
     prices = prices_monthly(tiny_tables)
     prices.loc[prices.index[-1], "usd_kg"] = float("nan")
-    assert price_range(prices)["from_month"].iloc[0] == "2007-11"
+    assert price_range(prices, "try_kg")["from_month"].iloc[0] == "2007-11"
 
 
 def test_load_interim_tables_skips_missing(tmp_path):
-    assert load_interim_tables(tmp_path, tmp_path) == {}
+    assert load_interim_tables(CROP, tmp_path, tmp_path) == {}
 
 
 def test_load_interim_tables_reads_and_skips_unreadable(tmp_path):
     (tmp_path / "ordu_daily.csv").write_text("date,price\n2020-01-01,5\n")
     (tmp_path / "cpi_monthly.csv").write_bytes(b"")  # empty -> unreadable
-    t = load_interim_tables(tmp_path, tmp_path)
+    t = load_interim_tables(CROP, tmp_path, tmp_path)
     assert set(t) == {"ordu_daily"}
 
 
