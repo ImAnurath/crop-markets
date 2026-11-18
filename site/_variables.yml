@@ -1,5 +1,5 @@
-# Owner details shown on the site ({{< var author_name >}} etc.). Owner step 3: fill these in.
-author_name: "OWNER: fill in"
-author_bio: "OWNER: fill in"
-github_url: "OWNER: fill in"
-linkedin_url: "OWNER: fill in"
+# Owner details shown on the site ({{< var author_name >}} etc.).
+author_name: "Ozan Berk Gultegin"
+author_bio: "Data analysis of Turkish crop markets."
+github_url: "https://github.com/ImAnurath/"
+linkedin_url: "https://www.linkedin.com/in/ozanberkgultegin/"
