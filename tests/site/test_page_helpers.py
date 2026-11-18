@@ -105,6 +105,36 @@ def test_stamp_with_a_stale_yearly_output():
     assert ph.as_of_stamp(manifest(frost_by_year="2024")).endswith("(some sources from 2024)")
 
 
+def _missing(m, name):
+    """The entry write_site_data records for an output that failed with no earlier file."""
+    m["outputs"][name] = {"as_of": None, "rows": 0, "stale": True}
+    return m
+
+
+def test_stamp_with_only_an_undated_stale_output():
+    assert ph.as_of_stamp(_missing(manifest(), "exports_top")) == (
+        "Data as of September 2026 · refreshed weekly (some sources unavailable)"
+    )
+
+
+def test_stamp_with_dated_and_undated_stale_outputs():
+    m = _missing(manifest(ordu_monthly="2026-05"), "exports_top")
+    assert ph.as_of_stamp(m).endswith("(some sources from May 2026, some unavailable)")
+
+
+def test_meta_row_renders_with_an_undated_stale_output():
+    assert "some sources unavailable" in ph.market_meta_html(_missing(manifest(), "frost_by_year"))
+
+
+def test_output_month_label():
+    m = _missing(manifest(), "exports_top")
+    assert ph.output_month_label(m, "exports_monthly") == "December 2025"
+    assert ph.output_month_label(m, "crop_by_year") == "2026"
+    assert ph.output_month_label(m, "exports_top") is None  # failed, no earlier file
+    assert ph.output_month_label(m, "not_built") is None
+    assert ph.output_month_label(None, "exports_monthly") is None
+
+
 # --- stat strip -------------------------------------------------------------------------
 
 def strip(stats=STATS):

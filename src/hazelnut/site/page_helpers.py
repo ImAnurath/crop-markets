@@ -74,14 +74,27 @@ def previous_month_name(as_of: str) -> str:
 
 
 def as_of_stamp(manifest: Mapping) -> str:
-    """"Data as of <Month YYYY> · refreshed weekly", plus the oldest stale source if any."""
+    """"Data as of <Month YYYY> · refreshed weekly", plus the oldest stale source if any.
+
+    A stale output with no date (it failed and had no earlier file) is "unavailable".
+    """
     stamp = f"Data as of {month_label(manifest['as_of'])} · refreshed weekly"
-    stale = [o["as_of"] for o in manifest.get("outputs", {}).values() if o.get("stale")]
-    if stale:
+    stale = [o.get("as_of") for o in manifest.get("outputs", {}).values() if o.get("stale")]
+    dated = [a for a in stale if a]
+    if dated:
         # A yearly as_of counts as the start of its year (month 0) when ordering.
-        oldest = min(stale, key=lambda a: (_parse(a)[0], _parse(a)[1] or 0))
-        stamp += f" (some sources from {month_label(oldest)})"
+        oldest = min(dated, key=lambda a: (_parse(a)[0], _parse(a)[1] or 0))
+        undated = ", some unavailable" if len(dated) < len(stale) else ""
+        stamp += f" (some sources from {month_label(oldest)}{undated})"
+    elif stale:
+        stamp += " (some sources unavailable)"
     return stamp
+
+
+def output_month_label(manifest: Mapping | None, name: str) -> str | None:
+    """The readable "as of" of one output in the manifest, or None if it has no date."""
+    entry = (manifest or {}).get("outputs", {}).get(name) or {}
+    return month_label(entry["as_of"]) if entry.get("as_of") else None
 
 
 def market_meta_html(manifest: Mapping) -> str:

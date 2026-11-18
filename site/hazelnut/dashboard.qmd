@@ -103,9 +103,7 @@ if show_range:
 
 ::: {#panel-exports .panel .span-4}
 ```{python}
-period = None
-if manifest is not None and "exports_top" in manifest.get("outputs", {}):
-    period = ph.month_label(manifest["outputs"]["exports_top"]["as_of"])
+period = ph.output_month_label(manifest, "exports_top")
 ph.raw_html(ph.panel_head_html(
     "Where the exports go",
     ph.exports_subtitle(exports_top, period) if exports_top is not None and period
