@@ -264,6 +264,8 @@ table.metric tr.hl td { color: var(--accent); }
 .records-head { flex-wrap: wrap; align-items: center; }
 .records-head .ptitle { margin-top: var(--s2); }
 .records-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); }
+/* Quarto's cell wrapper scrolls on overflow; a sub-pixel button height drew a stray scrollbar here. */
+.records .cell-output-display { overflow: visible; }
 .dl-status { color: var(--muted); font-size: 13px; }
 .dl-status:empty { display: none; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
@@ -290,6 +292,10 @@ table.records th + th, table.records td + td { padding-left: var(--s5); }
 table.metric.sheets td:first-child, table.metric.sources td:first-child { white-space: nowrap; color: var(--fg); }
 table.metric.sheets td, table.metric.sources td { color: var(--muted); }
 table.metric.sources td:last-child { white-space: nowrap; }
+/* Phones: let provider and terms wrap, or the middle column shrinks to a word per line */
+@media (max-width: 600px) {
+  table.metric.sources td:first-child, table.metric.sources td:last-child { white-space: normal; }
+}
 .glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: var(--s4); }
 .glossary .panel h3 { font-size: 17px; margin: 0 0 var(--s2); }
 .glossary .panel p { margin: 0; color: var(--muted); font-size: 15px; }
@@ -382,6 +388,8 @@ td { padding: var(--s3) 0; border-bottom: 1px solid var(--line); }
 
 /* Footer */
 .nav-footer { border-top: 1px solid var(--line); color: var(--dim); font-size: 12px; }
+/* Quarto shrinks the footer columns to 0.825em (9.9px); keep them at 12px. */
+.nav-footer .nav-footer-left, .nav-footer .nav-footer-center, .nav-footer .nav-footer-right { font-size: inherit; }
 .nav-footer a { color: var(--muted); }
 
 /* Narrow screens: columns collapse, nav links fold into the menu */

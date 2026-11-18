@@ -50,6 +50,7 @@ format:
     filters:
       - filters/main-landmark.lua   # one <main> landmark per page (custom layout has none)
     toc: false
+    code-copy: false   # no code is shown; empty OJS cells otherwise carry a stray copy button
     anchor-sections: false
     smooth-scroll: false
     link-external-newwindow: false

@@ -40,7 +40,7 @@ cfg.update(
     notes=notes,
     as_of=ph.month_label(manifest["as_of"]) if manifest else None,
     downloads_url=f"{SITE_URL}downloads.html",
-    unavailable=ph.UNAVAILABLE,
+    unavailable="These records could not be loaded. Reload the page to try again.",
     empty="No months match these filters.",
 )
 ojs_define(explorer=cfg)

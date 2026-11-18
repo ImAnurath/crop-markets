@@ -305,7 +305,7 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     fig = go.Figure(
         go.Bar(
             x=top["share"], y=top["partner"], orientation="h", meta="fg",
-            marker=dict(color=FG, opacity=0.8),
+            marker=dict(color=FG, opacity=0.8, line=dict(width=0)),
             text=top["share"], texttemplate="%{x:.0%}", textposition="outside",
             textfont=dict(family=MONO, size=11, color=MUTED), cliponaxis=False,
             customdata=list(zip(top["net_kg"] / 1000, top["fob_usd"] / 1e6)),
@@ -375,7 +375,7 @@ def season_profile(profile: pd.DataFrame) -> go.Figure:
         wy += [float(lo), float(hi), None]
     fig = go.Figure([
         go.Bar(x=labels, y=[float(v) for v in profile["mean"]], name="Average month",
-               meta="fg", marker=dict(color=FG, opacity=0.8),
+               meta="fg", marker=dict(color=FG, opacity=0.8, line=dict(width=0)),
                customdata=list(zip(profile["label"], profile["q25"], profile["q75"])),
                hovertemplate=("%{customdata[0]}<br>average %{y:+.1%}<br>middle half of seasons "
                               "%{customdata[1]:+.1%} to %{customdata[2]:+.1%}<extra></extra>")),
@@ -560,7 +560,7 @@ def ratio_bars(wide: pd.DataFrame, highlight: str | None = None) -> go.Figure:
         bars.append(go.Bar(
             x=x, y=[float(v) for v in wide[col]], name=str(col),
             meta="accent" if hl else "fg",
-            marker=dict(color=ACCENT if hl else FG, opacity=1 if hl else 0.55),
+            marker=dict(color=ACCENT if hl else FG, opacity=1 if hl else 0.55, line=dict(width=0)),
             texttemplate="%{y:.2f}", textposition="outside", cliponaxis=False,
             textfont=dict(family=MONO, size=11, color=MUTED),
             hovertemplate=f"{html.escape(str(col))} %{{y:.2f}}<extra></extra>",
