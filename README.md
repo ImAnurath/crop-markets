@@ -55,9 +55,10 @@ When something fails:
 
 - **One source fails** (even halfway): its raw folder is dropped, so a partial fetch is never
   published as fresh. Its outputs keep the last good files from the committed `site/data/`, are
-  marked stale in the manifest, and show their own "as of" date. The run carries on.
-- **The core price series fails**, or validation finds a problem (row counts, latest month too
-  old, gaps, negative prices): `build_site_data.py` exits 1, nothing is committed or deployed,
+  marked stale in the manifest, and show their own "as of" date. The run carries on. An output
+  whose row count falls more than 10% below the last build counts as failed in the same way.
+- **The core price series fails** (including such a row-count drop), or validation finds a
+  problem (latest month too old, gaps, negative prices): `build_site_data.py` exits 1, nothing is committed or deployed,
   and the live site stays as it was.
 - **Workbook, tests, render or link test fail**: the same, no commit and no deploy.
 - Failed sources, the per-output status / as-of table and any validation problems go to the

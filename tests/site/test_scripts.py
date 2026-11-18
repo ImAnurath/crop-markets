@@ -2,6 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from hazelnut.forecast.dataset import _FILES
@@ -139,3 +140,19 @@ def test_stale_output_prints_stale(build_site_data, dirs, capsys):
     capsys.readouterr()
     build_site_data.main(_argv(dirs))
     assert "exports_monthly: stale" in capsys.readouterr().out
+
+
+def test_row_drop_is_printed_and_summarised(build_site_data, dirs, tmp_path, monkeypatch, capsys):
+    assert build_site_data.main(_argv(dirs)) == 0
+    path = dirs[0] / "comtrade_monthly.csv"
+    c = pd.read_csv(path)
+    c[~c["month"].str.startswith("2006")].to_csv(path, index=False)  # 12 of 40 months gone
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    capsys.readouterr()
+    assert build_site_data.main(_argv(dirs)) == 0
+    out = capsys.readouterr().out
+    assert "exports_monthly: stale" in out
+    assert "NOTE: exports_monthly: row count fell" in out
+    text = summary.read_text(encoding="utf-8")
+    assert "### Not refreshed" in text and "exports_monthly: row count fell" in text

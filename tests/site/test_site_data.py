@@ -109,3 +109,49 @@ def test_load_interim_tables_reads_and_skips_unreadable(tmp_path):
     (tmp_path / "cpi_monthly.csv").write_bytes(b"")  # empty -> unreadable
     t = load_interim_tables(tmp_path, tmp_path)
     assert set(t) == {"ordu_daily"}
+
+
+def _drop_months(tables, key, months):
+    t = dict(tables)
+    df = t[key]
+    if "year" not in df.columns:
+        t[key] = df[~df["month"].isin(months)]
+    else:
+        stamp = df["year"].astype(str) + "-" + df["month"].map("{:02d}".format)
+        t[key] = df[~stamp.isin(months)]
+    return t
+
+
+def test_noncore_row_drop_keeps_last_good_and_marks_stale(tiny_tables, tmp_path):
+    first = write_site_data(CROP, tiny_tables, tmp_path, NOW)
+    before = (tmp_path / "exports_monthly.csv").read_bytes()
+    gone = [f"2006-{m:02d}" for m in range(1, 7)]  # 6 of 40 months: a 15% drop
+    notes: list[str] = []
+    manifest = write_site_data(CROP, _drop_months(tiny_tables, "comtrade", gone), tmp_path, NOW, notes=notes)
+    assert (tmp_path / "exports_monthly.csv").read_bytes() == before
+    entry = manifest["outputs"]["exports_monthly"]
+    assert entry == {**first["outputs"]["exports_monthly"], "stale": True}
+    assert manifest["outputs"]["prices_monthly"]["stale"] is False
+    assert any(n.startswith("exports_monthly:") and "row count" in n for n in notes)
+
+
+def test_small_row_drop_is_still_fresh(tiny_tables, tmp_path):
+    write_site_data(CROP, tiny_tables, tmp_path, NOW)
+    manifest = write_site_data(CROP, _drop_months(tiny_tables, "comtrade", ["2006-01"]), tmp_path, NOW)
+    assert manifest["outputs"]["exports_monthly"]["stale"] is False
+
+
+def test_core_row_drop_fails_and_writes_nothing(tiny_tables, tmp_path):
+    write_site_data(CROP, tiny_tables, tmp_path, NOW)
+    snap = {p.name: p.read_bytes() for p in tmp_path.iterdir()}
+    gone = [f"2007-{m:02d}" for m in range(1, 13)]  # the last 12 of 40 months
+    with pytest.raises(SiteDataError, match="row count"):
+        write_site_data(CROP, _drop_months(tiny_tables, "giresun_price", gone), tmp_path, NOW)
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == snap
+
+
+def test_notes_name_missing_sources(tiny_tables, tmp_path):
+    notes: list[str] = []
+    write_site_data(CROP, {k: v for k, v in tiny_tables.items() if k != "weather"}, tmp_path, NOW,
+                    notes=notes)
+    assert notes == ["frost_by_year: KeyError: \"missing tables: ['weather']\""]

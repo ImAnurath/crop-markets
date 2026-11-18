@@ -2,6 +2,8 @@
 
 Each output is built fresh when its source tables are present and its builder succeeds.
 Otherwise the last good file in ``out_dir`` is kept and marked ``stale`` in the manifest.
+An output whose row count falls more than ``MAX_ROW_DROP`` below the previous build's counts
+as failed (a partial source download), so it falls back the same way.
 If a core output cannot be built fresh, ``SiteDataError`` is raised before any file is touched.
 """
 
@@ -28,6 +30,7 @@ from hazelnut.site.crops import crop_module
 CORE_OUTPUTS = ("prices_monthly", "price_range", "stats")
 ORDU_FILE = "ordu_daily.csv"
 HORIZONS = (1, 3, 6)
+MAX_ROW_DROP = 0.10  # a fresh output this much smaller than the last build is treated as failed
 
 
 class SiteDataError(Exception):
@@ -155,12 +158,26 @@ def _previous_entries(out_dir: Path) -> dict:
         return {}
 
 
+def _row_drop(prev_entry: dict | None, rows: int) -> str | None:
+    """Why a fresh output with ``rows`` rows is suspect against its previous entry, if it is."""
+    prev_rows = (prev_entry or {}).get("rows") or 0
+    if prev_rows and rows < prev_rows * (1 - MAX_ROW_DROP):
+        return f"row count fell from {prev_rows} to {rows} (more than {MAX_ROW_DROP:.0%} below the last build)"
+    return None
+
+
 def _stale_entry(prev: dict, name: str) -> dict:
     kept = prev.get(name)
     return {**kept, "stale": True} if kept else {"as_of": None, "rows": 0, "stale": True}
 
 
-def write_site_data(crop: CropConfig, tables: dict, out_dir: Path, now: datetime) -> dict:
+def write_site_data(
+    crop: CropConfig, tables: dict, out_dir: Path, now: datetime, notes: list[str] | None = None
+) -> dict:
+    """Build every output, write the files and the manifest, and return the manifest.
+
+    ``notes``, if given, receives one line per output kept stale, with the reason.
+    """
     out_dir = Path(out_dir)
     builders = crop_module(crop.slug).BUILDERS
     prev = _previous_entries(out_dir)
@@ -190,6 +207,12 @@ def write_site_data(crop: CropConfig, tables: dict, out_dir: Path, now: datetime
         errors.setdefault("price_range", "prices_monthly unavailable")
         errors.setdefault("stats", "prices_monthly unavailable")
 
+    for name in list(frames):
+        drop = _row_drop(prev.get(name), len(frames[name]))
+        if drop:
+            errors[name] = drop
+            del frames[name]
+
     failed = [n for n in CORE_OUTPUTS if n in errors or (n != "stats" and n not in frames)]
     if failed or stats is None:
         raise SiteDataError(
@@ -212,6 +235,8 @@ def write_site_data(crop: CropConfig, tables: dict, out_dir: Path, now: datetime
         for name in builders:
             if name not in entries:
                 entries[name] = _stale_entry(prev, name)
+                if notes is not None:
+                    notes.append(f"{name}: {errors.get(name, 'unavailable')}")
         manifest = {
             "crop": crop.slug,
             "built_at": now.astimezone(timezone.utc).isoformat(),

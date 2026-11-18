@@ -26,12 +26,14 @@ def status(entry: dict) -> str:
     return "fresh"
 
 
-def _write_summary(rows: list[tuple[str, str, str]], problems: list[str]) -> None:
+def _write_summary(rows: list[tuple[str, str, str]], problems: list[str], notes: list[str]) -> None:
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not path:
         return
     lines = ["| output | status | as of |", "| --- | --- | --- |"]
     lines += [f"| {name} | {st} | {as_of} |" for name, st, as_of in rows]
+    if notes:
+        lines += ["", "### Not refreshed", ""] + [f"- {n}" for n in notes]
     lines += ["", "### Problems", ""]
     lines += [f"- {p}" for p in problems] or ["none"]
     with open(path, "a", encoding="utf-8") as f:
@@ -56,8 +58,9 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = args.out / crop.slug
 
     tables = load_interim_tables(args.interim, args.manual)
+    notes: list[str] = []
     try:
-        manifest = write_site_data(crop, tables, out_dir, datetime.now(timezone.utc))
+        manifest = write_site_data(crop, tables, out_dir, datetime.now(timezone.utc), notes=notes)
     except SiteDataError as exc:
         print(exc)
         return 1
@@ -70,11 +73,13 @@ def main(argv: list[str] | None = None) -> int:
     rows = [(n, status(e), str(e.get("as_of") or "")) for n, e in manifest["outputs"].items()]
     for name, st, as_of in rows:
         print(f"{name}: {st}" + (f" (as of {as_of})" if as_of else ""))
+    for note in notes:
+        print(f"NOTE: {note}")
 
     problems += validate_site_data(out_dir, args.today or datetime.now(timezone.utc).date())
     for problem in problems:
         print(f"PROBLEM: {problem}")
-    _write_summary(rows, problems)
+    _write_summary(rows, problems, notes)
     return 1 if problems else 0
 
 
