@@ -15,6 +15,7 @@ FIRST_CONTIGUOUS = pd.Period("2005-01", "M")
 NULLABLE_STATS = {"crop_estimate_t", "crop_yoy", "crop_year"}
 PRICE_COLS = ("usd_kg", "try_kg", "usd_try")
 RANGE_COLS = ("q05", "q10", "q50", "q90", "q95")
+MAX_LAG_MONTHS = 3  # the as-of month may be at most this many months before today
 
 
 def _finite_number(x) -> bool:
@@ -99,7 +100,7 @@ def _check_stats(stats, problems: list[str]) -> None:
             problems.append(f"stats.json: {key} is not a finite number ({val!r})")
 
 
-def validate_site_data(out_dir: Path, today: date, max_lag_months: int = 3) -> list[str]:
+def validate_site_data(out_dir: Path, today: date, max_lag_months: int = MAX_LAG_MONTHS) -> list[str]:
     """Return human-readable problems with the site data in `out_dir`; empty means OK."""
     out_dir = Path(out_dir)
     problems: list[str] = []

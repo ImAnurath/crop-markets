@@ -20,7 +20,7 @@ ref = ph.read_csv_or_none(data_dir / "prices_monthly.csv",
 other = ph.read_csv_or_none(data_dir / "ordu_monthly.csv",
                             required=("month", "usd_kg", local.column))
 
-OUTLIER = 0.5  # a monthly gap beyond ±50% is treated as a source error, not a price
+OUTLIER = ph.OUTLIER_LIMIT  # a monthly gap beyond this is treated as a source error, not a price
 
 both, gap, dropped_note = None, None, None
 if ref is not None and other is not None:

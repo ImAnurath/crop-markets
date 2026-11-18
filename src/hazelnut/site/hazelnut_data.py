@@ -209,3 +209,14 @@ WORKBOOK_SOURCES = [
 ]
 
 
+
+# Data explorer: each exchange's monthly sheet above (its file and column labels).
+EXPLORER_SHEETS = {"Giresun": "Prices", "Ordu": "Ordu"}
+
+# Methods page facts that live in the forecasting reports, not in the site data.
+HOLDOUT_PERIOD = ("2024-10", "2026-09")  # reports/forecast_results.md: final holdout
+TIMING_NOTE = (
+    "A harvest's crop estimate is used only from August of that year, when it is normally "
+    "out; moving every estimate a month later changed the error ratios by at most 0.03, so "
+    "the rule shows no sign of a leak."  # reports/crop_estimate_findings.md, section 3
+)

@@ -1,0 +1,62 @@
+---
+title: "Downloads"
+description: "The full Excel workbook for each crop, rebuilt on every weekly refresh, with the as-of date, what each sheet holds and the source credits."
+---
+
+```{python}
+from hazelnut.site import page_helpers as ph
+from hazelnut.site import workbook
+from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.crops import crop_module
+
+crops = load_crops()
+ph.raw_html(
+    '<div class="dash-head"><div><span class="eyebrow">Downloads</span>'
+    "<h1>Take the data with you</h1></div></div>"
+)
+```
+
+::: {.lede .explorer-lede}
+Each crop's workbook holds every table on this site in one formatted Excel file: a README sheet, the monthly prices, exports, crop sizes, the forecast range and the forecast scores. It is rebuilt on every weekly refresh. To take only some months, filter them in the crop's data explorer and download that view.
+:::
+
+```{python}
+for crop in crops.values():
+    mod = crop_module(crop.slug)
+    name = workbook.workbook_filename(crop.slug)
+    path = SITE_DIR / "downloads" / name
+    size = path.stat().st_size if path.is_file() else None  # CI builds it before rendering
+    manifest = ph.read_json_or_none(SITE_DIR / "data" / crop.slug / "manifest.json")
+    stamp = ""
+    if manifest is not None:
+        stamp = (f'<span class="live"><i aria-hidden="true"></i>'
+                 f"{ph.escape(ph.as_of_stamp(manifest))}</span>")
+    explorer = ""
+    if "explorer" in crop.sections:
+        explorer = (f'<a class="btn" href="{ph.escape(crop.slug)}/explorer.qmd">'
+                    f"Filter the monthly records {ph.ARROW}</a>")
+    ph.raw_html(
+        '<div class="dash downloads">'
+        f'<section class="panel span-8" aria-labelledby="wb-{ph.escape(crop.slug)}">'
+        f'<span class="eyebrow">{ph.escape(crop.name)} · {ph.escape(crop.country)}</span>'
+        f'<h2 class="ptitle" id="wb-{ph.escape(crop.slug)}">{ph.escape(crop.name)} market data workbook</h2>'
+        '<div class="sub">Every table on the site, formatted, with a README and the source credits.</div>'
+        f'<div class="dl-meta">{ph.workbook_download_html(f"downloads/{name}", size)}{explorer}{stamp}</div>'
+        f"{ph.sheet_list_html(workbook.sheet_list(crop.slug))}"
+        "</section>"
+        f'<section class="panel span-4 soon" aria-labelledby="pbi-{ph.escape(crop.slug)}">'
+        '<span class="pill">Coming later</span>'
+        f'<h2 class="ptitle" id="pbi-{ph.escape(crop.slug)}">Power BI template</h2>'
+        '<div class="sub">A Power BI template built on the same tables. Not available yet.</div>'
+        "</section>"
+        f'<section class="panel span-12" aria-labelledby="src-{ph.escape(crop.slug)}">'
+        f'<h2 class="ptitle" id="src-{ph.escape(crop.slug)}">Sources and credits</h2>'
+        f'<div class="sub">The {ph.escape(crop.name.lower())} data comes from these public '
+        "providers. If you reuse it, credit them as listed.</div>"
+        f"{ph.sources_table_html(mod.WORKBOOK_SOURCES)}"
+        '<p class="foot">Where the terms say to see the provider\'s terms, check them before '
+        "republishing.</p>"
+        "</section>"
+        "</div>"
+    )
+```

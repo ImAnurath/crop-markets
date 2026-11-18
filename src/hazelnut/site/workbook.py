@@ -97,6 +97,22 @@ GENERIC_NOTES = {
     "Scoreboard": "Backtest accuracy by method; holdout table scored once, never tuned on",
     "Sources": "Data providers, what we use and credit",
 }
+README_NOTE = "What each sheet holds, the as-of date and any stale sources"
+
+
+def workbook_filename(slug: str) -> str:
+    """The workbook's file name under ``site/downloads/``: ``<slug>-market-data.xlsx``."""
+    return f"{slug}-market-data.xlsx"
+
+
+def sheet_notes(slug: str) -> dict[str, str]:
+    """Each data sheet's one-line note, in workbook order (after the README)."""
+    return {**crop_module(slug).WORKBOOK_SHEET_NOTES, **GENERIC_NOTES}
+
+
+def sheet_list(slug: str) -> list[tuple[str, str]]:
+    """(sheet name, note) for every sheet of the crop's workbook, in workbook order."""
+    return [("README", README_NOTE), *sheet_notes(slug).items()]
 
 
 def _readme(ws, crop, site_url, manifest, sheet_ok, notes, output_sheets) -> None:
@@ -148,7 +164,7 @@ def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig, site_url: s
 
     mod = crop_module(crop.slug)
     sheets, sources = mod.WORKBOOK_SHEETS, mod.WORKBOOK_SOURCES
-    notes = {**mod.WORKBOOK_SHEET_NOTES, **GENERIC_NOTES}
+    notes = sheet_notes(crop.slug)
     output_sheets = {csv.removesuffix(".csv"): name for name, (csv, _) in sheets.items()}
 
     wb = Workbook()

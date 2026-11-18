@@ -1,0 +1,138 @@
+---
+title: "Methods"
+description: "How the numbers on this site are made: a plain-language glossary of the forecasting terms, what the tests found, and how the weekly refresh works."
+---
+
+```{python}
+from hazelnut.site import page_helpers as ph
+from hazelnut.site import validate
+from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.crops import crop_module
+
+crops = load_crops()
+first_month = ph.month_label(str(validate.FIRST_CONTIGUOUS))
+max_lag = validate.MAX_LAG_MONTHS
+ph.raw_html(
+    '<div class="dash-head"><div><span class="eyebrow">Methods</span>'
+    "<h1>How every number is made</h1></div></div>"
+)
+```
+
+::: {.lede .explorer-lede}
+The terms used across the site in plain words, what the forecast tests found, and how the weekly refresh keeps the data current without publishing broken numbers.
+:::
+
+```{=html}
+<div class="sect analysis-sect"><div><span class="eyebrow">Glossary</span><h2>The words, in plain language</h2></div></div>
+<div class="glossary">
+  <section class="panel" id="naive">
+    <h3>Naive forecast</h3>
+    <p>The simplest forecast there is: the price stays where it is. Next month's forecast and the one six months out are both this month's price.</p>
+    <p>It is the benchmark every other method has to beat. A method that cannot beat it adds nothing.</p>
+  </section>
+  <section class="panel" id="mae">
+    <h3>MAE (mean absolute error)</h3>
+    <p>How far off the forecasts were on average, ignoring direction, in the price's own units such as US dollars per kilo. A forecast $0.20 too high and one $0.20 too low both count as $0.20 of error.</p>
+  </section>
+  <section class="panel" id="ratio">
+    <h3>Ratio vs naive</h3>
+    <p>A method's MAE divided by naive's MAE on the same months. Below 1 means it beat naive; 1.03 means its errors were 3% larger.</p>
+    <p>The reports call the same comparison skill: skill = 1 − ratio, so a skill above 0 beats naive.</p>
+  </section>
+  <section class="panel" id="walk-forward">
+    <h3>Walk-forward backtest</h3>
+    <p>A replay of history. At each month of the test, every method sees only the data up to that month, makes its forecasts, and is scored against what actually happened. Then the clock moves on a month and it starts again.</p>
+    <p>Because nothing after the forecast month is used, the scores show how a method would really have done.</p>
+  </section>
+  <section class="panel" id="timing">
+    <h3>Timing rules (no look-ahead)</h3>
+    <p>Each input is used only from the month it would really have been known, not the month it describes. Export figures, published about three months late, are used three months late; a crop estimate is used from the month it is normally announced.</p>
+    <p>Without these rules a backtest quietly uses tomorrow's news and looks better than it could ever be in practice.</p>
+  </section>
+  <section class="panel" id="holdout">
+    <h3>Holdout, scored once</h3>
+    <p>The most recent 24 months were set aside before any method was built. Methods were developed and compared on the earlier months only. The holdout was then scored once, at the end, and nothing was changed afterwards: hence the label "scored once, never tuned on".</p>
+    <p>With so few months it is a sanity check, not a new ranking.</p>
+  </section>
+  <section class="panel" id="range">
+    <h3>80% range and coverage</h3>
+    <p>Instead of one number, a range the price should land in eight times out of ten (the site writes it 8-in-10). Coverage is how often it really did in the backtest.</p>
+    <p>An honest 80% range covers about 80% of months. Much less means the range is too narrow and overconfident; much more means it is wider than it needs to be. The range on this site is today's price stretched by the moves prices have made over the same number of months in the past.</p>
+  </section>
+  <section class="panel" id="season">
+    <h3>Season (September to August)</h3>
+    <p>Prices and crops are grouped by marketing season, the September-to-August year that exporters work on, not by calendar year.</p>
+    <p>A season is labelled by its two years: 2025/26 runs from September 2025 to August 2026.</p>
+  </section>
+  <section class="panel" id="old-lira">
+    <span class="pill tag">Turkish lira data only</span>
+    <h3>Old lira</h3>
+    <p>On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. Lira prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.</p>
+    <p>Lira prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.</p>
+  </section>
+</div>
+```
+
+```{python}
+# What each crop's forecast tests found, computed from its results tables (the same words
+# as its forecasting page). Crops without results are skipped.
+blocks = []
+for crop in crops.values():
+    res = SITE_DIR / "data" / crop.slug / "results"
+    if not res.is_dir():
+        continue
+    mod = crop_module(crop.slug)
+    dev = ph.read_csv_or_none(res / "scoreboard_dev.csv", required=("method", "horizon", "n", "ratio"))
+    holdout = ph.read_csv_or_none(res / "scoreboard_holdout.csv",
+                                  required=("method", "horizon", "n", "ratio"))
+    ranges = ph.read_csv_or_none(res / "ranges.csv", required=("method", "horizon", "cov80"))
+    facts = ph.methods_facts(dev, holdout, ranges, range_method="naive_emp",
+                             holdout_period=getattr(mod, "HOLDOUT_PERIOD", None))
+    timing = getattr(mod, "TIMING_NOTE", None)
+    if timing:
+        facts.insert(min(2, len(facts)), timing)
+    if not facts:
+        continue
+    link = ""
+    if "forecasting" in crop.analyses:
+        link = (f'<p class="foot"><a href="{ph.escape(crop.slug)}/analyses/forecasting.qmd">'
+                f"{ph.escape(crop.name)} forecasting analysis</a>: every table behind these lines.</p>")
+    items = "".join(f"<li>{ph.escape(f, quote=False)}</li>" for f in facts)
+    blocks.append(
+        f'<section class="panel span-12" aria-labelledby="facts-{ph.escape(crop.slug)}">'
+        f'<span class="eyebrow">{ph.escape(crop.name)}</span>'
+        f'<h3 class="ptitle" id="facts-{ph.escape(crop.slug)}">What the forecast tests found</h3>'
+        f'<ul class="facts">{items}</ul>{link}</section>'
+    )
+if blocks:
+    ph.raw_html(
+        '<div class="sect analysis-sect"><div><span class="eyebrow">In practice</span>'
+        "<h2>What the tests found</h2></div></div>"
+        f'<div class="dash">{"".join(blocks)}</div>'
+    )
+```
+
+```{python}
+ph.raw_html(f"""
+<div class="sect analysis-sect"><div><span class="eyebrow">Weekly refresh</span><h2>How the data stays current</h2></div></div>
+<div class="dash">
+<section class="panel span-7" aria-labelledby="refresh-steps">
+  <h3 class="ptitle" id="refresh-steps">Every week, in four steps</h3>
+  <div class="sub">Nothing reaches the site until it has passed the checks.</div>
+  <ol class="steps">
+    <li><strong>Fetch.</strong> An automated job downloads every source again. Each source is fetched on its own, so one that fails does not stop the others.</li>
+    <li><strong>Build, with fallback.</strong> The site's tables are rebuilt from the fresh data. A table whose source failed keeps its last good version from the previous refresh and is marked stale. The core tables (the monthly price series, the price range and the headline numbers) have no fallback: if they cannot be rebuilt, the run stops.</li>
+    <li><strong>Validate.</strong> A gate checks the data before anything is published: the monthly price series has every month from {ph.escape(first_month)} to the latest, with no duplicates, and every price and exchange rate is above zero; the price range is positive and in order; the headline numbers are all valid numbers; and the latest month is no more than {max_lag} months old. If any check fails, the run stops and the site already online stays as it was.</li>
+    <li><strong>Publish.</strong> The pages, charts and Excel workbook are rebuilt from the checked data. The forecast models are not re-run each week: the scoreboards come from the saved backtest results, and only the price range, which is cheap to compute, is recalculated from the latest prices.</li>
+  </ol>
+</section>
+<section class="panel span-5" aria-labelledby="stamp-heading">
+  <h3 class="ptitle" id="stamp-heading">The as-of stamp</h3>
+  <div class="sub">How fresh the numbers are, on every page.</div>
+  <p class="muted"><span class="live"><i aria-hidden="true"></i>Data as of &lt;month&gt; · refreshed weekly</span></p>
+  <p class="muted">The month is the latest month of the crop's exchange price series.</p>
+  <p class="muted">If a table is running on an older copy because its source failed, the stamp adds "(some sources from &lt;month&gt;)", naming the oldest such month. The workbook's README sheet lists each stale table and its date.</p>
+</section>
+</div>
+""")
+```

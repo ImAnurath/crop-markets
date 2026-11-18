@@ -1063,3 +1063,152 @@ def lira_subtitle(lira: pd.DataFrame, trend: Sequence[str], trend_words: str, *,
     if lo > 0 or hi > 0:
         return f"{lead}; at {hs} months {trend_words} had {size} error, {caveat}."
     return f"{lead}; at {hs} months {trend_words} had {size} error."
+
+
+# --- Data explorer, Downloads, Methods -----------------------------------------------------
+
+OUTLIER_LIMIT = 0.5  # a monthly gap between exchanges beyond ±50% is a source error, not a price
+BASE_CURRENCY = ("USD", "usd_kg")  # every crop's site data carries a USD/kg price column
+
+
+def number_decimals(fmt: str | None) -> int | None:
+    """Decimals shown by an Excel number format: ``"0.00"`` -> 2, ``"#,##0"`` -> 0;
+    None (text) stays None."""
+    if fmt is None:
+        return None
+    _, dot, tail = fmt.partition(".")
+    return len(tail) - len(tail.lstrip("0")) if dot else 0
+
+
+def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[str, str],
+                    sources: Sequence, data_href: str) -> dict:
+    """JSON-ready settings for the data explorer, built from the crop's config and its
+    workbook spec (``WORKBOOK_SHEETS``), so the explorer and the workbook share files,
+    labels and number formats.
+
+    ``exchange_sheets`` maps an exchange name to its monthly sheet; exchanges without one are
+    left out. ``data_href`` is the crop's data folder relative to the page. Each exchange's
+    ``extras`` are its columns other than the month and the currency prices (the visitor
+    can show or hide them); ``source`` and ``terms`` come from the provider row that
+    starts with its name."""
+    usd_label, usd_col = BASE_CURRENCY
+    currencies = [{"label": usd_label, "column": usd_col},
+                  {"label": crop.local_currency.label, "column": crop.local_currency.column}]
+    fixed = {"month"} | {c["column"] for c in currencies}
+    exchanges = []
+    for name in crop.exchanges:
+        sheet = exchange_sheets.get(name)
+        if sheet is None or sheet not in sheets:
+            continue
+        file, spec = sheets[sheet]
+        columns = [{"key": k, "label": label, "decimals": number_decimals(fmt)}
+                   for k, (label, fmt) in spec.items()]
+        row = next((r for r in sources if str(r[0]).startswith(name)), None)
+        exchanges.append({
+            "name": name,
+            "file": f"{data_href.rstrip('/')}/{file}",
+            "columns": columns,
+            "extras": [c["key"] for c in columns if c["key"] not in fixed],
+            "source": row[0] if row else None,
+            "terms": row[3] if row else None,
+        })
+    return {"slug": crop.slug, "name": crop.name, "currencies": currencies,
+            "exchanges": exchanges}
+
+
+def explorer_outlier_note(ref: pd.DataFrame, other: pd.DataFrame, col: str, name: str,
+                          ref_name: str, href: str | None,
+                          limit: float = OUTLIER_LIMIT) -> str | None:
+    """The line under the explorer's table for ``name``: the months its ``col`` price was
+    more than ``limit`` away from ``ref_name``'s (likely entry errors in the source), which
+    the explorer still shows as published. None when there are none."""
+    _, far = split_outliers(gap_series(ref, other, col), limit)
+    if far.empty:
+        return None
+    months = _join_names([month_label(str(m)) for m in far["month"]])
+    one = len(far) == 1
+    text = (f"{months}: {name}'s price was more than {round(limit * 100)}% away from "
+            f"{ref_name}'s, most likely {'an entry error' if one else 'entry errors'} in the "
+            f"source. {'It is' if one else 'They are'} shown as published.")
+    link = f' <a href="{escape(href)}">See the exchanges analysis</a>.' if href else ""
+    return f"{escape(text, quote=False)}{link}"
+
+
+def file_size_text(n_bytes: int) -> str:
+    """``850_000`` -> ``"830 KB"``, ``1_300_000`` -> ``"1.2 MB"`` (binary units)."""
+    kb, mb = n_bytes / 1024, n_bytes / 1024 ** 2
+    if mb < 1:
+        return f"{max(1, round(kb))} KB"
+    return f"{mb:.1f} MB" if mb < 10 else f"{round(mb)} MB"
+
+
+WORKBOOK_MISSING = "The workbook is not available in this refresh."
+DOWNLOAD_ICON = '<svg class="ico" aria-hidden="true"><use href="#download"/></svg>'
+
+
+def workbook_download_html(href: str, size_bytes: int | None) -> str:
+    """The workbook's download button with its size, or a note when the file was not built."""
+    if size_bytes is None:
+        return f'<p class="chart-error" role="note">{escape(WORKBOOK_MISSING, quote=False)}</p>'
+    return (f'<a class="btn pri" href="{escape(href)}" download>{DOWNLOAD_ICON}'
+            f"Download the workbook (.xlsx, {file_size_text(size_bytes)})</a>")
+
+
+def sheet_list_html(rows: Sequence[tuple[str, str]]) -> str:
+    """The workbook's sheets and what each holds, as a two-column table."""
+    body = "".join(f"<tr><td>{escape(name)}</td><td>{escape(note)}</td></tr>"
+                   for name, note in rows)
+    return (
+        '<div class="table-wrap"><table class="metric sheets" '
+        'data-quarto-disable-processing="true">'
+        '<caption class="visually-hidden">Sheets in the workbook</caption>'
+        '<thead><tr><th scope="col">Sheet</th><th scope="col">What it holds</th></tr></thead>'
+        f"<tbody>{body}</tbody></table></div>"
+    )
+
+
+def sources_table_html(sources: Sequence) -> str:
+    """The source credits: provider (linked), what the site uses, and the credit and terms.
+    Rows are a crop's ``WORKBOOK_SOURCES``: (provider, what we use, URL, terms)."""
+    body = "".join(
+        f'<tr><td><a href="{escape(url)}">{escape(name)}</a></td><td>{escape(what)}</td>'
+        f"<td>{escape(terms)}</td></tr>"
+        for name, what, url, terms in sources
+    )
+    return (
+        '<div class="table-wrap"><table class="metric sources" '
+        'data-quarto-disable-processing="true">'
+        '<caption class="visually-hidden">Data sources and their terms</caption>'
+        '<thead><tr><th scope="col">Provider</th><th scope="col">What we use</th>'
+        '<th scope="col">Credit and terms</th></tr></thead>'
+        f"<tbody>{body}</tbody></table></div>"
+    )
+
+
+def range_held_text(ranges: pd.DataFrame, method: str) -> str:
+    """How often ``method``'s 80% range held across horizons: ``"82% to 84%"`` or ``"83%"``."""
+    held = sorted({round(v * 100) for v in ranges.loc[ranges["method"] == method, "cov80"]})
+    return f"{held[0]}%" if len(held) == 1 else f"{held[0]}% to {held[-1]}%"
+
+
+def methods_facts(dev: pd.DataFrame | None, holdout: pd.DataFrame | None,
+                  ranges: pd.DataFrame | None, *, range_method: str,
+                  holdout_period: tuple[str, str] | None) -> list[str]:
+    """What a crop's forecast tests found, in its forecasting page's words: the development
+    scoreboard, the holdout (labelled scored once) and the range's coverage. A fact whose
+    data is missing is left out."""
+    facts = []
+    if dev is not None:
+        facts.append(f"Development period, walk-forward in {BASE_CURRENCY[0]}, "
+                     f"{count_text(dev['n'])} forecasts per horizon: {dev_subtitle(dev)}")
+    if holdout is not None and holdout_period is not None:
+        a, b = holdout_period
+        facts.append(f"Holdout, {month_label(a)} to {month_label(b)}: "
+                     f"{holdout_subtitle(holdout)}")
+    rng = ranges[ranges["method"] == range_method] if ranges is not None else None
+    if rng is not None and not rng.empty:
+        hs = _join_names([str(int(h)) for h in sorted(rng["horizon"])])
+        facts.append(f"The 8-in-10 range from past price moves held "
+                     f"{range_held_text(ranges, range_method)} of the time in the backtest, "
+                     f"at {hs} months ahead.")
+    return facts

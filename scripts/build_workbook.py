@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from hazelnut.site.config import SITE_DIR, load_crops
-from hazelnut.site.workbook import build_workbook
+from hazelnut.site.workbook import build_workbook, workbook_filename
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     crop = crops[args.crop]
     args.out.mkdir(parents=True, exist_ok=True)
-    path = build_workbook(args.data / crop.slug, args.out / f"{crop.slug}-market-data.xlsx", crop)
+    path = build_workbook(args.data / crop.slug, args.out / workbook_filename(crop.slug), crop)
     print(f"wrote {path}")
     return 0
 
