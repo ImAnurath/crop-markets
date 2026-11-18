@@ -148,6 +148,26 @@ def test_gap_subtitle_below_and_mixed_band():
     assert ph.gap_subtitle(gap2, "Ordu", "Giresun").endswith("below.")
 
 
+def test_gap_subtitle_all_below_band_runs_from_small_to_large():
+    gap = pd.DataFrame({"month": _months("2000-01", 11),
+                        "gap": [-0.03, -0.05, -0.08, -0.1, -0.1, -0.1, -0.12, -0.14, -0.16,
+                                -0.17, -0.3]})
+    sub = ph.gap_subtitle(gap, "Ordu", "Giresun")
+    lo, hi = gap["gap"].quantile(0.9), gap["gap"].quantile(0.1)  # smallest, largest discount
+    assert sub.endswith(f"8 in 10 months fell between {abs(lo) * 100:.1f}% and "
+                        f"{abs(hi) * 100:.1f}% below.")
+    assert abs(lo) < abs(hi)
+
+
+def test_gap_subtitle_all_above_band_runs_from_small_to_large():
+    gap = pd.DataFrame({"month": _months("2000-01", 11),
+                        "gap": [0.03, 0.05, 0.08, 0.1, 0.1, 0.1, 0.12, 0.14, 0.16, 0.17, 0.3]})
+    sub = ph.gap_subtitle(gap, "Ordu", "Giresun")
+    lo, hi = gap["gap"].quantile(0.1), gap["gap"].quantile(0.9)
+    assert sub.startswith("Ordu's monthly price ran a median 10.0% above Giresun's")
+    assert sub.endswith(f"8 in 10 months fell between {lo * 100:.1f}% and {hi * 100:.1f}% above.")
+
+
 # --- crop and frost ---------------------------------------------------------------------
 
 def _crop() -> pd.DataFrame:
@@ -367,10 +387,21 @@ def test_crop_check_table_rows_on_time_and_late():
 
 
 def test_crop_check_subtitle_timing_and_national():
-    sub = ph.crop_check_subtitle(_dev_for_check(), _check(), main_source="giresun")
-    assert "changed the scores by at most 0.03" in sub
-    assert "national estimate scored worse in 3 of 4" in sub
-    assert "naive" in sub
+    sub = ph.crop_check_subtitle(_dev_for_check(), _check(), main_source="giresun",
+                                 rule="the August rule")
+    assert sub == ("Moving every crop estimate a month later changed the scores by at most "
+                   "0.03, so the August rule shows no sign of a leak; at that month-late "
+                   "timing the national estimate scored worse in 3 of 4 method-horizon pairs.")
+
+
+def test_crop_check_subtitle_flags_a_large_shift():
+    check = _check()
+    check.loc[(check["crop_source"] == "giresun") & (check["horizon"] == 1)
+              & (check["method"] == "sarimax"), "ratio"] = 1.30
+    sub = ph.crop_check_subtitle(_dev_for_check(), check, main_source="giresun")
+    assert "changed the scores by up to 0.18" in sub
+    assert "no sign of a leak" not in sub and "may have gained from a leak" in sub
+    assert "at that month-late timing" in sub
 
 
 def _lira():
@@ -459,7 +490,10 @@ def test_lira_subtitle_first_horizon_and_trend_gains():
              "mape_ratio"] = 1.01
     sub = ph.lira_subtitle(lira, ["fx36", "infl"], "the trend forecasts")
     assert sub == ("In percent terms nothing beat naive at 1 month; at 3 and 6 months the "
-                   "trend forecasts had 3% lower error.")
+                   "trend forecasts had 3% lower error, which is suggestive only.")
+    sub = ph.lira_subtitle(lira, ["fx36", "infl"], "the trend forecasts",
+                           caveat="suggestive (6 variants tried)")
+    assert sub.endswith("had 3% lower error, suggestive (6 variants tried).")
 
 
 def test_periods_label():

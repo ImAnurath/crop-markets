@@ -187,7 +187,8 @@ if check is None or dev is None:
     ph.raw_html(ph.panel_head_html(TITLE, "Error divided by naive's with other crop inputs."))
     ph.raw_html(ph.unavailable_html())
 else:
-    ph.raw_html(ph.panel_head_html(TITLE, ph.crop_check_subtitle(dev, check, CROP_SOURCE)))
+    ph.raw_html(ph.panel_head_html(TITLE, ph.crop_check_subtitle(
+        dev, check, CROP_SOURCE, rule="the August rule")))
     ph.raw_html(ph.metric_table_html(
         ph.crop_check_table(dev, check, CROP_SOURCE), [("Error ÷ naive's", "ratio", RATIO3)],
         caption="Error divided by naive's with the crop estimate on time and a month late",
@@ -196,8 +197,9 @@ else:
         '<p class="foot">Development period. "On time" is the standard rule: a year\'s crop '
         'estimate is used from August of that year. "A month late" uses every estimate one '
         "month later (the 2018 Giresun estimate from November), to test that rule for a "
-        "leak; the national rows use that late timing too. At the standard timing, the "
-        "crop-estimate report also found the national estimate worse than Giresun's.</p>"
+        "leak; the national rows use that late timing too, so they are not the report's main "
+        "comparison. At the standard timing, the crop-estimate report found the national "
+        "estimate worse than Giresun's at every method and horizon.</p>"
     )
 ```
 :::
@@ -285,8 +287,11 @@ if lira is None:
     ph.raw_html(ph.panel_head_html(TITLE, "Error divided by lira naive's, all months."))
     ph.raw_html(ph.unavailable_html())
 else:
+    # USD naive x FX variants tried; the gains are suggestive at most.
+    n_fx = lira.loc[lira["method"].astype(str).str.startswith("composed_fx"), "method"].nunique()
     ph.raw_html(ph.panel_head_html(TITLE, ph.lira_subtitle(
-        lira, list(LIRA_TRENDS), "the depreciation-trend forecasts")))
+        lira, list(LIRA_TRENDS), "the depreciation-trend forecasts",
+        caveat=f"suggestive ({n_fx} variants tried)" if n_fx else "which is suggestive only")))
     allm = lira[(lira["period"] == "all") & lira["method"].isin(list(LIRA_NAMES))]
     ph.raw_html(ph.metric_table_html(
         allm, [("MAPE ÷ naive's", "mape_ratio", ph.fmt_ratio(2)),

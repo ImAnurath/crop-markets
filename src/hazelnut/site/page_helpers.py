@@ -626,8 +626,8 @@ def gap_subtitle(gap: pd.DataFrame, name: str, ref_name: str) -> str:
     """"Ordu's monthly price ran a median 9.7% below Giresun's over 308 months; 8 in 10 ..."."""
     g = gap["gap"].dropna()
     med, lo, hi = float(g.median()), float(g.quantile(0.1)), float(g.quantile(0.9))
-    if lo < 0 and hi < 0:
-        band = f"between {abs(lo) * 100:.1f}% and {abs(hi) * 100:.1f}% below"
+    if lo < 0 and hi < 0:  # smallest discount first
+        band = f"between {abs(hi) * 100:.1f}% and {abs(lo) * 100:.1f}% below"
     elif lo >= 0 and hi >= 0:
         band = f"between {lo * 100:.1f}% and {hi * 100:.1f}% above"
     else:
@@ -943,9 +943,14 @@ def crop_check_table(dev: pd.DataFrame, check: pd.DataFrame, main_source: str) -
     return pd.DataFrame(rows, columns=["row", "horizon", "ratio"])
 
 
-def crop_check_subtitle(dev: pd.DataFrame, check: pd.DataFrame, main_source: str) -> str:
-    """How far the scores moved with every crop estimate a month late, and how the other
-    estimate(s) compared with ``main_source`` on the same late timing."""
+LEAK_TOLERANCE = 0.05  # a shift this small in error ratio is read as no sign of a leak
+
+
+def crop_check_subtitle(dev: pd.DataFrame, check: pd.DataFrame, main_source: str, *,
+                        rule: str = "the timing rule",
+                        tolerance: float = LEAK_TOLERANCE) -> str:
+    """The leak verdict (how far the scores moved with every crop estimate a month late),
+    then how the other estimate(s) compared with ``main_source`` at that same late timing."""
     on_time = dev.set_index(["method", "horizon"])["ratio"]
     late = check[check["crop_source"] == main_source].set_index(["method", "horizon"])["ratio"]
     common = late.index.intersection(on_time.index)
@@ -954,12 +959,15 @@ def crop_check_subtitle(dev: pd.DataFrame, check: pd.DataFrame, main_source: str
     cmp = others.set_index(["method", "horizon"]).join(late.rename("main"), how="inner")
     worse = int((cmp["ratio"] > cmp["main"]).sum())
     sources = _join_names(list(dict.fromkeys(others["crop_source"].astype(str))))
-    under = int((check["ratio"] < 1).sum())
-    tail = ("and nothing beat naive" if under == 0
-            else f"and {under} of {len(check)} scores came in under naive")
-    return (f"Making every crop estimate a month later changed the scores by at most "
-            f"{shift:.2f}; the {sources} estimate scored worse in {worse} of {len(cmp)} "
-            f"method-horizon pairs, {tail}.")
+    if shift <= tolerance:
+        verdict = (f"changed the scores by at most {shift:.2f}, so {rule} shows no sign "
+                   "of a leak")
+    else:
+        verdict = (f"changed the scores by up to {shift:.2f}, so results under {rule} "
+                   "may have gained from a leak")
+    return (f"Moving every crop estimate a month later {verdict}; at that month-late timing "
+            f"the {sources} estimate scored worse in {worse} of {len(cmp)} "
+            f"method-horizon pairs.")
 
 
 def lira_split(lira: pd.DataFrame, method: str, periods: Sequence[str]) -> pd.DataFrame:
@@ -1030,9 +1038,11 @@ def ranges_subtitle(ranges: pd.DataFrame, base: str) -> str:
             f"{held}, and {tail}.")
 
 
-def lira_subtitle(lira: pd.DataFrame, trend: Sequence[str], trend_words: str) -> str:
+def lira_subtitle(lira: pd.DataFrame, trend: Sequence[str], trend_words: str, *,
+                  caveat: str = "which is suggestive only") -> str:
     """The lira table's takeaway over all months: the first horizon, then the gains of the
-    ``trend`` methods at the longer horizons (MAPE ratio vs naive)."""
+    ``trend`` methods at the longer horizons (MAPE ratio vs naive). A gain is never stated
+    without ``caveat``: several variants were tried, so it is suggestive at most."""
     a = lira[(lira["period"] == "all") & (lira["method"] != NAIVE)]
     h1 = int(a["horizon"].min())
     first = a[a["horizon"] == h1]
@@ -1050,4 +1060,6 @@ def lira_subtitle(lira: pd.DataFrame, trend: Sequence[str], trend_words: str) ->
         size = f"{lo}% lower" if lo == hi else f"{lo}% to {hi}% lower"
     else:
         size = f"between {-lo}% higher and {hi}% lower" if hi > 0 else f"{-hi}% to {-lo}% higher"
+    if lo > 0 or hi > 0:
+        return f"{lead}; at {hs} months {trend_words} had {size} error, {caveat}."
     return f"{lead}; at {hs} months {trend_words} had {size} error."
