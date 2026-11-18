@@ -146,6 +146,7 @@ def fetch_comtrade(start: str = "2000-01") -> None:
                     continue
                 resp.raise_for_status()
                 break
+            resp.raise_for_status()  # still rate limited after every retry: fail the source
             payload = resp.json()
             if payload.get("count", 0) >= 500:
                 print(f"  warning: {period} hit the 500-row cap, data may be truncated")
