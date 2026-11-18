@@ -1,13 +1,15 @@
 # Weekly data refresh and GitHub Pages deploy for the portfolio site (site/).
 #
 # Failure behaviour:
+# - check_site_vars.py: stops the job (before any fetch or render) while site/_variables.yml
+#   still holds placeholder owner details, so a placeholder byline never deploys.
 # - fetch_raw.py: never stops the job. A source that fails has its partial raw snapshot
 #   deleted, so its tables are not rebuilt and the site keeps that source's last good
 #   files from the committed site/data/ (marked stale in the manifest).
 # - build_tables.py: never stops the job (each table is built on its own).
 # - build_site_data.py: the gate. It fails when a core output (monthly prices, price range,
-#   headline stats) cannot be rebuilt or validation finds a problem; the job stops and the
-#   site already online stays as it was.
+#   headline stats) cannot be rebuilt (or its row count drops more than 10%) or validation
+#   finds a problem; the job stops and the site already online stays as it was.
 # - Everything after that (workbook, tests, render, link check, commit) also stops the job.
 # Only the default branch commits data and deploys; a run on another ref only builds.
 
@@ -49,6 +51,9 @@ jobs:
 
       - name: Install site requirements (no torch / chronos)
         run: pip install -r requirements-site.txt && pip install -e .
+
+      - name: Check owner details (no placeholders go live)
+        run: python scripts/check_site_vars.py
 
       - uses: quarto-dev/quarto-actions/setup@8a96df13519ee81fd526f2dfca5962811136661b # v2.2.0
         with:

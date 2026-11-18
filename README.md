@@ -46,8 +46,9 @@ branch is merged to `main`.
 ## Weekly refresh
 
 `.github/workflows/refresh-site.yml` runs every Monday 05:00 UTC (and on demand):
-fetch → `build_tables.py` → `build_site_data.py` → `build_workbook.py` → `pytest tests/site` →
-`quarto render site` → link test → bot commit of `site/data/` to `main` → GitHub Pages deploy.
+`check_site_vars.py` (owner details filled in) → fetch → `build_tables.py` →
+`build_site_data.py` → `build_workbook.py` → `pytest tests/site` → `quarto render site` →
+link test → bot commit of `site/data/` to `main` → GitHub Pages deploy.
 Forecast scores come from the committed `reports/backtest/` results; only the cheap
 naive-empirical price range is recomputed each week.
 

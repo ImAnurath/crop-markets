@@ -33,7 +33,7 @@ at `/crop-markets/`.
 | Path | What it is |
 |---|---|
 | `_quarto.yml` | Site config: navbar, footer, themes (dark listed first = the default), resources copied into `_site` (`data/**`, `downloads/*.xlsx`, `assets/**`). |
-| `_variables.yml` | Owner details (`author_name`, `author_bio`, `github_url`, `linkedin_url`); placeholders until the owner fills them in. Use with `{{< var author_name >}}`. |
+| `_variables.yml` | Owner details (`author_name`, `author_bio`, `github_url`, `linkedin_url`); placeholders until the owner fills them in; `scripts/check_site_vars.py` (the workflow's first check) blocks every deploy until no value is empty, starts with `OWNER:`, says "fill in" or "placeholder", or is a `*_url` that is not a URL. Use with `{{< var author_name >}}`. |
 | `theme/tokens.scss` | Shared tokens and components: fonts, 8px radius, spacing scale (`--s1`..`--s9`), 1840px content width, gutters, honeycomb background, nav, buttons, `.eyebrow`, `.panel`, `.dash` 12-column grid with `.span-1`..`.span-12`, `.strip`/`.stat`, `.explore`, `.seg`, `.pill`, chart skeleton/error states. |
 | `theme/dark.scss`, `theme/light.scss` | Colour tokens per scheme, as Bootstrap variables and CSS custom properties (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--dim`, `--accent`, `--accent-soft`). |
 | `assets/icons.svg` | Line-icon sprite, inlined into every page: `<svg class="ico"><use href="#download"/></svg>` (`arrow-right`, `download`, `contrast`, `chevron-down`, `hexagon`). |
