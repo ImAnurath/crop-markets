@@ -253,7 +253,9 @@ a:hover { color: var(--accent); }
 .table-wrap.is-scrollable.at-end, .records-wrap.is-scrollable.at-end { -webkit-mask-image: none; mask-image: none; }
 .table-wrap.is-scrollable.at-end::before, .records-wrap.is-scrollable.at-end::before { opacity: 0; }
 // The mask would clip the focus ring, so while the wrapper has keyboard focus the fade is off.
-.records-wrap.is-scrollable:focus-visible { -webkit-mask-image: none; mask-image: none; }
+.table-wrap.is-scrollable:focus-visible, .records-wrap.is-scrollable:focus-visible { -webkit-mask-image: none; mask-image: none; }
+// Inset: the cell wrapper around these tables clips anything drawn outside the box.
+.table-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--r); }
 table.metric { font-size: 13px; }
 table.metric .n { padding-left: var(--s3); white-space: nowrap; }
 table.metric th.grp { text-align: right; color: var(--fg); font-weight: 500; padding-left: var(--s3); }
