@@ -85,7 +85,7 @@ ph.raw_html("""
 <div class="glossary">
   <section class="panel" id="seasonal-naive">
     <h3>Seasonal naive</h3>
-    <p>Takes the latest price and adds the average change that prices made, in past years, from this calendar month to the same number of months ahead. It uses only the price history.</p>
+    <p>Takes the latest price and applies the average percentage change that prices made, in past years, from this calendar month to the same number of months ahead. It uses only the price history.</p>
   </section>
   <section class="panel" id="sarima">
     <h3>SARIMA</h3>
@@ -101,11 +101,11 @@ ph.raw_html("""
   </section>
   <section class="panel" id="lightgbm">
     <h3>LightGBM</h3>
-    <p>A machine-learning method built from many small decision trees. For each number of months ahead it learns the price change from a row of inputs: recent price changes, the calendar month, the crop estimate, spring frost days, export growth and volume, and exchange-rate moves. Its settings were fixed in advance and it is refitted every month.</p>
+    <p>A machine-learning method built from many small decision trees. For each number of months ahead it learns the price change from a row of inputs: the price level and its recent changes, the calendar month, the months since the crop estimate came out, the change in the crop estimate, spring frost days, export growth, the volume traded on the exchange, and exchange-rate moves. Its settings were fixed in advance and it is refitted every month.</p>
   </section>
   <section class="panel" id="season-regression">
     <h3>Season regression</h3>
-    <p>Forecasts the average price of the coming season, not single months. It fits a straight line to past seasons: how much the season's average price changed against how much the crop estimate changed. It needs the crop estimate, so it has no forecast before the estimate comes out in August.</p>
+    <p>Forecasts the average price of the coming season, not single months. It fits a straight line to past seasons: how much the season's average price changed against how much the crop estimate changed. It needs the crop estimate, so before the estimate comes out in August the naive forecast stands in.</p>
   </section>
   <section class="panel" id="mape">
     <h3>MAPE (mean absolute percentage error)</h3>
@@ -113,7 +113,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="pinball-loss">
     <h3>Pinball loss</h3>
-    <p>The score for a range forecast. Each quantile (such as the 90th percentile) is penalised for how far the price lands from it, unevenly on purpose: for the 90th, a price above the forecast costs nine times a price below it. The site averages it over five quantiles; lower is better.</p>
+    <p>The score for a range forecast. A quantile is a cut-off the price should stay below a set share of the time (the 90th percentile: nine times in ten). Each quantile is penalised for how far the price lands from it, unevenly on purpose: for the 90th, a price above the forecast costs nine times a price below it. The site averages it over five quantiles; lower is better.</p>
   </section>
   <section class="panel" id="skill">
     <h3>Skill</h3>
@@ -121,7 +121,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="p-value">
     <h3>Statistical tests (p-value)</h3>
-    <p>The Diebold-Mariano test asks whether one method's errors are really smaller than another's, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.</p>
+    <p>The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.</p>
   </section>
   <section class="panel" id="fob">
     <h3>FOB (free on board)</h3>
