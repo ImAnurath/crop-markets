@@ -90,7 +90,7 @@ else:
     ph.raw_html(
         f'<p class="foot">{OTHER}\'s monthly price divided by {REF}\'s, minus one, in '
         f"{ph.escape(local.label)}. {OTHER}'s sheet agrees closely with TOBB's {OTHER} Levant "
-        f"series on the same days. "
+        f"series on the days both report a price. "
         f"{REF}-quality nuts usually fetch a premium over Levant, which may explain much of "
         "the gap."
         f"{' ' + ph.escape(dropped_note) if dropped_note else ''}</p>"

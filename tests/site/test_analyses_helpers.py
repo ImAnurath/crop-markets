@@ -259,6 +259,7 @@ def test_wide_table_wrappers_carry_the_scroll_hint_text():
     marked = f'<div class="table-wrap" data-scroll-hint="{SCROLL_HINT}">'
     assert marked in ph.metric_table_html(
         _board(), [("Error vs naive", "ratio", ph.fmt_ratio(3))], caption="c")
+    assert 'data-scroll-hint="Scroll for more →"' in marked
     assert marked in ph.sheet_list_html([("Prices", "Monthly prices")])
     assert marked in ph.sources_table_html([("A", "b", "https://a.example/", "c")])
 
@@ -361,7 +362,7 @@ def test_holdout_dev_note_checks_the_same_horizon_in_development():
         "development, so these wins look like luck, not skill.")
     dev.loc[(dev["method"] == "lightgbm") & (dev["horizon"] == 1), "ratio"] = 0.99
     assert ph.holdout_dev_note(_holdout(), dev) == (
-        "1 of the holdout scores under 1 was also under 1 in development at the same horizon.")
+        "1 of the holdout scores that beat naive also beat it in development at the same horizon.")
 
 
 def test_holdout_dev_note_without_a_development_loss_makes_no_luck_claim():

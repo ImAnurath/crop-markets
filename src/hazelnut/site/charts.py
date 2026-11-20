@@ -325,12 +325,13 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def crop_vs_price(crop: pd.DataFrame, x_col: str) -> go.Figure:
+def crop_vs_price(crop: pd.DataFrame, x_col: str, x_title: str) -> go.Figure:
     """Crop estimate against the season's average USD price; latest season in amber.
 
     ``crop`` is ``crop_by_year.csv``. Rows missing either value are left out; the
     latest remaining season is highlighted (it may be a season still in progress).
-    ``x_col`` is the crop-size column to plot (per-crop builders own the names). With
+    ``x_col`` is the crop-size column to plot (per-crop builders own the names) and
+    ``x_title`` its axis title (it names the source). With
     no complete rows the figure has no traces; the page shows its empty state.
     """
     df = crop.dropna(subset=[x_col, "season_avg_usd"]).sort_values("year")
@@ -356,7 +357,7 @@ def crop_vs_price(crop: pd.DataFrame, x_col: str) -> go.Figure:
         layout(
             height=300,
             xaxis=dict(showgrid=False, tickformat="~s", ticksuffix=" t",
-                       title=dict(text="Crop estimate")),
+                       title=dict(text=x_title)),
             yaxis=dict(tickprefix="$", tickformat=".2f",
                        title=dict(text="Season average")),
         )

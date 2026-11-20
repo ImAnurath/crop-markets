@@ -140,6 +140,7 @@ h3 { font-size: 16px; font-weight: 500; margin: 0; }
 p { max-width: 72ch; }
 a { color: var(--fg); text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 3px; }
 a:hover { color: var(--accent); }
+.scoreboard tr.hl td a, table.metric tr.hl td a { color: inherit; }
 .lede { font-size: 18px; color: var(--muted); max-width: 56ch; margin: 0; }
 .prose { max-width: 68ch; }
 .eyebrow {

@@ -21,7 +21,7 @@ import pandas as pd
 from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.labels import (CROP_ESTIMATE_LABEL, CROP_ESTIMATE_LABEL_NO_YEAR,
                                   FROST_CROP_FALLBACK, FROST_CROP_FALLBACK_NO_SOURCE,
-                                  HOLDOUT_LUCK_NOTE, HOLDOUT_NO_REPEAT_NOTE, OTHER_PARTNER,
+                                  HOLDOUT_LUCK_NOTE, HOLDOUT_NO_REPEAT_NOTE, HOLDOUT_REPEAT_NOTE, OTHER_PARTNER,
                                   METHOD_ANCHORS, SCROLL_HINT, method_name)
 
 NA = "n/a"
@@ -832,7 +832,7 @@ def metric_table_html(df: pd.DataFrame, groups, *, caption: str, row: str = "met
         body.append(f"<tr{cls}><td>{method_cell(str(k), name_of(k), methods_href)}</td>{''.join(cells)}</tr>")
     return (
         # Quarto restyles raw HTML tables (striped, visible caption) unless told not to.
-        f'<div class="table-wrap" data-scroll-hint="{SCROLL_HINT}">'
+        f'<div class="table-wrap" data-scroll-hint="{escape(SCROLL_HINT)}">'
         '<table class="metric" data-quarto-disable-processing="true">'
         f'<caption class="visually-hidden">{escape(caption)}</caption>'
         f"<thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"
@@ -921,9 +921,7 @@ def holdout_dev_note(holdout: pd.DataFrame, dev: pd.DataFrame) -> str | None:
         return HOLDOUT_LUCK_NOTE
     if both == 0:
         return HOLDOUT_NO_REPEAT_NOTE
-    verb = "was" if both == 1 else "were"
-    return (f"{both} of the holdout scores under 1 {verb} also under 1 in development at the "
-            "same horizon.")
+    return HOLDOUT_REPEAT_NOTE.format(n=both)
 
 
 def forecast_3m_subtitle(f: pd.DataFrame, horizon: int) -> str:
@@ -1199,7 +1197,7 @@ def sheet_list_html(rows: Sequence[tuple[str, str]]) -> str:
     body = "".join(f"<tr><td>{escape(name)}</td><td>{escape(note)}</td></tr>"
                    for name, note in rows)
     return (
-        f'<div class="table-wrap" data-scroll-hint="{SCROLL_HINT}">'
+        f'<div class="table-wrap" data-scroll-hint="{escape(SCROLL_HINT)}">'
         '<table class="metric sheets" '
         'data-quarto-disable-processing="true">'
         '<caption class="visually-hidden">Sheets in the workbook</caption>'
@@ -1217,7 +1215,7 @@ def sources_table_html(sources: Sequence) -> str:
         for name, what, url, terms in sources
     )
     return (
-        f'<div class="table-wrap" data-scroll-hint="{SCROLL_HINT}">'
+        f'<div class="table-wrap" data-scroll-hint="{escape(SCROLL_HINT)}">'
         '<table class="metric sources" '
         'data-quarto-disable-processing="true">'
         '<caption class="visually-hidden">Data sources and their terms</caption>'

@@ -37,6 +37,12 @@ HOLDOUT_LUCK_NOTE = ("Each score that beat naive in the holdout had lost to naiv
 HOLDOUT_NO_REPEAT_NOTE = ("None of the holdout scores that beat naive also beat it in "
                           "development at the same horizon.")
 
+HOLDOUT_REPEAT_NOTE = ("{n} of the holdout scores that beat naive also beat it in development "
+                       "at the same horizon.")
+
+# Footnote under the crop-and-frost chart naming whose crop figures are plotted.
+CROP_FIGURES_NOTE = "The crop figures are the {source} exchange's estimates."
+
 # Frost page subtitle when there are too few years to correlate.
 FROST_CROP_FALLBACK = "Spring frost days against the {source} crop estimate."
 FROST_CROP_FALLBACK_NO_SOURCE = "Spring frost days against the crop estimate."

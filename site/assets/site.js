@@ -175,11 +175,11 @@
       if (!wrapSeen.has(w)) {
         wrapSeen.add(w);
         w.addEventListener("scroll", function () { checkWrap(w); }, { passive: true });
-      }
-      if (wrapRO) {
-        wrapRO.observe(w);
-        var t = w.querySelector("table");
-        if (t) wrapRO.observe(t);
+        if (wrapRO) {
+          wrapRO.observe(w);
+          var t = w.querySelector("table");
+          if (t) wrapRO.observe(t);
+        }
       }
       checkWrap(w);
     });

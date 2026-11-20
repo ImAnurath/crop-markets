@@ -184,7 +184,7 @@ def test_crop_vs_price_highlights_latest_year_in_accent():
             "season_avg_usd": [None, 3.2, 3.5, 6.0, 4.3],
         }
     )
-    fig = charts.crop_vs_price(crop, "giresun_estimate_t")
+    fig = charts.crop_vs_price(crop, "giresun_estimate_t", "Giresun crop estimate")
     accent = [t for t in fig.data if t.marker.color == charts.ACCENT]
     assert len(accent) == 1
     assert "2026" in accent[0].name
@@ -192,6 +192,7 @@ def test_crop_vs_price_highlights_latest_year_in_accent():
     # rows without a season price are dropped, the rest drawn in the neutral colour
     others = [t for t in fig.data if t is not accent[0]]
     assert sum(len(t.x) for t in others) == 3
+    assert fig.layout.xaxis.title.text == "Giresun crop estimate"
 
 
 def test_crop_vs_price_with_no_complete_rows_is_an_empty_figure():
@@ -199,7 +200,7 @@ def test_crop_vs_price_with_no_complete_rows_is_an_empty_figure():
         {"year": [2025, 2026], "season": ["2025/26", "2026/27"],
          "giresun_estimate_t": [60.0, None], "season_avg_usd": [None, 4.3]}
     )
-    fig = charts.crop_vs_price(crop, "giresun_estimate_t")
+    fig = charts.crop_vs_price(crop, "giresun_estimate_t", "Giresun crop estimate")
     assert len(fig.data) == 0
     assert fig.layout.paper_bgcolor == "rgba(0,0,0,0)"
 
