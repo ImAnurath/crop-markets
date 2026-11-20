@@ -80,6 +80,58 @@ ph.raw_html(f"""
 ```
 
 ```{python}
+ph.raw_html("""
+<div class="sect analysis-sect"><div><span class="eyebrow">Glossary</span><h2>The forecasting methods, in plain language</h2></div></div>
+<div class="glossary">
+  <section class="panel" id="seasonal-naive">
+    <h3>Seasonal naive</h3>
+    <p>Takes the latest price and adds the average change that prices made, in past years, from this calendar month to the same number of months ahead. It uses only the price history.</p>
+  </section>
+  <section class="panel" id="sarima">
+    <h3>SARIMA</h3>
+    <p>A classic statistical model of the price history. It looks for a steady drift, for patterns that follow from recent months, and for a yearly cycle. It is fitted to the log of the price and uses nothing but the price itself.</p>
+  </section>
+  <section class="panel" id="sarimax">
+    <h3>SARIMAX</h3>
+    <p>SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (US dollars to lira). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.</p>
+  </section>
+  <section class="panel" id="chronos-bolt">
+    <h3>Chronos-Bolt</h3>
+    <p>A ready-made forecasting model (the small size of Amazon's Chronos-Bolt) that was trained on many other time series. We use it as it comes, with no training on our data. It reads only the price history and its forecast is its median guess.</p>
+  </section>
+  <section class="panel" id="lightgbm">
+    <h3>LightGBM</h3>
+    <p>A machine-learning method built from many small decision trees. For each number of months ahead it learns the price change from a row of inputs: recent price changes, the calendar month, the crop estimate, spring frost days, export growth and volume, and exchange-rate moves. Its settings were fixed in advance and it is refitted every month.</p>
+  </section>
+  <section class="panel" id="season-regression">
+    <h3>Season regression</h3>
+    <p>Forecasts the average price of the coming season, not single months. It fits a straight line to past seasons: how much the season's average price changed against how much the crop estimate changed. It needs the crop estimate, so it has no forecast before the estimate comes out in August.</p>
+  </section>
+  <section class="panel" id="mape">
+    <h3>MAPE (mean absolute percentage error)</h3>
+    <p>How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with lira prices across decades of inflation, because a percentage stays comparable.</p>
+  </section>
+  <section class="panel" id="pinball-loss">
+    <h3>Pinball loss</h3>
+    <p>The score for a range forecast. Each quantile (such as the 90th percentile) is penalised for how far the price lands from it, unevenly on purpose: for the 90th, a price above the forecast costs nine times a price below it. The site averages it over five quantiles; lower is better.</p>
+  </section>
+  <section class="panel" id="skill">
+    <h3>Skill</h3>
+    <p>How much better a forecast did than a baseline: 1 minus its error divided by the baseline's. Above 0 beats the baseline, 0 ties it, and below 0 is worse. For point forecasts the error is MAE and the baseline is naive; for ranges it is pinball loss and the baseline is the naive range.</p>
+  </section>
+  <section class="panel" id="p-value">
+    <h3>Statistical tests (p-value)</h3>
+    <p>The Diebold-Mariano test asks whether one method's errors are really smaller than another's, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.</p>
+  </section>
+  <section class="panel" id="fob">
+    <h3>FOB (free on board)</h3>
+    <p>An export's value counted at the port of departure, before freight and insurance to the buyer are added. The export values on this site are FOB.</p>
+  </section>
+</div>
+""")
+```
+
+```{python}
 # What each crop's forecast tests found, computed from its results tables (the same words
 # as its forecasting page). Crops without results are skipped.
 blocks = []

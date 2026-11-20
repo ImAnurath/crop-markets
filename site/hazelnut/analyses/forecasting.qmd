@@ -106,7 +106,8 @@ else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.dev_subtitle(dev)))
     ph.raw_html(ph.metric_table_html(dev, [("Error ÷ naive's", "ratio", RATIO3)],
                                      caption="Development-period error divided by naive's, "
-                                             "by months ahead", order=order))
+                                             "by months ahead", order=order,
+                                     methods_href="../../methods.qmd"))
     naive = dev[dev["method"] == ph.NAIVE].sort_values("horizon")
     ph.raw_html(
         '<p class="foot">Mean absolute error divided by naive\'s on the same forecasts; above '
@@ -245,8 +246,10 @@ else:
         order=ph.ranges_order(ranges, RANGE_BASE), highlight=RANGE_BASE))
     ph.raw_html(
         '<p class="foot">Held: share of months the actual price fell inside the range. '
-        "Width: the average 8-in-10 range, USD per kg. Skill: 1 minus the method's pinball "
-        "loss (averaged over five quantiles) divided by the first row's; above 0 would beat "
+        "Width: the average 8-in-10 range, USD per kg. "
+        '<a href="../../methods.qmd#skill">Skill</a>: 1 minus the method\'s '
+        '<a href="../../methods.qmd#pinball-loss">pinball loss</a> '
+        "(averaged over five quantiles) divided by the first row's; above 0 would beat "
         "it. Development period.</p>"
     )
 ```
@@ -272,7 +275,7 @@ else:
     wide.columns = ["Calm months", "Lira crises"]
     charts.show(charts.ratio_bars(wide, highlight="Lira crises"))
     ph.raw_html(
-        '<p class="foot">MAPE divided by lira naive\'s, development period (36-month trend). '
+        '<p class="foot"><a href="../../methods.qmd#mape">MAPE</a> divided by lira naive\'s, development period (36-month trend). '
         f"Lira crises: {ph.periods_label(LIRA_CRISES)}. This is the lira's own depreciation "
         "trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no "
         "hazelnut-market signal.</p>"
@@ -300,7 +303,8 @@ else:
         names=LIRA_NAMES.get, order=list(LIRA_NAMES)))
     ph.raw_html(
         '<p class="foot">Development period, all months. MAPE is the fair measure here; MAE is '
-        "dominated by the high-inflation years. Diebold-Mariano test on |log error| against "
+        "dominated by the high-inflation years. "
+        '<a href="../../methods.qmd#p-value">Diebold-Mariano test</a> on |log error| against '
         f"lira naive, all months: {ph.escape(ph.lira_p_note(lira, LIRA_TRENDS))} Six FX "
         "variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for "
         "the calm or crisis months alone would be approximate (their months are not "

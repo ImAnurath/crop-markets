@@ -142,7 +142,8 @@ if scoreboard is None:
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html("Forecast scoreboard", ph.scoreboard_subtitle(scoreboard)))
-    ph.raw_html(ph.scoreboard_html(scoreboard, holdout, "analyses/forecasting.qmd"))
+    ph.raw_html(ph.scoreboard_html(scoreboard, holdout, "analyses/forecasting.qmd",
+                                   methods_href="../methods.qmd"))
 ```
 :::
 

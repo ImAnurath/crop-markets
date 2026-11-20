@@ -22,7 +22,7 @@ from hazelnut.site.config import CropConfig, LocalCurrency
 from hazelnut.site.labels import (CROP_ESTIMATE_LABEL, CROP_ESTIMATE_LABEL_NO_YEAR,
                                   FROST_CROP_FALLBACK, FROST_CROP_FALLBACK_NO_SOURCE,
                                   HOLDOUT_LUCK_NOTE, HOLDOUT_NO_REPEAT_NOTE, OTHER_PARTNER,
-                                  method_name)
+                                  METHOD_ANCHORS, method_name)
 
 NA = "n/a"
 MINUS = "−"
@@ -469,8 +469,19 @@ def _holdout_sentence(holdout: pd.DataFrame) -> str:
     return f"Holdout ({HOLDOUT_NOTE}): {who}."
 
 
-def scoreboard_html(dev: pd.DataFrame, holdout: pd.DataFrame | None, analysis_href: str) -> str:
-    """The dev scoreboard as a table (naive row in amber) and its footnote."""
+def method_cell(method: str, name: str, methods_href: str | None) -> str:
+    """A method's table label, linked to its Methods page card when ``methods_href`` (the
+    relative path of methods.qmd) is given and the method has one."""
+    anchor = METHOD_ANCHORS.get(method)
+    if methods_href is None or anchor is None:
+        return escape(name)
+    return f'<a href="{escape(methods_href)}#{anchor}">{escape(name)}</a>'
+
+
+def scoreboard_html(dev: pd.DataFrame, holdout: pd.DataFrame | None, analysis_href: str,
+                    methods_href: str | None = None) -> str:
+    """The dev scoreboard as a table (naive row in amber) and its footnote. With
+    ``methods_href`` each method name links to its Methods page card."""
     horizons = sorted(int(h) for h in dev["horizon"].unique())
     head = "".join(f'<th class="n" scope="col">{h} mo</th>' for h in horizons)
     body = []
@@ -478,7 +489,7 @@ def scoreboard_html(dev: pd.DataFrame, holdout: pd.DataFrame | None, analysis_hr
         cls = ' class="hl"' if m == NAIVE else ""
         cells = "".join(f'<td class="n">{r[h]:.2f}</td>' if h in r else '<td class="n">n/a</td>'
                         for h in horizons)
-        body.append(f"<tr{cls}><td>{escape(name)}</td>{cells}</tr>")
+        body.append(f"<tr{cls}><td>{method_cell(m, name, methods_href)}</td>{cells}</tr>")
     nmin, nmax = int(dev["n"].min()), int(dev["n"].max())
     count = f"{nmin}" if nmin == nmax else f"{nmin} to {nmax}"
     foot = f"Ratio of mean absolute errors, over {count} forecasts per horizon."
@@ -786,13 +797,14 @@ def fmt_p(x) -> str:
 def metric_table_html(df: pd.DataFrame, groups, *, caption: str, row: str = "method",
                       col: str = "horizon", names=None, order: Sequence | None = None,
                       highlight: str | None = NAIVE, row_head: str = "Method",
-                      col_label=None) -> str:
+                      col_label=None, methods_href: str | None = None) -> str:
     """A table from a long frame: one row per ``row`` value, and for each group
     ``(label, value column, formatter)`` one column per ``col`` value (horizons by default,
     headed "1 mo"). With more than one group a spanning header names each group.
 
     ``names`` maps a row key to its label (falling back to ``method_name``); ``order``
-    sets the row order (default: first appearance); the ``highlight`` row is amber."""
+    sets the row order (default: first appearance); the ``highlight`` row is amber. With
+    ``methods_href`` (rows that are methods) each name links to its Methods page card."""
     cols = sorted(df[col].unique())
     keys = list(order) if order is not None else list(dict.fromkeys(df[row]))
     label = col_label or (lambda c: f"{c} mo")
@@ -817,7 +829,7 @@ def metric_table_html(df: pd.DataFrame, groups, *, caption: str, row: str = "met
                 v = values[vcol].get((k, c), math.nan)
                 cells.append(f'<td class="n">{fmt(v)}</td>')
         cls = ' class="hl"' if highlight is not None and k == highlight else ""
-        body.append(f"<tr{cls}><td>{escape(name_of(k))}</td>{''.join(cells)}</tr>")
+        body.append(f"<tr{cls}><td>{method_cell(str(k), name_of(k), methods_href)}</td>{''.join(cells)}</tr>")
     return (
         # Quarto restyles raw HTML tables (striped, visible caption) unless told not to.
         '<div class="table-wrap"><table class="metric" data-quarto-disable-processing="true">'

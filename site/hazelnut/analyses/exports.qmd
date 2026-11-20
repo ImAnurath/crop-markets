@@ -92,7 +92,7 @@ else:
     charts.show(charts.compare_lines(uv["month"], uv["usd_per_kg"], uv["usd_kg"],
                                      "Shelled exports", "Giresun in-shell"))
     ph.raw_html(
-        '<p class="foot">Shelled exports: FOB value divided by net weight, all destinations '
+        '<p class="foot">Shelled exports: <a href="../../methods.qmd#fob">FOB</a> value divided by net weight, all destinations '
         "(UN Comtrade). Giresun in-shell: the exchange's monthly average. Shelling roughly "
         "halves the weight, which accounts for most of the gap; in-shell exports are too "
         "small to compare.</p>"

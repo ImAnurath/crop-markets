@@ -283,3 +283,10 @@ def test_crop_panel_complete_latest_season_is_kept():
     _, sub, note = ph.crop_panel(CROP, "crop_t", None)
     assert note is None
     assert sub.startswith("Over 4 seasons,")
+
+
+def test_scoreboard_html_links_method_names_to_their_methods_cards():
+    html = ph.scoreboard_html(DEV, None, "x.qmd", methods_href="../methods.qmd")
+    assert '<a href="../methods.qmd#naive">Naive</a>' in html
+    assert "../methods.qmd#" in html
+    assert "methods.qmd" not in ph.scoreboard_html(DEV, None, "x.qmd")

@@ -11,6 +11,14 @@ METHOD_NAMES = {
 }
 
 
+# The Methods page card that explains each method (its anchor id).
+METHOD_ANCHORS = {
+    "naive": "naive", "seasonal_naive": "seasonal-naive", "sarima": "sarima",
+    "sarimax": "sarimax", "season_reg": "season-regression", "lightgbm": "lightgbm",
+    "chronos": "chronos-bolt",
+}
+
+
 # The exports table's bucket for every partner outside the top ten.
 OTHER_PARTNER = "Other"
 

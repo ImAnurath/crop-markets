@@ -70,3 +70,32 @@ def test_rendered_site_has_no_root_absolute_links():
     assert (RENDERED / "404.html").is_file(), "404.html missing from the rendered site"
     bad = root_absolute_links(RENDERED)
     assert not bad, f"{len(bad)} root-absolute link(s) outside /{SITE_PATH}/:\n" + "\n".join(bad[:20])
+
+
+METHODS_REF = re.compile(r"""href\s*=\s*["'][^"']*methods\.html#([^"']+)["']""", re.I)
+ID_ATTR = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
+
+
+def missing_methods_anchors(site_dir: Path) -> list[str]:
+    """Every `methods.html#id` link in the HTML under `site_dir` whose id is not in methods.html."""
+    ids = set(ID_ATTR.findall((Path(site_dir) / "methods.html").read_text(encoding="utf-8")))
+    bad = []
+    for path in sorted(Path(site_dir).rglob("*.html")):
+        for anchor in METHODS_REF.findall(path.read_text(encoding="utf-8", errors="replace")):
+            if anchor not in ids:
+                bad.append(f"{path.relative_to(site_dir).as_posix()}: #{anchor}")
+    return bad
+
+
+def test_missing_methods_anchors_on_a_tiny_site(tmp_path):
+    (tmp_path / "methods.html").write_text('<section id="sarima"></section>', encoding="utf-8")
+    (tmp_path / "a.html").write_text(
+        '<a href="../methods.html#sarima">ok</a><a href="methods.html#nope">bad</a>',
+        encoding="utf-8")
+    assert missing_methods_anchors(tmp_path) == ["a.html: #nope"]
+
+
+@pytest.mark.skipif(not RENDERED.is_dir(), reason="site/_site not rendered (run quarto render site)")
+def test_rendered_methods_links_point_at_existing_cards():
+    bad = missing_methods_anchors(RENDERED)
+    assert not bad, "methods.html anchors that do not exist:\n" + "\n".join(bad[:20])
