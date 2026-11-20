@@ -19,6 +19,10 @@ METHOD_ANCHORS = {
 }
 
 
+# Shown above a table that is wider than its card, so a reader knows it scrolls sideways.
+SCROLL_HINT = "Scroll for more →"
+
+
 # The exports table's bucket for every partner outside the top ten.
 OTHER_PARTNER = "Other"
 

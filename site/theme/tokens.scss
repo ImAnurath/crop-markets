@@ -237,6 +237,20 @@ a:hover { color: var(--accent); }
 .dash + .dash { margin-top: var(--s4); }
 // Wide tables scroll inside their panel on narrow screens, never the page
 .table-wrap { overflow-x: auto; }
+// site.js adds .is-scrollable when a wrapper is wider than its card, and .at-end once it is
+// scrolled all the way right. The hint text comes from the wrapper's data-scroll-hint.
+.table-wrap.is-scrollable::before, .records-wrap.is-scrollable::before {
+  content: attr(data-scroll-hint); display: block; position: sticky; left: 0; width: max-content;
+  margin-bottom: var(--s2); font: 500 12px/1.4 var(--mono); color: var(--muted);
+  transition: opacity .2s;
+}
+.table-wrap.is-scrollable, .records-wrap.is-scrollable {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+}
+.table-wrap.is-scrollable.at-end, .records-wrap.is-scrollable.at-end { -webkit-mask-image: none; mask-image: none; }
+.table-wrap.is-scrollable.at-end::before, .records-wrap.is-scrollable.at-end::before { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .table-wrap::before, .records-wrap::before { transition: none; } }
 table.metric { font-size: 13px; }
 table.metric .n { padding-left: var(--s3); white-space: nowrap; }
 table.metric th.grp { text-align: right; color: var(--fg); font-weight: 500; padding-left: var(--s3); }

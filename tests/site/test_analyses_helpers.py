@@ -254,6 +254,22 @@ def test_metric_table_html_groups_rows_and_highlight():
     assert "colspan" not in html
 
 
+def test_wide_table_wrappers_carry_the_scroll_hint_text():
+    from hazelnut.site.labels import SCROLL_HINT
+    marked = f'<div class="table-wrap" data-scroll-hint="{SCROLL_HINT}">'
+    assert marked in ph.metric_table_html(
+        _board(), [("Error vs naive", "ratio", ph.fmt_ratio(3))], caption="c")
+    assert marked in ph.sheet_list_html([("Prices", "Monthly prices")])
+    assert marked in ph.sources_table_html([("A", "b", "https://a.example/", "c")])
+
+
+def test_explorer_records_wrapper_carries_the_scroll_hint():
+    from pathlib import Path
+    qmd = (Path(__file__).parents[2] / "site/hazelnut/explorer.qmd").read_text(encoding="utf-8")
+    assert "scroll_hint=SCROLL_HINT" in qmd
+    assert 'class="records-wrap"' in qmd and "data-scroll-hint=${explorer.scroll_hint}" in qmd
+
+
 def test_metric_table_html_two_groups_have_a_spanning_header_and_na():
     df = _board()
     df.loc[(df["method"] == "sarima") & (df["horizon"] == 3), "mae"] = np.nan

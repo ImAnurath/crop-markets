@@ -160,8 +160,43 @@
     document.head.appendChild(s);
   }
 
+  // Mark table wrappers that are wider than their card, so CSS can show a fade and hint.
+  var WRAPS = ".table-wrap, .records-wrap";
+  var wrapRO = window.ResizeObserver ? new ResizeObserver(function (es) {
+    es.forEach(function (e) { var w = e.target.closest(WRAPS); if (w) checkWrap(w); });
+  }) : null;
+  var wrapSeen = new WeakSet();
+  function checkWrap(w) {
+    w.classList.toggle("is-scrollable", w.scrollWidth > w.clientWidth + 1);
+    w.classList.toggle("at-end", w.scrollLeft + w.clientWidth >= w.scrollWidth - 1);
+  }
+  function scanWraps() {
+    document.querySelectorAll(WRAPS).forEach(function (w) {
+      if (!wrapSeen.has(w)) {
+        wrapSeen.add(w);
+        w.addEventListener("scroll", function () { checkWrap(w); }, { passive: true });
+      }
+      if (wrapRO) {
+        wrapRO.observe(w);
+        var t = w.querySelector("table");
+        if (t) wrapRO.observe(t);
+      }
+      checkWrap(w);
+    });
+  }
+
   function init() {
     decorateNav();
+    scanWraps();
+    window.addEventListener("resize", scanWraps);
+    // The explorer redraws its table in place on every filter change.
+    var main = document.querySelector("main") || document.body;
+    var pending = false;
+    new MutationObserver(function () {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () { pending = false; scanWraps(); });
+    }).observe(main, { childList: true, subtree: true });
     loadPlotly();
     // The scheme toggle flips body classes; a re-enabled stylesheet may finish
     // loading a moment later, so listen for both.
