@@ -13,6 +13,7 @@ data_dir = SITE_DIR / "data" / crop.slug
 manifest = ph.read_json_or_none(data_dir / "manifest.json")
 stamp = ph.as_of_stamp(manifest) if manifest is not None else None
 
+SOURCE = crop.exchanges[0]  # whose crop estimate is plotted (the Giresun exchange's)
 CROP_COL = "giresun_estimate_t"  # the crop size plotted: Giresun exchange's estimate
 FROST_YEARS = (2004, 2014)       # the two frost years that carry the crop/price link
 FROST_LAST_MONTH = 4             # frost days are counted over March and April
@@ -52,7 +53,7 @@ if crop_by_year is not None:
         parts.append(f"Two frost years carry much of that: {lower_first(without)}")
 if frost_crop is not None:
     parts.append("A plain count of spring frost days says less: "
-                 + lower_first(ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL)))
+                 + lower_first(ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL, SOURCE)))
 found = " ".join(parts) or "Crop size against price, and spring frost against crop size."
 ph.raw_html(ph.analysis_head_html(crop.name, "Crop and frost",
                                   "Bigger crop, lower price? And what frost does", found, stamp))
@@ -86,11 +87,11 @@ if frost_crop is None:
     ph.raw_html(ph.panel_head_html(TITLE, "March-April frost days against the crop estimate."))
     ph.raw_html(ph.unavailable_html())
 else:
-    ph.raw_html(ph.panel_head_html(TITLE, ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL)))
+    ph.raw_html(ph.panel_head_html(TITLE, ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL, SOURCE)))
     smallest = frost_crop.nsmallest(2, CROP_COL)["year"].tolist()
     charts.show(charts.labeled_scatter(frost_crop, "frost_days", CROP_COL, "year",
                                        highlight=smallest, x_title="Frost days",
-                                       y_title="Crop estimate", y_suffix=" t"))
+                                       y_title=f"{SOURCE} crop estimate", y_suffix=" t"))
     notes = ["The crop figures are the Giresun exchange's estimates.",
              ph.smallest_crops_note(frost_crop, "frost_days", CROP_COL),
              "A count of cold days does not say how hard or when the frost hit; one bad "

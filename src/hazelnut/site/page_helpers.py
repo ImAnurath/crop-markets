@@ -19,7 +19,9 @@ from typing import Mapping
 import pandas as pd
 
 from hazelnut.site.config import CropConfig, LocalCurrency
-from hazelnut.site.labels import (CROP_ESTIMATE_LABEL, CROP_ESTIMATE_LABEL_NO_YEAR, OTHER_PARTNER,
+from hazelnut.site.labels import (CROP_ESTIMATE_LABEL, CROP_ESTIMATE_LABEL_NO_YEAR,
+                                  FROST_CROP_FALLBACK, FROST_CROP_FALLBACK_NO_SOURCE,
+                                  HOLDOUT_LUCK_NOTE, HOLDOUT_NO_REPEAT_NOTE, OTHER_PARTNER,
                                   method_name)
 
 NA = "n/a"
@@ -711,10 +713,13 @@ def frost_words(r: float) -> str:
     return "more frost days have not meant smaller crops"
 
 
-def frost_crop_subtitle(df: pd.DataFrame, frost_col: str, crop_col: str) -> str:
+def frost_crop_subtitle(df: pd.DataFrame, frost_col: str, crop_col: str,
+                        crop_source: str | None = None) -> str:
     d = df.dropna(subset=[frost_col, crop_col])
     if len(d) < MIN_SEASONS:
-        return "Spring frost days against the crop estimate."
+        if crop_source:
+            return FROST_CROP_FALLBACK.format(source=crop_source)
+        return FROST_CROP_FALLBACK_NO_SOURCE
     r = float(d[frost_col].corr(d[crop_col]))
     return f"Over {len(d)} years, {frost_words(r)} (correlation {_r_text(r)})."
 
@@ -887,12 +892,6 @@ def holdout_subtitle(holdout: pd.DataFrame) -> str:
     tail = ", each from a method that lost at another horizon" if lost else ""
     return (f"{lead} No method beat naive at every horizon; {len(under)} of {len(others)} "
             f"scores came in under 1{tail}.")
-
-
-HOLDOUT_LUCK_NOTE = ("Each score that beat naive in the holdout had lost to naive at that same "
-                     "horizon in development, so these wins look like luck, not skill.")
-HOLDOUT_NO_REPEAT_NOTE = ("None of the holdout scores that beat naive also beat it in "
-                          "development at the same horizon.")
 
 
 def holdout_dev_note(holdout: pd.DataFrame, dev: pd.DataFrame) -> str | None:

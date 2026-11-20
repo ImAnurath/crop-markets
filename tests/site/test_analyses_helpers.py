@@ -201,6 +201,11 @@ def test_frost_crop_subtitle_and_smallest_note():
     sub = ph.frost_crop_subtitle(df, "frost_days", "crop_t")
     r = df["frost_days"].corr(df["crop_t"])
     assert f"{r:.2f}".replace("-", "−") in sub and "Over 5 years" in sub
+    few = df.head(2)
+    assert ph.frost_crop_subtitle(few, "frost_days", "crop_t", "Giresun") == (
+        "Spring frost days against the Giresun crop estimate.")
+    assert ph.frost_crop_subtitle(few, "frost_days", "crop_t") == (
+        "Spring frost days against the crop estimate.")
     note = ph.smallest_crops_note(df, "frost_days", "crop_t", n=2)
     assert note == "The two smallest crops, 4 and 2, followed 3.0 and 9.0 frost days."
 
@@ -341,6 +346,14 @@ def test_holdout_dev_note_checks_the_same_horizon_in_development():
     dev.loc[(dev["method"] == "lightgbm") & (dev["horizon"] == 1), "ratio"] = 0.99
     assert ph.holdout_dev_note(_holdout(), dev) == (
         "1 of the holdout scores under 1 was also under 1 in development at the same horizon.")
+
+
+def test_holdout_dev_note_without_a_development_loss_makes_no_luck_claim():
+    dev = _board()
+    dev.loc[(dev["method"] == "lightgbm") & (dev["horizon"] == 1), "ratio"] = 1.0  # a tie, not a loss
+    assert ph.holdout_dev_note(_holdout(), dev) == (
+        "None of the holdout scores that beat naive also beat it in development at the same "
+        "horizon.")
 
 
 def test_forecast_3m_subtitle():
