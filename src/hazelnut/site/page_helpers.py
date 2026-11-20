@@ -19,7 +19,8 @@ from typing import Mapping
 import pandas as pd
 
 from hazelnut.site.config import CropConfig, LocalCurrency
-from hazelnut.site.labels import OTHER_PARTNER, method_name
+from hazelnut.site.labels import (CROP_ESTIMATE_LABEL, CROP_ESTIMATE_LABEL_NO_YEAR, OTHER_PARTNER,
+                                  method_name)
 
 NA = "n/a"
 MINUS = "−"
@@ -129,7 +130,7 @@ def market_strip_html(stats: Mapping, *, local_name: str, local: LocalCurrency, 
 
     ``local_name`` names the local currency in the label ("Price, lira"), ``local`` is the
     crop's local currency (its label is the unit, "TL" -> "TL/kg", and its column names the
-    stats keys), ``crop_source`` says whose crop estimate it is.
+    stats keys), ``crop_source`` says whose crop estimate it is (named in the tile label).
     """
     name, unit, source = escape(local_name), escape(local.label), escape(crop_source)
     prev = previous_month_name(stats["as_of"])
@@ -142,14 +143,17 @@ def market_strip_html(stats: Mapping, *, local_name: str, local: LocalCurrency, 
     year = stats.get("crop_year")
     estimate = stats.get("crop_estimate_t")
     if _missing(estimate):
-        crop_value, crop_sub = NA, f"{source}, no estimate yet"
+        crop_value, crop_sub = NA, "no estimate yet"
     else:
         crop_value = f"{fmt_tonnes(estimate)}<small> t</small>"
         if _missing(stats.get("crop_yoy")) or _missing(year):
-            crop_sub = f"{source}, no earlier year to compare"
+            crop_sub = "no earlier year to compare"
         else:
-            crop_sub = f"{source}, {_change_span(stats['crop_yoy'])} on {int(year) - 1}"
-    crop_label = "Crop estimate" if _missing(year) else f"{int(year)} crop estimate"
+            crop_sub = f"{_change_span(stats['crop_yoy'])} on {int(year) - 1}"
+    if _missing(year):
+        crop_label = CROP_ESTIMATE_LABEL_NO_YEAR.format(source=source)
+    else:
+        crop_label = CROP_ESTIMATE_LABEL.format(source=source, year=int(year))
 
     usd = fmt_usd(stats.get("usd_kg"))
     local_price = fmt_number(stats.get(local.column))
@@ -885,6 +889,12 @@ def holdout_subtitle(holdout: pd.DataFrame) -> str:
             f"scores came in under 1{tail}.")
 
 
+HOLDOUT_LUCK_NOTE = ("Each score that beat naive in the holdout had lost to naive at that same "
+                     "horizon in development, so these wins look like luck, not skill.")
+HOLDOUT_NO_REPEAT_NOTE = ("None of the holdout scores that beat naive also beat it in "
+                          "development at the same horizon.")
+
+
 def holdout_dev_note(holdout: pd.DataFrame, dev: pd.DataFrame) -> str | None:
     """Whether the holdout's scores under 1 were also under 1 in development."""
     under = holdout[(holdout["method"] != NAIVE) & (holdout["ratio"] < 1)]
@@ -893,8 +903,12 @@ def holdout_dev_note(holdout: pd.DataFrame, dev: pd.DataFrame) -> str | None:
     d = dev.set_index(["method", "horizon"])["ratio"]
     both = sum(1 for m, h in zip(under["method"], under["horizon"])
                if (m, h) in d.index and float(d[(m, h)]) < 1)
+    lost = sum(1 for m, h in zip(under["method"], under["horizon"])
+               if (m, h) in d.index and float(d[(m, h)]) > 1)
+    if both == 0 and lost == len(under):
+        return HOLDOUT_LUCK_NOTE
     if both == 0:
-        return "None of the holdout scores under 1 was under 1 in development at the same horizon."
+        return HOLDOUT_NO_REPEAT_NOTE
     verb = "was" if both == 1 else "were"
     return (f"{both} of the holdout scores under 1 {verb} also under 1 in development at the "
             "same horizon.")

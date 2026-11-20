@@ -91,7 +91,8 @@ else:
     charts.show(charts.labeled_scatter(frost_crop, "frost_days", CROP_COL, "year",
                                        highlight=smallest, x_title="Frost days",
                                        y_title="Crop estimate", y_suffix=" t"))
-    notes = [ph.smallest_crops_note(frost_crop, "frost_days", CROP_COL),
+    notes = ["The crop figures are the Giresun exchange's estimates.",
+             ph.smallest_crops_note(frost_crop, "frost_days", CROP_COL),
              "A count of cold days does not say how hard or when the frost hit; one bad "
              "night at flowering can do the damage.",
              "Frost days: March-April days below 0 °C, averaged over the growing-area weather "

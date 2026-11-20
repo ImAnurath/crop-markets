@@ -222,7 +222,7 @@ WORKBOOK_SHEET_NOTES = {
     "Ordu": "Monthly Ordu exchange price",
     "Exports": "Monthly exports by destination",
     "Top destinations": "Largest export destinations",
-    "Crop": "Crop size by year and season average price",
+    "Crop": "The Giresun exchange's crop estimate by year, and the season average price",
     "Forecast range": "Empirical price range by horizon, in USD/kg",
 }
 

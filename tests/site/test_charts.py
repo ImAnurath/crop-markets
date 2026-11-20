@@ -38,6 +38,7 @@ def test_price_history_takes_the_local_currency_from_the_caller(prices):
     fig = charts.price_history(prices, SHOCK_PERIODS, "eur_kg", "EUR")
     assert _button_labels(fig.layout.updatemenus[0]) == ["USD", "EUR"]
     assert [t.name for t in fig.data] == ["USD", "EUR"]
+    assert fig.layout.yaxis2.ticksuffix == " EUR"
     assert list(fig.data[1].y) == list(prices["eur_kg"])
     assert "EUR/kg" in fig.data[1].hovertemplate
 
@@ -52,6 +53,8 @@ def test_price_history_local_view_uses_a_log_axis(prices):
     assert fig.layout.yaxis2.overlaying == "y" and fig.layout.yaxis2.visible is False
     # its own round log ticks (1, 2, 5 x 10^n), not synced to the USD axis
     assert fig.layout.yaxis2.tickmode == "linear" and fig.layout.yaxis2.dtick == "D2"
+    # ticks carry the currency; the USD ticks keep their "$"
+    assert fig.layout.yaxis2.ticksuffix == " TL" and fig.layout.yaxis.tickprefix == "$"
     usd, local = fig.layout.updatemenus[0].buttons
     assert list(usd.args) == [{"visible": [True, False]}, {"yaxis.visible": True, "yaxis2.visible": False}]
     assert list(local.args) == [{"visible": [False, True]}, {"yaxis.visible": False, "yaxis2.visible": True}]

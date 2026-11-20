@@ -336,7 +336,8 @@ def test_holdout_subtitle_names_an_every_horizon_winner_with_the_chance_caveat()
 def test_holdout_dev_note_checks_the_same_horizon_in_development():
     dev = _board()  # lightgbm h1 1.054 in dev
     assert ph.holdout_dev_note(_holdout(), dev) == (
-        "None of the holdout scores under 1 was under 1 in development at the same horizon.")
+        "Each score that beat naive in the holdout had lost to naive at that same horizon in "
+        "development, so these wins look like luck, not skill.")
     dev.loc[(dev["method"] == "lightgbm") & (dev["horizon"] == 1), "ratio"] = 0.99
     assert ph.holdout_dev_note(_holdout(), dev) == (
         "1 of the holdout scores under 1 was also under 1 in development at the same horizon.")

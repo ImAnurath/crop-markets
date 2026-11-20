@@ -89,9 +89,10 @@ else:
     charts.show(charts.gap_line(gap["month"], gap["gap"], float(gap["gap"].median())))
     ph.raw_html(
         f'<p class="foot">{OTHER}\'s monthly price divided by {REF}\'s, minus one, in '
-        f"{ph.escape(local.label)}. The first-look notebook checks {OTHER}'s sheet against "
-        f"TOBB's {OTHER} Levant series; {REF}-quality nuts usually fetch a premium over "
-        "Levant, which may explain much of the gap."
+        f"{ph.escape(local.label)}. {OTHER}'s sheet matches TOBB's {OTHER} Levant series: on "
+        f"most days both report a price, the two are within 1% of each other. "
+        f"{REF}-quality nuts usually fetch a premium over Levant, which may explain much of "
+        "the gap."
         f"{' ' + ph.escape(dropped_note) if dropped_note else ''}</p>"
     )
 ```

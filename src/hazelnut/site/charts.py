@@ -209,6 +209,7 @@ def price_history(
             # sync its ticks to yaxis (values like 35.44), and D1 crowds short windows.
             yaxis2=_axis(showgrid=True, overlaying="y", side="left", type="log",
                          tickmode="linear", dtick="D2", tickformat=",~r",
+                         ticksuffix=f" {local_label}",
                          autorange=False, range=all_loc, visible=False),
             xaxis=dict(type="date", hoverformat="%b %Y", autorange=False, range=all_x),
             updatemenus=[

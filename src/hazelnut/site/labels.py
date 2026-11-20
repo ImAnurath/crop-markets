@@ -15,6 +15,11 @@ METHOD_NAMES = {
 OTHER_PARTNER = "Other"
 
 
+# Stat-tile labels for a crop estimate, whole sentences with named fields.
+CROP_ESTIMATE_LABEL = "{source} crop estimate, {year}"
+CROP_ESTIMATE_LABEL_NO_YEAR = "{source} crop estimate"
+
+
 def method_name(method: str) -> str:
     """Readable forecasting-method name; unknown methods keep their code name."""
     return METHOD_NAMES.get(method, method)

@@ -148,28 +148,35 @@ def test_strip_shows_the_four_stats_from_stats_json():
         "Price, USD", "$4.28<small> /kg</small>",
         "Price, lira", "208.15<small> TL/kg</small>",
         "From the peak", "−43.5%", "since May 2015 ($7.59)",
-        "2026 crop estimate", "86,440<small> t</small>",
+        "Giresun crop estimate, 2026", "86,440<small> t</small>",
     ]:
         assert text in html, text
     assert html.count("on August") == 2
     assert '<span class="down">−5.3%</span> on August' in html
     assert '<span class="down">−3.7%</span> on August' in html
-    assert "Giresun, <span>+31.5%</span> on 2025" in html
+    assert "<span>+31.5%</span> on 2025" in html
+    assert "Giresun," not in html  # the source is in the label, not the sub-line
+
+
+def test_strip_label_names_the_crop_source_and_year():
+    html = ph.market_strip_html(STATS, local_name="lira", local=LocalCurrency("TL", "try_kg"),
+                                crop_source="Ordu")
+    assert "Ordu crop estimate, 2026" in html and "Giresun" not in html
 
 
 def test_strip_without_a_crop_estimate():
     stats = dict(STATS, crop_estimate_t=None, crop_yoy=None, crop_year=None)
     html = strip(stats)
-    assert "Crop estimate" in html
+    assert "Giresun crop estimate<" in html
     assert ">n/a<" in html
-    assert "Giresun, no estimate yet" in html
+    assert "no estimate yet" in html
     assert "None" not in html and "nan" not in html
 
 
 def test_strip_with_an_estimate_but_no_earlier_year():
     html = strip(dict(STATS, crop_yoy=None))
     assert "86,440" in html
-    assert "Giresun, no earlier year to compare" in html
+    assert "no earlier year to compare" in html
 
 
 def test_strip_with_missing_changes_and_peak():
