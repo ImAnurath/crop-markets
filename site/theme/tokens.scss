@@ -123,6 +123,29 @@ footer.footer .nav-footer {
 .iconbtn:hover { color: var(--fg); }
 // Replace Quarto's toggle glyph with the sprite icon site.js inserts
 .quarto-color-scheme-toggle .bi { display: none; }
+// Language switch (site.js builds it): two codes in one 32px-high box, the current one lit
+.quarto-navbar-tools { display: flex; align-items: center; }
+.lang-switch {
+  display: inline-flex;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 30px;
+}
+.lang-switch > * { padding: 0 var(--s2); color: var(--muted); text-decoration: none; }
+.lang-switch > * + * { border-left: 1px solid var(--line); }
+.lang-switch > [aria-current] { color: var(--fg); background: var(--panel); font-weight: 500; }
+.lang-switch > a:hover,
+.lang-switch > a:focus-visible { color: var(--fg); }
+// Just above the collapse breakpoint the links, Excel button and both tools only fit
+// one row (Turkish labels included) with tighter spacing.
+@media (min-width: 992px) and (max-width: 1099.98px) {
+  .navbar-nav { gap: var(--s3); }
+  .navbar-brand { margin-right: var(--s4); }
+}
 .navbar-toggler { border-color: var(--line); }
 
 /* Type */

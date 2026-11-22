@@ -3,9 +3,14 @@ title: "Page not found"
 ---
 
 <!-- Quarto writes this page's links against the site path (/crop-markets/), because
-     GitHub Pages serves it at whatever URL was missing. Keep links as .qmd/.html paths. -->
+     GitHub Pages serves it at whatever URL was missing. Keep links as .qmd/.html paths.
+     GitHub Pages serves only the root 404.html (render_site.py drops the Turkish one),
+     so this page carries both languages: the script below shows the one whose tree the
+     missing URL is in; without JavaScript both show. Each block's button leads to its
+     tree's home, which is also how the script finds the trees. -->
 
 ::: {.notfound}
+::: {lang="en" data-title="Page not found – Crop Markets"}
 <span class="eyebrow">Error 404</span>
 
 # This page is not here.
@@ -17,3 +22,52 @@ still lives under the same few pages.]{.lede}
 [Back to the start <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](index.qmd){.btn .pri}
 :::
 :::
+
+::: {lang="tr" data-title="Sayfa bulunamadı – Crop Markets"}
+<span class="eyebrow">Hata 404</span>
+
+# Bu sayfa burada yok.
+
+[Bağlantı eski olabilir ya da sayfa, site yeniden düzenlenirken taşınmış olabilir. Her şey
+hâlâ aynı birkaç sayfada duruyor.]{.lede}
+
+::: {.btns}
+[Başa dön <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](tr/index.html){.btn .pri}
+:::
+:::
+:::
+
+```{=html}
+<script>
+/* Show the language of the tree the missing URL is in, set <html lang> and the tab title
+   to match, and give site.js's language switch this URL in the other tree. */
+(function () {
+  "use strict";
+  var blocks = [].slice.call(document.querySelectorAll(".notfound > [lang]"));
+  var trees = blocks.map(function (b) {
+    var home = b.querySelector(".btns a[href]");
+    return { block: b, lang: b.getAttribute("lang"), root: home ? new URL(".", home.href).pathname : null };
+  }).filter(function (t) { return t.root; });
+  var path = location.pathname, here = null;
+  trees.forEach(function (t) {  // the deepest root the URL is under ("/x/tr/" over "/x/")
+    if (path.indexOf(t.root) === 0 && (!here || t.root.length > here.root.length)) here = t;
+  });
+  if (!here) return;
+  var rest = path.slice(here.root.length);
+  var html = document.documentElement;
+  html.setAttribute("lang", here.lang);
+  html.setAttribute("xml:lang", here.lang);
+  trees.forEach(function (t) {
+    if (t !== here) {
+      t.block.hidden = true;
+      var link = document.createElement("link");
+      link.rel = "alternate";
+      link.setAttribute("hreflang", t.lang);
+      link.setAttribute("data-href", t.root + rest);
+      document.head.appendChild(link);
+    }
+  });
+  if (here.block.getAttribute("data-title")) document.title = here.block.getAttribute("data-title");
+})();
+</script>
+```

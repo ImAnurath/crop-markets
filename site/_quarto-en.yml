@@ -24,3 +24,14 @@ website:
     right: >-
       Hero photo: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
       [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons (cropped)
+
+# Strings site.js shows, written into every page as a JSON block (#site-strings) by
+# filters/lang-links.lua. The switch lists each language by its code; a link's title is
+# written in the language it leads to, so it reads the same on both sides.
+site-strings:
+  theme-toggle: "Switch light / dark"
+  lang-switch:
+    label: "Language"
+    langs:
+      - { lang: tr, code: TR, title: "Bu sayfayı Türkçe okuyun" }
+      - { lang: en, code: EN, title: "Read this page in English" }

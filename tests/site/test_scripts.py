@@ -200,3 +200,17 @@ def test_render_site_renders_english_before_turkish():
     assert [c[-2:] for c in cmds] == [["--profile", "en"], ["--profile", "tr"]]
     assert all(c[:2] == ["quarto", "render"] and c[2].endswith("site") for c in cmds)
     assert render_site.render_commands("quarto", ["tr"]) == [cmds[1]]
+
+
+def test_render_site_moves_the_turkish_sitemap_to_the_root_robots_and_drops_root_files(tmp_path):
+    render_site = _load("render_site")
+    (tmp_path / "tr").mkdir()
+    (tmp_path / "robots.txt").write_text("Sitemap: https://x.org/cm/sitemap.xml\n", "utf-8")
+    (tmp_path / "tr" / "robots.txt").write_text("Sitemap: https://x.org/cm/tr/sitemap.xml\n", "utf-8")
+    for name in ("404.html", "sitemap.xml", "index.html"):
+        (tmp_path / "tr" / name).write_text("x", "utf-8")
+    render_site.finish_tree(tmp_path, "tr")
+    render_site.finish_tree(tmp_path, "tr")  # idempotent
+    assert (tmp_path / "robots.txt").read_text("utf-8").splitlines() == [
+        "Sitemap: https://x.org/cm/sitemap.xml", "Sitemap: https://x.org/cm/tr/sitemap.xml"]
+    assert sorted(p.name for p in (tmp_path / "tr").iterdir()) == ["index.html", "sitemap.xml"]

@@ -41,6 +41,7 @@ format:
     filters:
       - filters/main-landmark.lua   # one <main> landmark per page (custom layout has none)
       - filters/lang-meta.lua       # title-tr / description-tr on the Turkish profile
+      - filters/lang-links.lua      # hreflang links, first-visit detection, site.js strings
     toc: false
     code-copy: false   # no code is shown; empty OJS cells otherwise carry a stray copy button
     anchor-sections: false
@@ -73,6 +74,15 @@ format:
     include-after-body:
       # Quarto rewrites this root path to a page-relative one (and to the site path on 404.html).
       - text: <script src="/assets/site.js"></script>
+
+# Each language's site root, the first being the default (x-default) language: the same
+# URLs as each profile's website.site-url (tests/site/test_site_trees.py keeps them in
+# step). filters/lang-links.lua builds every page's hreflang links from them.
+site-langs:
+  - lang: en
+    url: https://imanurath.github.io/crop-markets/
+  - lang: tr
+    url: https://imanurath.github.io/crop-markets/tr/
 
 execute:
   echo: false

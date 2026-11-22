@@ -16,5 +16,9 @@ Error 404
 This page is not here.
 The link may be old, or the page may have moved when the site was reorganised. Everything still lives under the same few pages.
 Back to the start
+Hata 404
+Bu sayfa burada yok.
+Bağlantı eski olabilir ya da sayfa, site yeniden düzenlenirken taşınmış olabilir. Her şey hâlâ aynı birkaç sayfada duruyor.
+Başa dön
 Crop Markets · data refreshed weekly from public sources · Sources and credits
 Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)
