@@ -41,6 +41,20 @@ def test_page_text_keeps_visible_text_and_drops_scripts_and_svg():
     )
 
 
+def test_page_text_drops_hidden_elements_but_keeps_visually_hidden_text():
+    html = (
+        "<body><p>Shown</p>"
+        '<details class="code-fold"><summary>Code</summary>'
+        '<div class="sourceCode cell-code hidden"><pre class="sourceCode js">'
+        "<code><span>attachments = new Map([</span><div>nested</div></code></pre></div>"
+        "</details>"
+        "<div hidden><p>secret</p></div><p hidden>also secret</p>"
+        '<table><caption class="visually-hidden">For screen readers</caption></table>'
+        "<p>After</p></body>"
+    )
+    assert snapshot.page_text(html) == "Shown\nCode\nFor screen readers\nAfter\n"
+
+
 def test_snapshot_names_skip_the_turkish_tree(tmp_path):
     for rel in ("index.html", "hazelnut/analyses/a.html", "tr/index.html"):
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)

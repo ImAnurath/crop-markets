@@ -1,7 +1,8 @@
 """Snapshot the visible text of every page in a rendered English site tree.
 
 Each page becomes one text file: its visible text with scripts, styles and SVG dropped,
-one line per block element and whitespace collapsed. Alt text, aria-labels, titles and
+and hidden elements too (the ``hidden`` attribute or class, such as Quarto's folded
+``cell-code hidden`` source blocks), one line per block element and whitespace collapsed. Alt text, aria-labels, titles and
 placeholders count as visible too (each on its own line, marked ``[alt]`` and so on).
 The Turkish tree (``tr/``) is skipped. ``tests/site/fixtures/en_text/`` holds the English
 snapshot that the rendered site must keep matching (tests/site/test_rendered_text.py).
@@ -35,12 +36,21 @@ TEXT_ATTRS = ("alt", "aria-label", "title", "placeholder", "data-scroll-hint")
 _WS = re.compile(r"\s+")
 
 
+def _hidden(attrs) -> bool:
+    """True for an element never shown: a ``hidden`` attribute or a ``hidden`` class."""
+    for name, value in attrs:
+        if name == "hidden" or (name == "class" and "hidden" in (value or "").split()):
+            return True
+    return False
+
+
 class _Text(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.lines: list[str] = []
         self._buf: list[str] = []
-        self._dropped = 0  # depth inside a dropped element
+        self._drop_tag: str | None = None  # the element being dropped
+        self._dropped = 0  # nesting depth of that tag inside it
 
     def _flush(self) -> None:
         line = _WS.sub(" ", "".join(self._buf)).strip()
@@ -50,11 +60,11 @@ class _Text(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if self._dropped:
-            if tag in DROPPED and tag not in VOID:
+            if tag == self._drop_tag:
                 self._dropped += 1
             return
-        if tag in DROPPED:
-            self._dropped = 1
+        if tag not in VOID and (tag in DROPPED or _hidden(attrs)):
+            self._drop_tag, self._dropped = tag, 1
             return
         if tag in BLOCKS:
             self._flush()
@@ -65,12 +75,12 @@ class _Text(HTMLParser):
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs)
-        if self._dropped and tag in DROPPED and tag not in VOID:
+        if self._dropped and tag == self._drop_tag:
             self._dropped -= 1
 
     def handle_endtag(self, tag):
         if self._dropped:
-            if tag in DROPPED:
+            if tag == self._drop_tag:
                 self._dropped -= 1
             return
         if tag in BLOCKS:
