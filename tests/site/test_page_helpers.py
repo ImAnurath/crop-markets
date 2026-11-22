@@ -280,3 +280,37 @@ def test_holdout_glossary_with_two_crops_and_none():
     assert ph.holdout_glossary_sentence([]) == (
         "The final months of the backtest were set aside before any method was built."
     )
+
+
+# --- Turkish ----------------------------------------------------------------------------
+
+def test_strip_and_meta_row_in_turkish(turkish):
+    html = ph.market_meta_html(manifest()) + strip()
+    for text in [
+        "Bu ayki piyasa", "Veriler Eylül 2026 itibarıyla",
+        "Fiyat, USD", "4,28 $<small> /kg</small>", "208,15<small> TL/kg</small>",
+        "Zirveden bu yana", "−%43,5", "zirve: Mayıs 2015 (7,59 $)",
+        "Giresun rekolte tahmini, 2026", "86.440<small> t</small>",
+        'Ağustos ayına göre <span class="down">−%5,3</span>',
+        "2025 yılına göre <span>+%31,5</span>",
+    ]:
+        assert text in html, text
+    assert "on August" not in html and "Price" not in html
+
+
+def test_sources_summary_and_exchanges_in_turkish(turkish):
+    import importlib
+
+    from hazelnut.site import hazelnut_data
+
+    # The crop module reads its words when it is imported; reload it in Turkish.
+    sources = importlib.reload(hazelnut_data).WORKBOOK_SOURCES
+    try:
+        count, text = ph.sources_summary(sources)
+        assert count == f"{len(sources)} kamuya açık veri seti"
+        assert text.startswith("Giresun ve Ordu borsaları, UN Comtrade, FAOSTAT")
+    finally:
+        import hazelnut.site.i18n as i18n
+
+        i18n.LANG = "en"
+        importlib.reload(hazelnut_data)

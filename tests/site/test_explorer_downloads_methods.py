@@ -144,8 +144,7 @@ def test_workbook_download_html_links_the_file_or_says_it_is_missing():
     assert "1.2 MB" in html and 'class="btn pri"' in html
     missing = ph.workbook_download_html("downloads/rye-market-data.xlsx", None)
     assert "href" not in missing
-    assert ph.WORKBOOK_MISSING in missing
-    assert ph.WORKBOOK_MISSING == "The workbook is not available in this refresh."
+    assert "The workbook is not available in this refresh." in missing
 
 
 def test_sheet_list_html_lists_each_sheet_with_its_note():

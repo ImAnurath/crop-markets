@@ -2,11 +2,11 @@
 (home, overview, dashboard, analyses).
 
 Pages call these from Python cells and emit the HTML as a raw block (see ``raw_html``).
-Nothing here assumes a crop or a country: the page passes in its labels.
+Nothing here assumes a crop or a country: the page passes in its labels. Every word comes
+from ``site/i18n/{en,tr}.yml`` through ``hazelnut.site.i18n``, in the active language.
 """
 from __future__ import annotations
 
-import calendar
 import json
 import math
 from collections.abc import Sequence
@@ -18,14 +18,12 @@ from typing import Mapping
 
 import pandas as pd
 
+from hazelnut.site import i18n
 from hazelnut.site.config import CropConfig, LocalCurrency
-from hazelnut.site.labels import (CROP_ESTIMATE_LABEL, CROP_ESTIMATE_LABEL_NO_YEAR,
-                                  FROST_CROP_FALLBACK, FROST_CROP_FALLBACK_NO_SOURCE,
-                                  HOLDOUT_LUCK_NOTE, HOLDOUT_NO_REPEAT_NOTE, HOLDOUT_REPEAT_NOTE, OTHER_PARTNER,
-                                  METHOD_ANCHORS, SCROLL_HINT, method_name)
+from hazelnut.site.i18n import MINUS, join_names, month_label, month_name, plural, t
+from hazelnut.site.labels import (OTHER_PARTNER, METHOD_ANCHORS, crop_estimate_label,
+                                  method_name, scroll_hint)
 
-NA = "n/a"
-MINUS = "−"
 ARROW = '<svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>'
 
 
@@ -33,29 +31,29 @@ def _missing(x) -> bool:
     return x is None or (isinstance(x, float) and math.isnan(x))
 
 
+def na() -> str:
+    """The text for a missing value: ``n/a``."""
+    return t("na")
+
+
 def fmt_usd(x) -> str:
     """US dollars with two decimals: ``$4.28``."""
-    return NA if _missing(x) else f"${x:,.2f}"
+    return i18n.fmt_usd(x)
 
 
 def fmt_number(x) -> str:
     """A price in another currency, two decimals: ``208.15`` (the page adds the unit)."""
-    return NA if _missing(x) else f"{x:,.2f}"
+    return i18n.fmt_number(x)
 
 
 def fmt_change(x) -> str:
     """A fractional change as a signed percent with one decimal: ``−5.3%``, ``+31.5%``."""
-    if _missing(x):
-        return NA
-    pct = round(x * 100, 1)
-    if pct == 0:
-        return "0.0%"
-    return f"{'+' if pct > 0 else MINUS}{abs(pct):.1f}%"
+    return i18n.fmt_pct(x, 1, signed=True)
 
 
 def fmt_tonnes(x) -> str:
     """Tonnes with thousands separators: ``86,440``."""
-    return NA if _missing(x) else f"{round(x):,}"
+    return i18n.fmt_tonnes(x)
 
 
 def _parse(as_of: str) -> tuple[int, int | None]:
@@ -64,16 +62,10 @@ def _parse(as_of: str) -> tuple[int, int | None]:
     return int(year), (int(month) if month else None)
 
 
-def month_label(as_of: str) -> str:
-    """``"2026-09"`` -> ``"September 2026"``; a yearly ``"2026"`` stays ``"2026"``."""
-    year, month = _parse(as_of)
-    return str(year) if month is None else f"{calendar.month_name[month]} {year}"
-
-
 def previous_month_name(as_of: str) -> str:
     """The month before ``as_of`` by name: ``"2026-01"`` -> ``"December"``."""
     _, month = _parse(as_of)
-    return calendar.month_name[12 if month == 1 else month - 1]
+    return month_name(12 if month == 1 else month - 1)
 
 
 def as_of_stamp(manifest: Mapping) -> str:
@@ -81,17 +73,7 @@ def as_of_stamp(manifest: Mapping) -> str:
 
     A stale output with no date (it failed and had no earlier file) is "unavailable".
     """
-    stamp = f"Data as of {month_label(manifest['as_of'])} · refreshed weekly"
-    stale = [o.get("as_of") for o in manifest.get("outputs", {}).values() if o.get("stale")]
-    dated = [a for a in stale if a]
-    if dated:
-        # A yearly as_of counts as the start of its year (month 0) when ordering.
-        oldest = min(dated, key=lambda a: (_parse(a)[0], _parse(a)[1] or 0))
-        undated = ", some unavailable" if len(dated) < len(stale) else ""
-        stamp += f" (some sources from {month_label(oldest)}{undated})"
-    elif stale:
-        stamp += " (some sources unavailable)"
-    return stamp
+    return i18n.as_of(manifest)
 
 
 def output_month_label(manifest: Mapping | None, name: str) -> str | None:
@@ -103,7 +85,7 @@ def output_month_label(manifest: Mapping | None, name: str) -> str | None:
 def market_meta_html(manifest: Mapping) -> str:
     """The row above the stat strip: "The market this month" and the as-of stamp."""
     return (
-        '<div class="meta"><span class="eyebrow">The market this month</span>'
+        f'<div class="meta"><span class="eyebrow">{escape(t("overview.market_eyebrow"))}</span>'
         f'<span class="live"><i aria-hidden="true"></i>{escape(as_of_stamp(manifest))}</span></div>'
     )
 
@@ -134,37 +116,40 @@ def market_strip_html(stats: Mapping, *, local_name: str, local: LocalCurrency, 
     crop's local currency (its label is the unit, "TL" -> "TL/kg", and its column names the
     stats keys), ``crop_source`` says whose crop estimate it is (named in the tile label).
     """
-    name, unit, source = escape(local_name), escape(local.label), escape(crop_source)
-    prev = previous_month_name(stats["as_of"])
+    prev = escape(previous_month_name(stats["as_of"]))
+    missing = na()
 
     if _missing(stats.get("from_peak")) or _missing(stats.get("peak_usd")) or not stats.get("peak_month"):
-        peak_sub = "peak n/a"
+        peak_sub = escape(t("strip.peak_na"))
     else:
-        peak_sub = f"since {month_label(stats['peak_month'])} ({fmt_usd(stats['peak_usd'])})"
+        peak_sub = escape(t("strip.since_peak", month=month_label(stats["peak_month"]),
+                            price=fmt_usd(stats["peak_usd"])))
 
     year = stats.get("crop_year")
     estimate = stats.get("crop_estimate_t")
     if _missing(estimate):
-        crop_value, crop_sub = NA, "no estimate yet"
+        crop_value, crop_sub = missing, escape(t("strip.no_estimate"))
     else:
-        crop_value = f"{fmt_tonnes(estimate)}<small> t</small>"
+        crop_value = f"{fmt_tonnes(estimate)}<small> {escape(t('unit.tonnes'))}</small>"
         if _missing(stats.get("crop_yoy")) or _missing(year):
-            crop_sub = "no earlier year to compare"
+            crop_sub = escape(t("strip.no_earlier_year"))
         else:
-            crop_sub = f"{_change_span(stats['crop_yoy'])} on {int(year) - 1}"
-    if _missing(year):
-        crop_label = CROP_ESTIMATE_LABEL_NO_YEAR.format(source=source)
-    else:
-        crop_label = CROP_ESTIMATE_LABEL.format(source=source, year=int(year))
+            crop_sub = t("strip.change_on_year", change=_change_span(stats["crop_yoy"]),
+                         year=int(year) - 1)
+    crop_label = escape(crop_estimate_label(crop_source, None if _missing(year) else int(year)))
 
     usd = fmt_usd(stats.get("usd_kg"))
     local_price = fmt_number(stats.get(local.column))
+    per_kg = escape(t("unit.per_kg"))
+    local_per_kg = escape(t("unit.local_per_kg", unit=local.label))
     stats_html = [
-        _stat("Price, USD", usd + ("" if usd == NA else "<small> /kg</small>"),
-              f"{_change_span(stats.get('usd_mom'))} on {prev}"),
-        _stat(f"Price, {name}", local_price + ("" if local_price == NA else f"<small> {unit}/kg</small>"),
-              f"{_change_span(stats.get(local.mom_key))} on {prev}"),
-        _stat("From the peak", fmt_change(stats.get("from_peak")), peak_sub),
+        _stat(escape(t("strip.price_usd")),
+              usd + ("" if usd == missing else f"<small> {per_kg}</small>"),
+              t("strip.change_on_month", change=_change_span(stats.get("usd_mom")), month=prev)),
+        _stat(escape(t("strip.price_local", name=local_name)),
+              local_price + ("" if local_price == missing else f"<small> {local_per_kg}</small>"),
+              t("strip.change_on_month", change=_change_span(stats.get(local.mom_key)), month=prev)),
+        _stat(escape(t("strip.from_peak")), fmt_change(stats.get("from_peak")), peak_sub),
         _stat(crop_label, crop_value, crop_sub),
     ]
     return '<div class="strip">' + "".join(stats_html) + "</div>"
@@ -174,22 +159,20 @@ def exchanges_phrase(exchanges) -> str:
     """("Giresun", "Ordu") -> "Giresun & Ordu exchanges"."""
     names = list(exchanges)
     if len(names) == 1:
-        return f"{names[0]} exchange"
-    return f"{', '.join(names[:-1])} & {names[-1]} exchanges"
-
-
-EXCHANGE_SUFFIX = " Commodity Exchange"
+        return t("exchanges.one", name=names[0])
+    return t("exchanges.many", names=", ".join(names[:-1]), last=names[-1])
 
 
 def sources_summary(sources) -> tuple[str, str]:
     """("8 public datasets", "Giresun & Ordu exchanges, UN Comtrade, ...") from a crop's
-    ``WORKBOOK_SOURCES`` rows (provider name first). Commodity exchanges are grouped."""
+    ``WORKBOOK_SOURCES`` rows (provider name first). Commodity exchanges (names ending in
+    the language's "Commodity Exchange") are grouped."""
+    suffix = t("sources.exchange_suffix")
     names = [row[0] for row in sources]
-    cities = [n.removesuffix(EXCHANGE_SUFFIX) for n in names if n.endswith(EXCHANGE_SUFFIX)]
-    others = [n for n in names if not n.endswith(EXCHANGE_SUFFIX)]
+    cities = [n.removesuffix(suffix) for n in names if n.endswith(suffix)]
+    others = [n for n in names if not n.endswith(suffix)]
     listed = ([exchanges_phrase(cities)] if cities else []) + others
-    count = f"{len(names)} public dataset{'' if len(names) == 1 else 's'}"
-    return count, ", ".join(listed)
+    return plural("sources.count", len(names)), ", ".join(listed)
 
 
 def crop_cards_html(crops: Mapping[str, CropConfig], data_dir: Path) -> str:
@@ -204,14 +187,15 @@ def crop_cards_html(crops: Mapping[str, CropConfig], data_dir: Path) -> str:
         if stats_file.exists():
             stats = json.loads(stats_file.read_text(encoding="utf-8"))
             if not _missing(stats.get("usd_kg")):
-                price = (
-                    f'<p>{fmt_usd(stats["usd_kg"])}/kg in {month_label(stats["as_of"])}</p>'
-                )
-        where = escape(f"{crop.country} · {exchanges_phrase(crop.exchanges)}")
+                text = t("home.crop_price", price=fmt_usd(stats["usd_kg"]),
+                         month=month_label(stats["as_of"]))
+                price = f"<p>{escape(text, quote=False)}</p>"
+        where = escape(t("home.crop_where", country=i18n.crop_country(crop),
+                         exchanges=exchanges_phrase(crop.exchanges)))
         cards.append(
             f'<a class="panel crop-card" href="{escape(crop.slug)}/index.qmd">'
             f'<span class="eyebrow">{where}</span>'
-            f"<h3>{escape(crop.name)} {ARROW}</h3>{price}</a>"
+            f"<h3>{escape(i18n.crop_name(crop))} {ARROW}</h3>{price}</a>"
         )
     return '<div class="crops">' + "".join(cards) + "</div>"
 
@@ -226,9 +210,6 @@ def raw_html(html: str) -> None:
 
 # --- Dashboard --------------------------------------------------------------------------
 # Panel loading with an error state, and each panel's takeaway, computed from the data.
-
-UNAVAILABLE = "This chart's data is not available in this refresh."
-
 
 def read_csv_or_none(path: Path, required: Sequence[str] = ()) -> pd.DataFrame | None:
     """The CSV at ``path``, or None if it is missing, unreadable, has no rows, or lacks
@@ -253,7 +234,7 @@ def read_json_or_none(path: Path) -> dict | None:
 
 def unavailable_html() -> str:
     """The panel body shown when its data file is missing or unreadable."""
-    return f'<div class="chart-error" role="note">{escape(UNAVAILABLE, quote=False)}</div>'
+    return f'<div class="chart-error" role="note">{escape(t("panel.unavailable"), quote=False)}</div>'
 
 
 def panel_head_html(title: str, sub: str) -> str:
@@ -262,13 +243,13 @@ def panel_head_html(title: str, sub: str) -> str:
             f'<div class="sub">{escape(sub, quote=False)}</div>')
 
 
-def _plural(n: int, word: str) -> str:
-    return f"{n} {word}{'' if n == 1 else 's'}"
+def _months(n: int) -> str:
+    """"1 month", "14 months"."""
+    return plural("unit.months", n)
 
 
 def _join_names(names: Sequence[str]) -> str:
-    names = list(names)
-    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+    return join_names(names)
 
 
 @dataclass(frozen=True)
@@ -305,11 +286,11 @@ def price_subtitle(prices: pd.DataFrame, named_shocks: Sequence[tuple[str, tuple
         m = shock_move(prices, start, end)
         if m is None:
             continue
-        lead = f"{name} took the price from" if not parts else f"{name}, from"
-        parts.append(f"{lead} {fmt_usd(m.low)} to {fmt_usd(m.peak)} "
-                     f"in {_plural(m.months, 'month')}")
+        key = "price.shock_next" if parts else "price.shock_first"
+        parts.append(t(key, name=name, low=fmt_usd(m.low), peak=fmt_usd(m.peak),
+                       span=_months(m.months)))
     if not parts:
-        return "Monthly exchange price; shaded periods are supply shocks."
+        return t("price.fallback")
     text = "; ".join(parts) + "."
     return text[0].upper() + text[1:]
 
@@ -327,9 +308,9 @@ def shock_years_label(shocks: Sequence[tuple[str, str]]) -> str:
 def range_subtitle(rng: pd.DataFrame) -> str:
     """The 8-in-10 band at the longest horizon, in words."""
     row = rng.sort_values("horizon").iloc[-1]
-    return (f"If past {int(row['horizon'])}-month moves repeat, eight times in ten the "
-            f"{month_label(str(row['target_month']))} price lands between "
-            f"{fmt_usd(float(row['q10']))} and {fmt_usd(float(row['q90']))}.")
+    return t("range.subtitle", horizon=int(row["horizon"]),
+             month=month_label(str(row["target_month"])),
+             low=fmt_usd(float(row["q10"])), high=fmt_usd(float(row["q90"])))
 
 
 def range_coverage_note(ranges: pd.DataFrame | None, method: str, horizon: int) -> str | None:
@@ -339,8 +320,8 @@ def range_coverage_note(ranges: pd.DataFrame | None, method: str, horizon: int) 
     hit = ranges[(ranges["method"] == method) & (ranges["horizon"] == horizon)]
     if hit.empty or _missing(float(hit["cov80"].iloc[0])):
         return None
-    return (f"In testing, the 8-in-10 band held {round(float(hit['cov80'].iloc[0]) * 100)}% "
-            f"of the time at {_plural(horizon, 'month')}.")
+    return t("range.coverage_note", pct=fmt_pct(float(hit["cov80"].iloc[0])),
+             span=_months(horizon))
 
 
 def range_currencies_label(currencies: Sequence[str]) -> str:
@@ -352,9 +333,8 @@ def exports_subtitle(top: pd.DataFrame, period_end: str, n: int = 2) -> str:
     """"Italy and Germany took 51% of export volume in the 12 months to December 2025."
     The "Other" bucket is never named as a destination."""
     named = top[top["partner"] != OTHER_PARTNER].sort_values("share", ascending=False).head(n)
-    share = round(float(named["share"].sum()) * 100)
-    return (f"{_join_names(named['partner'].astype(str))} took {share}% of export volume "
-            f"in the 12 months to {period_end}.")
+    return t("exports.subtitle", names=_join_names(named["partner"].astype(str)),
+             share=fmt_pct(float(named["share"].sum())), period=period_end)
 
 
 def season_months(prices: pd.DataFrame, season: str) -> list[str]:
@@ -369,23 +349,28 @@ def season_to_date_note(prices: pd.DataFrame, season: str) -> str | None:
         return None
     first, last = months[0], months[-1]
     if first == last:
-        span = f"{month_label(first)} only"
+        span = t("span.only", month=month_label(first))
     elif first[:4] == last[:4]:
-        span = f"{calendar.month_name[int(first[5:])]} to {month_label(last)}"
+        span = t("span.same_year", first=month_name(int(first[5:])), last=month_label(last))
     else:
-        span = f"{month_label(first)} to {month_label(last)}"
-    return f"{season} is season to date ({span}), so its average is provisional."
+        span = t("span.years", first=month_label(first), last=month_label(last))
+    return t("season.to_date_note", season=season, span=span)
+
+
+def _strength(r: float) -> str:
+    """The key of a correlation's plain-words variant."""
+    if r <= -0.4:
+        return "strong_negative"
+    if r <= -0.2:
+        return "weak_negative"
+    if r < 0.2:
+        return "none"
+    return "positive"
 
 
 def correlation_words(r: float) -> str:
     """Plain words for a crop-size / price correlation."""
-    if r <= -0.4:
-        return "bigger crops have usually come with lower prices"
-    if r <= -0.2:
-        return "bigger crops have loosely gone with lower prices"
-    if r < 0.2:
-        return "crop size alone says little about the price"
-    return "bigger crops have not come with lower prices"
+    return t(f"crop_price.words.{_strength(r)}")
 
 
 MIN_SEASONS = 3
@@ -397,10 +382,9 @@ def crop_price_subtitle(crop: pd.DataFrame, x_col: str, exclude_season: str | No
     if exclude_season is not None:
         df = df[df["season"] != exclude_season]
     if len(df) < MIN_SEASONS:
-        return "Crop estimate against the season's average price."
+        return t("crop_price.fallback")
     r = float(df[x_col].corr(df["season_avg_usd"]))
-    r_text = f"{r:.2f}".replace("-", MINUS)
-    return f"Over {len(df)} seasons, {correlation_words(r)} (correlation {r_text})."
+    return t(f"crop_price.subtitle.{_strength(r)}", n=len(df), r=_r_text(r))
 
 
 def partial_season(crop: pd.DataFrame, x_col: str, prices: pd.DataFrame | None) -> str | None:
@@ -425,7 +409,7 @@ def crop_panel(crop: pd.DataFrame, x_col: str,
     note = None
     if partial is not None:
         note = season_to_date_note(prices, partial)
-        df.loc[df["season"] == partial, "season"] = f"{partial} to date"
+        df.loc[df["season"] == partial, "season"] = t("season.to_date_label", season=partial)
     return df, crop_price_subtitle(crop, x_col, exclude_season=partial), note
 
 
@@ -450,23 +434,17 @@ def scoreboard_subtitle(board: pd.DataFrame) -> str:
     """The takeaway: how many method-horizon scores came in under naive (usually none)."""
     others = board[board["method"] != NAIVE]
     under = int((others["ratio"] < 1).sum())
-    lead = ("Each method's error divided by naive's (the price stays where it is): "
-            "above 1 is worse.")
     if under == 0:
-        return f"{lead} None beat naive at any horizon."
-    return (f"{lead} {under} of {len(others)} method-horizon scores came in under 1; "
-            "the forecasting analysis tests whether that is more than chance.")
-
-
-HOLDOUT_NOTE = "scored once, never tuned on"
+        return t("scoreboard.subtitle_none")
+    return t("scoreboard.subtitle_some", under=under, total=len(others))
 
 
 def _holdout_sentence(holdout: pd.DataFrame) -> str:
     under = [name for m, name, r in scoreboard_rows(holdout)
              if m != NAIVE and r and all(v < 1 for v in r.values())]
-    who = (f"{_join_names(under)} came in under naive at every horizon" if under
-           else "no method beat naive at every horizon")
-    return f"Holdout ({HOLDOUT_NOTE}): {who}."
+    if under:
+        return t("scoreboard.holdout_winners", names=_join_names(under))
+    return t("scoreboard.holdout_none")
 
 
 def method_cell(method: str, name: str, methods_href: str | None) -> str:
@@ -483,25 +461,24 @@ def scoreboard_html(dev: pd.DataFrame, holdout: pd.DataFrame | None, analysis_hr
     """The dev scoreboard as a table (naive row in amber) and its footnote. With
     ``methods_href`` each method name links to its Methods page card."""
     horizons = sorted(int(h) for h in dev["horizon"].unique())
-    head = "".join(f'<th class="n" scope="col">{h} mo</th>' for h in horizons)
+    head = "".join(f'<th class="n" scope="col">{escape(t("unit.mo", n=h))}</th>' for h in horizons)
     body = []
     for m, name, r in scoreboard_rows(dev):
         cls = ' class="hl"' if m == NAIVE else ""
-        cells = "".join(f'<td class="n">{r[h]:.2f}</td>' if h in r else '<td class="n">n/a</td>'
-                        for h in horizons)
+        cells = "".join(f'<td class="n">{fmt_ratio(2)(r[h])}</td>' if h in r
+                        else f'<td class="n">{escape(na())}</td>' for h in horizons)
         body.append(f"<tr{cls}><td>{method_cell(m, name, methods_href)}</td>{cells}</tr>")
-    nmin, nmax = int(dev["n"].min()), int(dev["n"].max())
-    count = f"{nmin}" if nmin == nmax else f"{nmin} to {nmax}"
-    foot = f"Ratio of mean absolute errors, over {count} forecasts per horizon."
+    foot = escape(t("scoreboard.foot", count=count_text(dev["n"])), quote=False)
     if holdout is not None and not holdout.empty:
-        foot += " " + _holdout_sentence(holdout)
-    foot += f' <a href="{escape(analysis_href)}">Forecasting analysis</a>'
+        foot += " " + escape(_holdout_sentence(holdout), quote=False)
+    foot += (f' <a href="{escape(analysis_href)}">'
+             f'{escape(t("scoreboard.analysis_link"), quote=False)}</a>')
     return (
         # Quarto restyles raw HTML tables (striped, visible caption) unless told not to.
         '<table class="scoreboard" data-quarto-disable-processing="true">'
-        '<caption class="visually-hidden">Forecast error relative to naive, by months ahead'
+        f'<caption class="visually-hidden">{escape(t("scoreboard.caption"))}'
         "</caption>"
-        f'<thead><tr><th scope="col">Method</th>{head}</tr></thead>'
+        f'<thead><tr><th scope="col">{escape(t("table.method"))}</th>{head}</tr></thead>'
         f"<tbody>{''.join(body)}</tbody></table>"
         f'<p class="foot">{foot}</p>'
     )
@@ -512,12 +489,23 @@ def scoreboard_html(dev: pd.DataFrame, holdout: pd.DataFrame | None, analysis_hr
 # from the site data. Labels (crop, exchange and method names) come from the page.
 
 def _r_text(r: float) -> str:
-    return f"{r:.2f}".replace("-", MINUS)
+    """A correlation with two decimals and a real minus sign: ``−0.45``, ``0.12``."""
+    return i18n.fmt_number(r, 2).replace("-", MINUS)
+
+
+def _span(lo: str, hi: str) -> str:
+    """``lo`` alone when it equals ``hi``, else "lo to hi"."""
+    return lo if lo == hi else t("span.values", low=lo, high=hi)
+
+
+def _pct_points(n: int) -> str:
+    """A whole number of percent points as a percent: ``12`` -> ``12%``."""
+    return fmt_pct(n / 100)
 
 
 def count_text(n: pd.Series) -> str:
     lo, hi = int(n.min()), int(n.max())
-    return f"{lo}" if lo == hi else f"{lo} to {hi}"
+    return _span(str(lo), str(hi))
 
 
 def analyses_list_html(slugs: Sequence[str], entries: Mapping[str, tuple[str, str]]) -> str:
@@ -530,7 +518,8 @@ def analyses_list_html(slugs: Sequence[str], entries: Mapping[str, tuple[str, st
         text = f"<p>{escape(summary, quote=False)}</p>" if summary else ""
         cards.append(f'<a class="panel analysis-card" href="{escape(slug)}.qmd">'
                      f"<h3>{escape(title, quote=False)} {ARROW}</h3>{text}</a>")
-    return '<nav class="analyses" aria-label="Analyses">' + "".join(cards) + "</nav>"
+    return (f'<nav class="analyses" aria-label="{escape(t("analyses.nav_label"))}">'
+            + "".join(cards) + "</nav>")
 
 
 def analysis_head_html(crop_name: str, page: str, h1: str, found: str,
@@ -539,12 +528,13 @@ def analysis_head_html(crop_name: str, page: str, h1: str, found: str,
     optional as-of stamp, and the "What we found" paragraph."""
     live = (f'<span class="live"><i aria-hidden="true"></i>{escape(stamp, quote=False)}</span>'
             if stamp else "")
+    analyses = f'<a href="index.qmd">{escape(t("analyses.nav_label"))}</a>'
+    eyebrow = t("analyses.eyebrow", crop=escape(crop_name), analyses=analyses, page=escape(page))
     return (
         '<div class="dash-head"><div>'
-        f'<span class="eyebrow">Crops / {escape(crop_name)} / '
-        f'<a href="index.qmd">Analyses</a> / {escape(page)}</span>'
+        f'<span class="eyebrow">{eyebrow}</span>'
         f"<h1>{escape(h1, quote=False)}</h1></div>{live}</div>"
-        '<div class="found"><span class="eyebrow">What we found</span>'
+        f'<div class="found"><span class="eyebrow">{escape(t("analyses.found"))}</span>'
         f"<p>{escape(found, quote=False)}</p></div>"
     )
 
@@ -572,7 +562,7 @@ def seasonal_profile(prices: pd.DataFrame, col: str = "usd_kg") -> pd.DataFrame:
         "mean": g["dev"].mean(), "q25": g["dev"].quantile(0.25),
         "q75": g["dev"].quantile(0.75), "seasons": g["dev"].count(),
     })
-    out["label"] = out["month"].map(lambda m: calendar.month_name[m])
+    out["label"] = out["month"].map(month_name)
     return out.reset_index(drop=True)[cols]
 
 
@@ -581,10 +571,9 @@ def seasonality_subtitle(profile: pd.DataFrame) -> str:
     lo = profile.loc[profile["mean"].idxmin()]
     hi = profile.loc[profile["mean"].idxmax()]
     spread = round(float((profile["q75"] - profile["q25"]).median()) * 100)
-    return (f"Across {int(profile['seasons'].max())} complete seasons, the average month sits "
-            f"between {fmt_change(lo['mean'])} ({lo['label']}) and {fmt_change(hi['mean'])} "
-            f"({hi['label']}) from its season's mean; the middle half of seasons spans "
-            f"{spread} points in a typical month.")
+    return t("seasonality.subtitle", seasons=int(profile["seasons"].max()),
+             low=fmt_change(lo["mean"]), low_month=lo["label"],
+             high=fmt_change(hi["mean"]), high_month=hi["label"], spread=spread)
 
 
 # Exports
@@ -611,12 +600,13 @@ def share_shift_subtitle(shares: pd.DataFrame, what: str, n: int = 2) -> str:
     first, last = shares.index[0], shares.index[-1]
     parts = []
     for partner in shares.columns[:n]:
-        a = round(float(shares.loc[first, partner]) * 100)
-        b = round(float(shares.loc[last, partner]) * 100)
+        a = fmt_pct(float(shares.loc[first, partner]))
+        b = fmt_pct(float(shares.loc[last, partner]))
         if not parts:
-            parts.append(f"{partner}'s share of {what} went from {a}% in {first} to {b}% in {last}")
+            parts.append(t("exports.share_first", partner=partner, what=what, first_share=a,
+                           first=first, last_share=b, last=last))
         else:
-            parts.append(f"{partner}'s from {a}% to {b}%")
+            parts.append(t("exports.share_next", partner=partner, first_share=a, last_share=b))
     return "; ".join(parts) + "."
 
 
@@ -636,8 +626,9 @@ def ratio_stats(a: pd.Series, b: pd.Series) -> RatioStats:
 
 
 def ratio_subtitle(stats: RatioStats, a_name: str, b_name: str) -> str:
-    return (f"{a_name} sold for a median {stats.median:.2f} times {b_name} (8 in 10 months "
-            f"between {stats.q10:.2f} and {stats.q90:.2f} times).")
+    num = i18n.fmt_number
+    return t("exports.ratio_subtitle", a=a_name, b=b_name, median=num(stats.median),
+             low=num(stats.q10), high=num(stats.q90))
 
 
 # Exchanges
@@ -649,22 +640,24 @@ def gap_series(ref: pd.DataFrame, other: pd.DataFrame, col: str) -> pd.DataFrame
     return m.dropna(subset=["gap"])[["month", "gap"]].reset_index(drop=True)
 
 
-def _side(x: float) -> str:
-    return f"{abs(x) * 100:.1f}% {'below' if x < 0 else 'above'}"
+def _gap_pct(x: float) -> str:
+    """The size of a gap (its sign is said in words): ``9.7%``."""
+    return i18n.fmt_pct(abs(x), 1)
 
 
 def gap_subtitle(gap: pd.DataFrame, name: str, ref_name: str) -> str:
     """"Ordu's monthly price ran a median 9.7% below Giresun's over 308 months; 8 in 10 ..."."""
     g = gap["gap"].dropna()
     med, lo, hi = float(g.median()), float(g.quantile(0.1)), float(g.quantile(0.9))
+    median = t("gap.median_below" if med < 0 else "gap.median_above", name=name,
+               pct=_gap_pct(med), ref=ref_name, n=len(g))
     if lo < 0 and hi < 0:  # smallest discount first
-        band = f"between {abs(hi) * 100:.1f}% and {abs(lo) * 100:.1f}% below"
+        band = t("gap.band_below", low=_gap_pct(hi), high=_gap_pct(lo))
     elif lo >= 0 and hi >= 0:
-        band = f"between {lo * 100:.1f}% and {hi * 100:.1f}% above"
-    else:
-        band = f"between {_side(lo)} and {_side(hi)}"
-    return (f"{name}'s monthly price ran a median {_side(med)} {ref_name}'s over {len(g)} "
-            f"months; 8 in 10 months fell {band}.")
+        band = t("gap.band_above", low=_gap_pct(lo), high=_gap_pct(hi))
+    else:  # lo below, hi above
+        band = t("gap.band_mixed", low=_gap_pct(lo), high=_gap_pct(hi))
+    return f"{median}; {band}."
 
 
 def split_outliers(gap: pd.DataFrame, limit: float) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -678,22 +671,19 @@ def outlier_note(dropped: pd.DataFrame, name: str, ref_name: str, limit: float) 
     if dropped.empty:
         return None
     months = _join_names([month_label(str(m)) for m in dropped["month"]])
-    return (f"Left out: {months}, when {name}'s average was more than {round(limit * 100)}% "
-            f"away from {ref_name}'s (most likely entry errors in the source).")
+    return t("gap.outlier_note", months=months, name=name, limit=fmt_pct(limit), ref=ref_name)
 
 
 def gap_detail_subtitle(gap: pd.DataFrame, name: str) -> str:
     """How often ``name`` was dearer, and its widest discount (or premium, if never cheaper)."""
     g = gap.dropna(subset=["gap"])
     dearer = int((g["gap"] > 0).sum())
-    lead = f"{name} was dearer in {dearer} of {len(g)} months"
     if (g["gap"] < 0).any():
-        row = g.loc[g["gap"].idxmin()]
-        return (f"{lead}; its widest discount was {abs(float(row['gap'])) * 100:.1f}%, "
-                f"in {month_label(str(row['month']))}.")
-    row = g.loc[g["gap"].idxmax()]
-    return (f"{lead}; its widest premium was {float(row['gap']) * 100:.1f}%, "
-            f"in {month_label(str(row['month']))}.")
+        row, key = g.loc[g["gap"].idxmin()], "gap.detail_discount"
+    else:
+        row, key = g.loc[g["gap"].idxmax()], "gap.detail_premium"
+    return t(key, name=name, dearer=dearer, n=len(g), pct=_gap_pct(float(row["gap"])),
+             month=month_label(str(row["month"])))
 
 
 # Crop and frost
@@ -709,19 +699,13 @@ def correlation_without_note(crop: pd.DataFrame, x_col: str, years: Sequence[int
     if len(df) < MIN_SEASONS:
         return None
     r = float(df[x_col].corr(df["season_avg_usd"]))
-    return (f"Without {_join_names([str(y) for y in years])}, the correlation is "
-            f"{_r_text(r)} ({len(df)} seasons).")
+    return t("frost.without_note", years=_join_names([str(y) for y in years]), r=_r_text(r),
+             n=len(df))
 
 
 def frost_words(r: float) -> str:
     """Plain words for a frost-days / crop-size correlation."""
-    if r <= -0.4:
-        return "more frost days have usually meant smaller crops"
-    if r <= -0.2:
-        return "more frost days have loosely gone with smaller crops"
-    if r < 0.2:
-        return "the frost-day count says little about the crop"
-    return "more frost days have not meant smaller crops"
+    return t(f"frost.words.{_strength(r)}")
 
 
 def frost_crop_subtitle(df: pd.DataFrame, frost_col: str, crop_col: str,
@@ -729,13 +713,16 @@ def frost_crop_subtitle(df: pd.DataFrame, frost_col: str, crop_col: str,
     d = df.dropna(subset=[frost_col, crop_col])
     if len(d) < MIN_SEASONS:
         if crop_source:
-            return FROST_CROP_FALLBACK.format(source=crop_source)
-        return FROST_CROP_FALLBACK_NO_SOURCE
+            return t("frost.fallback", source=crop_source)
+        return t("frost.fallback_no_source")
     r = float(d[frost_col].corr(d[crop_col]))
-    return f"Over {len(d)} years, {frost_words(r)} (correlation {_r_text(r)})."
+    return t(f"frost.subtitle.{_strength(r)}", n=len(d), r=_r_text(r))
 
 
-_COUNT_WORDS = {2: "two", 3: "three", 4: "four", 5: "five"}
+def _count_word(n: int) -> str:
+    """``2`` -> "two" (up to five), else the number."""
+    key = f"count_word.{n}"
+    return t(key) if i18n.has(key) else str(n)
 
 
 def smallest_crops_note(df: pd.DataFrame, frost_col: str, crop_col: str, n: int = 2,
@@ -743,10 +730,10 @@ def smallest_crops_note(df: pd.DataFrame, frost_col: str, crop_col: str, n: int 
     """"The two smallest crops, 2004 and 2014, followed 8.7 and 2.3 frost days."."""
     d = df.dropna(subset=[frost_col, crop_col]).nsmallest(n, crop_col)
     years = _join_names([str(int(y)) for y in d[year_col]])
-    days = _join_names([f"{v:.1f}" for v in d[frost_col]])
+    days = _join_names([i18n.fmt_number(v, 1) for v in d[frost_col]])
     if len(d) == 1:
-        return f"The smallest crop, {years}, followed {days} frost days."
-    return f"The {_COUNT_WORDS.get(len(d), len(d))} smallest crops, {years}, followed {days} frost days."
+        return t("frost.smallest_one", years=years, days=days)
+    return t("frost.smallest_many", count=_count_word(len(d)), years=years, days=days)
 
 
 def partial_year_note(latest_year: int, built_at: str | None, last_month: int = 4) -> str | None:
@@ -761,53 +748,53 @@ def partial_year_note(latest_year: int, built_at: str | None, last_month: int = 
     end = pd.Period(year=int(latest_year), month=last_month, freq="M").end_time
     if built.replace(tzinfo=None) > end:
         return None
-    return (f"{latest_year} is partial: the data was built on {built.day} "
-            f"{calendar.month_name[built.month]} {built.year}, before its frost window ended.")
+    date = t("format.day_month_year", day=built.day, month=month_name(built.month),
+             year=built.year)
+    return t("frost.partial_year", year=latest_year, date=date)
 
 
 # Tables
 
 def fmt_ratio(dp: int):
     """A formatter for ratios with ``dp`` decimals."""
-    return lambda x: NA if _missing(x) else f"{x:.{dp}f}"
+    return lambda x: i18n.fmt_number(x, dp)
 
 
 def fmt_pct(x) -> str:
     """A fraction as a whole percent: ``0.8418`` -> ``84%``."""
-    return NA if _missing(x) else f"{round(x * 100)}%"
+    return i18n.fmt_pct(x)
 
 
 def fmt_signed(x) -> str:
     """A signed number with two decimals: ``−0.10``, ``+0.18``; zero has no sign."""
-    if _missing(x):
-        return NA
-    v = round(x, 2)
-    return "0.00" if v == 0 else f"{'+' if v > 0 else MINUS}{abs(v):.2f}"
+    return i18n.fmt_signed(x)
 
 
 def fmt_p(x) -> str:
     """A p-value: two decimals, three when two would show 0.00, "<0.001" below that."""
     if _missing(x):
-        return NA
+        return na()
     if x < 0.001:
-        return "<0.001"
-    return f"{x:.3f}" if round(x, 2) == 0 else f"{x:.2f}"
+        return "<" + i18n.fmt_number(0.001, 3)
+    return i18n.fmt_number(x, 3 if round(x, 2) == 0 else 2)
 
 
 def metric_table_html(df: pd.DataFrame, groups, *, caption: str, row: str = "method",
                       col: str = "horizon", names=None, order: Sequence | None = None,
-                      highlight: str | None = NAIVE, row_head: str = "Method",
+                      highlight: str | None = NAIVE, row_head: str | None = None,
                       col_label=None, methods_href: str | None = None) -> str:
     """A table from a long frame: one row per ``row`` value, and for each group
     ``(label, value column, formatter)`` one column per ``col`` value (horizons by default,
     headed "1 mo"). With more than one group a spanning header names each group.
+    ``row_head`` heads the name column (default "Method").
 
     ``names`` maps a row key to its label (falling back to ``method_name``); ``order``
     sets the row order (default: first appearance); the ``highlight`` row is amber. With
     ``methods_href`` (rows that are methods) each name links to its Methods page card."""
     cols = sorted(df[col].unique())
     keys = list(order) if order is not None else list(dict.fromkeys(df[row]))
-    label = col_label or (lambda c: f"{c} mo")
+    label = col_label or (lambda c: t("unit.mo", n=c))
+    row_head = t("table.method") if row_head is None else row_head
     values = df.set_index([row, col])
 
     def name_of(k) -> str:
@@ -832,7 +819,7 @@ def metric_table_html(df: pd.DataFrame, groups, *, caption: str, row: str = "met
         body.append(f"<tr{cls}><td>{method_cell(str(k), name_of(k), methods_href)}</td>{''.join(cells)}</tr>")
     return (
         # Quarto restyles raw HTML tables (striped, visible caption) unless told not to.
-        f'<div class="table-wrap" data-scroll-hint="{escape(SCROLL_HINT)}">'
+        f'<div class="table-wrap" data-scroll-hint="{escape(scroll_hint())}">'
         '<table class="metric" data-quarto-disable-processing="true">'
         f'<caption class="visually-hidden">{escape(caption)}</caption>'
         f"<thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"
@@ -846,13 +833,11 @@ def dev_subtitle(board: pd.DataFrame) -> str:
     others = board[board["method"] != NAIVE]
     under = int((others["ratio"] < 1).sum())
     if under:
-        return (f"{under} of {len(others)} method-horizon scores came in under 1 "
-                "(below 1 beats naive), which could be chance.")
+        return t("forecast.dev_some", under=under, total=len(others))
     closest = sorted(round((float(r) - 1) * 100)
                      for r in others.groupby("horizon")["ratio"].min())
-    margin = (f"{closest[0]}%" if closest[0] == closest[-1]
-              else f"{closest[0]}% to {closest[-1]}%")
-    return f"None beat naive at any horizon; the closest lost by {margin}."
+    margin = _span(_pct_points(closest[0]), _pct_points(closest[-1]))
+    return t("forecast.dev_none", margin=margin)
 
 
 def shock_table(shocks: pd.DataFrame) -> pd.DataFrame:
@@ -874,37 +859,31 @@ def shock_multiple(shocks: pd.DataFrame, exclude: Sequence[str] = ()) -> tuple[f
 def shock_subtitle(shocks: pd.DataFrame, exclude: Sequence[str] = ()) -> str:
     """How much bigger errors get in shock months (methods in ``exclude`` left out of that
     multiple), and how many shock-month scores came in under naive; names no method."""
-    lo, hi = shock_multiple(shocks, exclude)
-    lead = (f"In shock months the errors were {lo:.1f} to {hi:.1f} times "
-            "their calm size, naive's included")
+    lo, hi = (i18n.fmt_number(v, 1) for v in shock_multiple(shocks, exclude))
     sh = shocks[(shocks["period"] == "shock") & (shocks["method"] != NAIVE)]
     under = sh[sh["ratio"] < 1]
     if under.empty:
-        return f"{lead}; no method beat naive there."
+        return t("forecast.shock_none", low=lo, high=hi)
     best = round((1 - float(under["ratio"].min())) * 100)
-    return (f"{lead}; {len(under)} of {len(sh)} shock-month scores came in under 1, "
-            f"by at most {best}%.")
+    return t("forecast.shock_some", low=lo, high=hi, under=len(under), total=len(sh),
+             best=_pct_points(best))
 
 
 def holdout_subtitle(holdout: pd.DataFrame) -> str:
     """The holdout's takeaway, labelled as scored once. Names a method only if it came in
     under naive at every horizon, and then says that could be chance."""
     n = count_text(holdout["n"])
-    lead = f"{n} forecasts per horizon, {HOLDOUT_NOTE}."
     rows = [(m, name, r) for m, name, r in scoreboard_rows(holdout) if m != NAIVE]
     winners = [name for _, name, r in rows if r and all(v < 1 for v in r.values())]
     if winners:
-        return (f"{lead} {_join_names(winners)} came in under naive at every horizon; on "
-                f"{n} forecasts per horizon that could be chance (no significance test was "
-                "run on the holdout).")
+        return t("forecast.holdout_winners", n=n, names=_join_names(winners))
     others = holdout[holdout["method"] != NAIVE]
     under = others[others["ratio"] < 1]
     if under.empty:
-        return f"{lead} No method beat naive at any horizon."
+        return t("forecast.holdout_none", n=n)
     lost = all(any(v > 1 for v in r.values()) for m, _, r in rows if m in set(under["method"]))
-    tail = ", each from a method that lost at another horizon" if lost else ""
-    return (f"{lead} No method beat naive at every horizon; {len(under)} of {len(others)} "
-            f"scores came in under 1{tail}.")
+    return t("forecast.holdout_some_lost" if lost else "forecast.holdout_some", n=n,
+             under=len(under), total=len(others))
 
 
 def holdout_dev_note(holdout: pd.DataFrame, dev: pd.DataFrame) -> str | None:
@@ -918,10 +897,10 @@ def holdout_dev_note(holdout: pd.DataFrame, dev: pd.DataFrame) -> str | None:
     lost = sum(1 for m, h in zip(under["method"], under["horizon"])
                if (m, h) in d.index and float(d[(m, h)]) > 1)
     if both == 0 and lost == len(under):
-        return HOLDOUT_LUCK_NOTE
+        return t("forecast.holdout_luck_note")
     if both == 0:
-        return HOLDOUT_NO_REPEAT_NOTE
-    return HOLDOUT_REPEAT_NOTE.format(n=both)
+        return t("forecast.holdout_no_repeat_note")
+    return t("forecast.holdout_repeat_note", n=both)
 
 
 def forecast_3m_subtitle(f: pd.DataFrame, horizon: int) -> str:
@@ -930,8 +909,8 @@ def forecast_3m_subtitle(f: pd.DataFrame, horizon: int) -> str:
     other = float((f["best_other"] - f["actual"]).abs().mean())
     pct = round((other / naive - 1) * 100)
     name = method_name(str(f["best_other_method"].iloc[0]))
-    return (f"{horizon} months ahead, naive missed by {fmt_usd(naive)}/kg on average; {name}, "
-            f"the closest challenger, missed by {abs(pct)}% {'more' if pct >= 0 else 'less'}.")
+    return t("forecast.f3_more" if pct >= 0 else "forecast.f3_less", horizon=horizon,
+             miss=fmt_usd(naive), name=name, pct=_pct_points(abs(pct)))
 
 
 def _in_periods(month: str, periods: Sequence[tuple[str, str]]) -> bool:
@@ -957,11 +936,10 @@ def band_subtitle(band: pd.DataFrame, shocks: Sequence[tuple[str, str]], horizon
     share, n_held, n = band_held(band)
     shock = b["target_month"].astype(str).map(lambda m: _in_periods(m, shocks))
     misses = n - n_held
-    lead = (f"{horizon} months ahead, the 8-in-10 range held {fmt_pct(share)} of the "
-            f"time ({n_held} of {n} months)")
     if misses == 0:
-        return f"{lead}."
-    return f"{lead}; {int((~held & shock).sum())} of the {misses} misses fell in a shock period."
+        return t("forecast.band_all_held", horizon=horizon, pct=fmt_pct(share), held=n_held, n=n)
+    return t("forecast.band_misses", horizon=horizon, pct=fmt_pct(share), held=n_held, n=n,
+             in_shock=int((~held & shock).sum()), misses=misses)
 
 
 def crop_check_table(dev: pd.DataFrame, check: pd.DataFrame, main_source: str) -> pd.DataFrame:
@@ -972,12 +950,12 @@ def crop_check_table(dev: pd.DataFrame, check: pd.DataFrame, main_source: str) -
     for m in dict.fromkeys(check["method"]):
         name = method_name(str(m))
         d = dev[dev["method"] == m]
-        rows += [(f"{name}, {main_source.capitalize()}, on time", int(h), float(r))
-                 for h, r in zip(d["horizon"], d["ratio"])]
+        on_time = t("crop_check.row_on_time", method=name, source=main_source.capitalize())
+        rows += [(on_time, int(h), float(r)) for h, r in zip(d["horizon"], d["ratio"])]
         for src in dict.fromkeys(check["crop_source"]):
             c = check[(check["method"] == m) & (check["crop_source"] == src)]
-            rows += [(f"{name}, {str(src).capitalize()}, a month late", int(h), float(r))
-                     for h, r in zip(c["horizon"], c["ratio"])]
+            late = t("crop_check.row_late", method=name, source=str(src).capitalize())
+            rows += [(late, int(h), float(r)) for h, r in zip(c["horizon"], c["ratio"])]
     return pd.DataFrame(rows, columns=["row", "horizon", "ratio"])
 
 
@@ -985,10 +963,11 @@ LEAK_TOLERANCE = 0.05  # a shift this small in error ratio is read as no sign of
 
 
 def crop_check_subtitle(dev: pd.DataFrame, check: pd.DataFrame, main_source: str, *,
-                        rule: str = "the timing rule",
+                        rule: str | None = None,
                         tolerance: float = LEAK_TOLERANCE) -> str:
     """The leak verdict (how far the scores moved with every crop estimate a month late),
-    then how the other estimate(s) compared with ``main_source`` at that same late timing."""
+    then how the other estimate(s) compared with ``main_source`` at that same late timing.
+    ``rule`` names the timing rule under test (default "the timing rule")."""
     on_time = dev.set_index(["method", "horizon"])["ratio"]
     late = check[check["crop_source"] == main_source].set_index(["method", "horizon"])["ratio"]
     common = late.index.intersection(on_time.index)
@@ -997,15 +976,9 @@ def crop_check_subtitle(dev: pd.DataFrame, check: pd.DataFrame, main_source: str
     cmp = others.set_index(["method", "horizon"]).join(late.rename("main"), how="inner")
     worse = int((cmp["ratio"] > cmp["main"]).sum())
     sources = _join_names(list(dict.fromkeys(others["crop_source"].astype(str))))
-    if shift <= tolerance:
-        verdict = (f"changed the scores by at most {shift:.2f}, so {rule} shows no sign "
-                   "of a leak")
-    else:
-        verdict = (f"changed the scores by up to {shift:.2f}, so results under {rule} "
-                   "may have gained from a leak")
-    return (f"Moving every crop estimate a month later {verdict}; at that month-late timing "
-            f"the {sources} estimate scored worse in {worse} of {len(cmp)} "
-            f"method-horizon pairs.")
+    return t("crop_check.no_leak" if shift <= tolerance else "crop_check.leak",
+             shift=i18n.fmt_number(shift, 2), rule=t("crop_check.default_rule") if rule is None else rule,
+             sources=sources, worse=worse, total=len(cmp))
 
 
 def lira_split(lira: pd.DataFrame, method: str, periods: Sequence[str]) -> pd.DataFrame:
@@ -1015,22 +988,34 @@ def lira_split(lira: pd.DataFrame, method: str, periods: Sequence[str]) -> pd.Da
     return wide[list(periods)].rename_axis(columns=None)
 
 
-def _vs_naive(values) -> str:
+def _vs_naive(values) -> tuple[str, dict]:
+    """The lira split's key variant ("below", "above", ranges or "mixed") and its fields."""
     pcts = sorted(round((float(v) - 1) * 100) for v in values)
     lo, hi = pcts[0], pcts[-1]
     if hi < 0:
-        return f"{-hi}% below naive's" if lo == hi else f"{-hi}% to {-lo}% below naive's"
+        if lo == hi:
+            return "lira.split_below", {"pct": _pct_points(-hi)}
+        return "lira.split_below_range", {"low": _pct_points(-hi), "high": _pct_points(-lo)}
     if lo > 0:
-        return f"{lo}% above naive's" if lo == hi else f"{lo}% to {hi}% above naive's"
-    return f"between {-lo}% below and {hi}% above naive's"
+        if lo == hi:
+            return "lira.split_above", {"pct": _pct_points(lo)}
+        return "lira.split_above_range", {"low": _pct_points(lo), "high": _pct_points(hi)}
+    return "lira.split_mixed", {"low": _pct_points(-lo), "high": _pct_points(hi)}
+
+
+def _period_word(period: str) -> str:
+    """A lira period's name in words ("calm", "crisis"); other periods keep their key."""
+    key = f"lira.period.{period}"
+    return t(key) if i18n.has(key) else period
 
 
 def lira_split_subtitle(lira: pd.DataFrame, method: str, calm: str = "calm",
                         crisis: str = "crisis") -> str:
     w = lira_split(lira, method, (calm, crisis))
     within = round(float((w[calm] - 1).abs().max()) * 100)
-    return (f"In the {crisis} months its error was {_vs_naive(w[crisis])}; in {calm} months "
-            f"it was within {within}% of naive's.")
+    key, values = _vs_naive(w[crisis])
+    return t(key, crisis=_period_word(crisis), calm=_period_word(calm),
+             within=_pct_points(within), **values)
 
 
 def lira_p_note(lira: pd.DataFrame, methods: Mapping[str, str]) -> str:
@@ -1041,7 +1026,7 @@ def lira_p_note(lira: pd.DataFrame, methods: Mapping[str, str]) -> str:
         r = a[a["method"] == code].sort_values("horizon")
         ps = " / ".join(fmt_p(p) for p in r["dm_p"])
         hs = " / ".join(str(int(h)) for h in r["horizon"])
-        parts.append(f"{name}: p = {ps} at {hs} months")
+        parts.append(t("lira.p_part", name=name, ps=ps, horizons=hs))
     return "; ".join(parts) + "."
 
 
@@ -1050,8 +1035,8 @@ def periods_label(periods: Sequence[tuple[str, str]]) -> str:
     "May to December 2018 and September 2021 to December 2023"."""
     def one(a: str, b: str) -> str:
         if a[:4] == b[:4]:
-            return f"{calendar.month_name[int(a[5:])]} to {month_label(b)}"
-        return f"{month_label(a)} to {month_label(b)}"
+            return t("span.same_year", first=month_name(int(a[5:])), last=month_label(b))
+        return t("span.years", first=month_label(a), last=month_label(b))
     return _join_names([one(a, b) for a, b in periods])
 
 
@@ -1066,47 +1051,57 @@ def ranges_subtitle(ranges: pd.DataFrame, base: str) -> str:
     """How often ``base``'s 8-in-10 range held, and whether any method's skill beat it."""
     b = ranges[ranges["method"] == base]
     covs = sorted(round(float(c) * 100) for c in b["cov80"])
-    lo, hi = covs[0], covs[-1]
-    held = f"{lo}%" if lo == hi else f"{lo}% to {hi}%"
+    held = _span(_pct_points(covs[0]), _pct_points(covs[-1]))
     others = ranges[ranges["method"] != base]
     better = int((others["skill"] > 0).sum())
-    tail = ("no other method scored better at any horizon" if better == 0
-            else f"{better} of {len(others)} other scores beat it")
-    return (f"An honest 8-in-10 range holds about 80% of the time. {method_name(base)} held "
-            f"{held}, and {tail}.")
+    if better == 0:
+        return t("forecast.ranges_none", method=method_name(base), held=held)
+    return t("forecast.ranges_some", method=method_name(base), held=held, better=better,
+             total=len(others))
 
 
 def lira_subtitle(lira: pd.DataFrame, trend: Sequence[str], trend_words: str, *,
-                  caveat: str = "which is suggestive only") -> str:
+                  caveat: str | None = None) -> str:
     """The lira table's takeaway over all months: the first horizon, then the gains of the
     ``trend`` methods at the longer horizons (MAPE ratio vs naive). A gain is never stated
-    without ``caveat``: several variants were tried, so it is suggestive at most."""
+    without ``caveat`` (default "which is suggestive only"): several variants were tried,
+    so it is suggestive at most."""
+    caveat = t("lira.default_caveat") if caveat is None else caveat
     a = lira[(lira["period"] == "all") & (lira["method"] != NAIVE)]
     h1 = int(a["horizon"].min())
     first = a[a["horizon"] == h1]
     beat = int((first["mape_ratio"] < 1).sum())
-    lead = (f"In percent terms nothing beat naive at {_plural(h1, 'month')}" if beat == 0
-            else f"In percent terms {beat} of {len(first)} methods beat naive at "
-                 f"{_plural(h1, 'month')}")
+    if beat == 0:
+        lead = t("lira.lead_none", span=_months(h1))
+    else:
+        lead = t("lira.lead_some", beat=beat, total=len(first), span=_months(h1))
     rest = a[a["method"].isin(list(trend)) & (a["horizon"] > h1)]
     if rest.empty:
         return f"{lead}."
     hs = _join_names([str(int(h)) for h in sorted(rest["horizon"].unique())])
     gains = sorted(round((1 - float(r)) * 100) for r in rest["mape_ratio"])
     lo, hi = gains[0], gains[-1]
-    if lo > 0:
-        size = f"{lo}% lower" if lo == hi else f"{lo}% to {hi}% lower"
+    common = dict(horizons=hs, trend=trend_words, caveat=caveat)
+    if lo > 0 and lo == hi:
+        tail = t("lira.tail_lower", pct=_pct_points(lo), **common)
+    elif lo > 0:
+        tail = t("lira.tail_lower_range", low=_pct_points(lo), high=_pct_points(hi), **common)
+    elif hi > 0:
+        tail = t("lira.tail_mixed", low=_pct_points(-lo), high=_pct_points(hi), **common)
     else:
-        size = f"between {-lo}% higher and {hi}% lower" if hi > 0 else f"{-hi}% to {-lo}% higher"
-    if lo > 0 or hi > 0:
-        return f"{lead}; at {hs} months {trend_words} had {size} error, {caveat}."
-    return f"{lead}; at {hs} months {trend_words} had {size} error."
+        tail = t("lira.tail_higher", low=_pct_points(-hi), high=_pct_points(-lo), **common)
+    return f"{lead}; {tail}."
 
 
 # --- Data explorer, Downloads, Methods -----------------------------------------------------
 
 OUTLIER_LIMIT = 0.5  # a monthly gap between exchanges beyond ±50% is a source error, not a price
-BASE_CURRENCY = ("USD", "usd_kg")  # every crop's site data carries a USD/kg price column
+BASE_COLUMN = "usd_kg"  # every crop's site data carries a USD/kg price column
+
+
+def base_currency() -> tuple[str, str]:
+    """(label, column) of the site's base currency, US dollars per kg."""
+    return t("unit.usd"), BASE_COLUMN
 
 
 def number_decimals(fmt: str | None) -> int | None:
@@ -1129,7 +1124,7 @@ def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[
     ``extras`` are its columns other than the month and the currency prices (the visitor
     can show or hide them); ``source`` and ``terms`` come from the provider row that
     starts with its name."""
-    usd_label, usd_col = BASE_CURRENCY
+    usd_label, usd_col = base_currency()
     currencies = [{"label": usd_label, "column": usd_col},
                   {"label": crop.local_currency.label, "column": crop.local_currency.column}]
     fixed = {"month"} | {c["column"] for c in currencies}
@@ -1150,7 +1145,7 @@ def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[
             "source": row[0] if row else None,
             "terms": row[3] if row else None,
         })
-    return {"slug": crop.slug, "name": crop.name, "currencies": currencies,
+    return {"slug": crop.slug, "name": i18n.crop_name(crop), "currencies": currencies,
             "exchanges": exchanges}
 
 
@@ -1164,11 +1159,10 @@ def explorer_outlier_note(ref: pd.DataFrame, other: pd.DataFrame, col: str, name
     if far.empty:
         return None
     months = _join_names([month_label(str(m)) for m in far["month"]])
-    one = len(far) == 1
-    text = (f"{months}: {name}'s price was more than {round(limit * 100)}% away from "
-            f"{ref_name}'s, most likely {'an entry error' if one else 'entry errors'} in the "
-            f"source. {'It is' if one else 'They are'} shown as published.")
-    link = f' <a href="{escape(href)}">See the exchanges analysis</a>.' if href else ""
+    text = t("explorer.outlier_one" if len(far) == 1 else "explorer.outlier_many",
+             months=months, name=name, limit=fmt_pct(limit), ref=ref_name)
+    link = (f' <a href="{escape(href)}">{escape(t("explorer.outlier_link"), quote=False)}</a>.'
+            if href else "")
     return f"{escape(text, quote=False)}{link}"
 
 
@@ -1176,20 +1170,21 @@ def file_size_text(n_bytes: int) -> str:
     """``850_000`` -> ``"830 KB"``, ``1_300_000`` -> ``"1.2 MB"`` (binary units)."""
     kb, mb = n_bytes / 1024, n_bytes / 1024 ** 2
     if mb < 1:
-        return f"{max(1, round(kb))} KB"
-    return f"{mb:.1f} MB" if mb < 10 else f"{round(mb)} MB"
+        return t("unit.kb", n=max(1, round(kb)))
+    return t("unit.mb", n=i18n.fmt_number(mb, 1) if mb < 10 else round(mb))
 
 
-WORKBOOK_MISSING = "The workbook is not available in this refresh."
 DOWNLOAD_ICON = '<svg class="ico" aria-hidden="true"><use href="#download"/></svg>'
 
 
 def workbook_download_html(href: str, size_bytes: int | None) -> str:
     """The workbook's download button with its size, or a note when the file was not built."""
     if size_bytes is None:
-        return f'<p class="chart-error" role="note">{escape(WORKBOOK_MISSING, quote=False)}</p>'
+        missing = escape(t("downloads.workbook_missing"), quote=False)
+        return f'<p class="chart-error" role="note">{missing}</p>'
+    label = t("downloads.button", size=file_size_text(size_bytes))
     return (f'<a class="btn pri" href="{escape(href)}" download>{DOWNLOAD_ICON}'
-            f"Download the workbook (.xlsx, {file_size_text(size_bytes)})</a>")
+            f"{escape(label, quote=False)}</a>")
 
 
 def sheet_list_html(rows: Sequence[tuple[str, str]]) -> str:
@@ -1197,11 +1192,12 @@ def sheet_list_html(rows: Sequence[tuple[str, str]]) -> str:
     body = "".join(f"<tr><td>{escape(name)}</td><td>{escape(note)}</td></tr>"
                    for name, note in rows)
     return (
-        f'<div class="table-wrap" data-scroll-hint="{escape(SCROLL_HINT)}">'
+        f'<div class="table-wrap" data-scroll-hint="{escape(scroll_hint())}">'
         '<table class="metric sheets" '
         'data-quarto-disable-processing="true">'
-        '<caption class="visually-hidden">Sheets in the workbook</caption>'
-        '<thead><tr><th scope="col">Sheet</th><th scope="col">What it holds</th></tr></thead>'
+        f'<caption class="visually-hidden">{escape(t("downloads.sheets_caption"))}</caption>'
+        f'<thead><tr><th scope="col">{escape(t("downloads.sheet"))}</th>'
+        f'<th scope="col">{escape(t("downloads.holds"))}</th></tr></thead>'
         f"<tbody>{body}</tbody></table></div>"
     )
 
@@ -1215,12 +1211,13 @@ def sources_table_html(sources: Sequence) -> str:
         for name, what, url, terms in sources
     )
     return (
-        f'<div class="table-wrap" data-scroll-hint="{escape(SCROLL_HINT)}">'
+        f'<div class="table-wrap" data-scroll-hint="{escape(scroll_hint())}">'
         '<table class="metric sources" '
         'data-quarto-disable-processing="true">'
-        '<caption class="visually-hidden">Data sources and their terms</caption>'
-        '<thead><tr><th scope="col">Provider</th><th scope="col">What we use</th>'
-        '<th scope="col">Credit and terms</th></tr></thead>'
+        f'<caption class="visually-hidden">{escape(t("sources.caption"))}</caption>'
+        f'<thead><tr><th scope="col">{escape(t("sources.provider"))}</th>'
+        f'<th scope="col">{escape(t("sources.what"))}</th>'
+        f'<th scope="col">{escape(t("sources.terms"))}</th></tr></thead>'
         f"<tbody>{body}</tbody></table></div>"
     )
 
@@ -1228,7 +1225,7 @@ def sources_table_html(sources: Sequence) -> str:
 def range_held_text(ranges: pd.DataFrame, method: str) -> str:
     """How often ``method``'s 80% range held across horizons: ``"82% to 84%"`` or ``"83%"``."""
     held = sorted({round(v * 100) for v in ranges.loc[ranges["method"] == method, "cov80"]})
-    return f"{held[0]}%" if len(held) == 1 else f"{held[0]}% to {held[-1]}%"
+    return _span(_pct_points(held[0]), _pct_points(held[-1]))
 
 
 def methods_facts(dev: pd.DataFrame | None, holdout: pd.DataFrame | None,
@@ -1239,18 +1236,17 @@ def methods_facts(dev: pd.DataFrame | None, holdout: pd.DataFrame | None,
     data is missing is left out."""
     facts = []
     if dev is not None:
-        facts.append(f"Development period, walk-forward in {BASE_CURRENCY[0]}, "
-                     f"{count_text(dev['n'])} forecasts per horizon: {dev_subtitle(dev)}")
+        facts.append(t("methods_page.fact_dev", currency=base_currency()[0],
+                       count=count_text(dev["n"]), finding=dev_subtitle(dev)))
     if holdout is not None and holdout_period is not None:
         a, b = holdout_period
-        facts.append(f"Holdout, {month_label(a)} to {month_label(b)}: "
-                     f"{holdout_subtitle(holdout)}")
+        facts.append(t("methods_page.fact_holdout", first=month_label(a), last=month_label(b),
+                       finding=holdout_subtitle(holdout)))
     rng = ranges[ranges["method"] == range_method] if ranges is not None else None
     if rng is not None and not rng.empty:
         hs = _join_names([str(int(h)) for h in sorted(rng["horizon"])])
-        facts.append(f"The 8-in-10 range from past price moves held "
-                     f"{range_held_text(ranges, range_method)} of the time in the backtest, "
-                     f"at {hs} months ahead.")
+        facts.append(t("methods_page.fact_range", held=range_held_text(ranges, range_method),
+                       horizons=hs))
     return facts
 
 
@@ -1260,13 +1256,14 @@ def holdout_glossary_sentence(periods: Sequence[tuple[str, tuple[str, str]]]) ->
     ``periods`` is ``[(crop name, (first month, last month)), ...]``.
     """
     if not periods:
-        return "The final months of the backtest were set aside before any method was built."
+        return t("methods_page.holdout_none")
     spans = []
     for name, (a, b) in periods:
         n = (pd.Period(b, "M") - pd.Period(a, "M")).n + 1
-        spans.append((name.lower(), f"{month_label(a)} to {month_label(b)} ({n} months)"))
-    first, rest = spans[0], spans[1:]
-    text = f"For {first[0]} the holdout is {first[1]}"
-    text += "".join(f"; for {name}, {span}" for name, span in rest)
-    who = "It was" if not rest else "Each was"
-    return f"{text}. {who} set aside before any method was built."
+        spans.append((name.lower(), t("methods_page.holdout_span", first=month_label(a),
+                                      last=month_label(b), months=_months(n))))
+    (crop, span), rest = spans[0], spans[1:]
+    if not rest:
+        return t("methods_page.holdout_one", crop=crop, span=span)
+    more = "".join(t("methods_page.holdout_more", crop=c, span=s) for c, s in rest)
+    return t("methods_page.holdout_many", crop=crop, span=span, more=more)

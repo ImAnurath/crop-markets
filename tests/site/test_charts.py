@@ -272,18 +272,16 @@ def test_english_charts_carry_no_locale(prices):
     assert "separators" not in spec["layout"]
 
 
-def test_turkish_charts_get_plotlys_tr_locale_and_separators(prices, monkeypatch):
+def test_turkish_charts_get_plotlys_tr_locale_and_separators(prices, turkish):
     from hazelnut.site.plotly_locales import LOCALES
 
-    monkeypatch.setenv("QUARTO_PROFILE", "tr")
     spec = _spec(charts.to_html(charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")))
     assert spec["layout"]["separators"] == ",."  # decimal comma, thousands dot
     assert spec["config"] == {**charts.CONFIG, "locale": "tr", "locales": {"tr": LOCALES["tr"]}}
     assert LOCALES["tr"]["format"]["shortMonths"][9] == "Eki"  # hover "%b %Y" -> "Eki 2026"
 
 
-def test_turkish_price_history_labels(prices, monkeypatch):
-    monkeypatch.setenv("QUARTO_PROFILE", "tr")
+def test_turkish_price_history_labels(prices, turkish):
     fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
     assert _button_labels(fig.layout.updatemenus[1]) == ["5 yıl", "10 yıl", "Tümü"]
     assert fig.data[0].hovertemplate == "%{y:.2f} $/kg<extra></extra>"  # "4,13 $/kg"

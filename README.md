@@ -104,7 +104,11 @@ still hazelnut-only and gets refactored when a second crop is added.
      (`{backtest method: (method shown, crop-estimate source)}` for the crop-estimate check).
    - `WORKBOOK_SHEETS`, `WORKBOOK_SHEET_NOTES`, `WORKBOOK_SOURCES` (workbook, Downloads page,
      source count on the overview) and `EXPLORER_SHEETS` (which sheet each exchange shows).
+     Their words (sheet names, headers, notes, source credits) are `<slug>.*` entries in
+     `site/i18n/en.yml` and `tr.yml`, read through `hazelnut.site.i18n.t`.
    - Optional `HOLDOUT_PERIOD` and `TIMING_NOTE` for the Methods page.
+   - In both `site/i18n/*.yml` files, `crop.<slug>.name` and `crop.<slug>.country` (the
+     English ones match `crops.yml`; a test checks).
 3. **Register it** in `CROP_MODULES` in `src/hazelnut/site/crops.py`.
 4. **Pages**: copy `site/hazelnut/` to `site/<slug>/`, change each page's
    `load_crops()["hazelnut"]` and the explorer's two `FileAttachment` paths, and rewrite the

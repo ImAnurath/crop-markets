@@ -7,7 +7,7 @@ description: "Every monthly hazelnut price record from the Giresun and Ordu comm
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, SITE_URL, load_crops
 from hazelnut.site.crops import crop_module
-from hazelnut.site.labels import SCROLL_HINT
+from hazelnut.site.labels import scroll_hint
 
 crop = load_crops()["hazelnut"]
 mod = crop_module(crop.slug)
@@ -43,7 +43,7 @@ cfg.update(
     downloads_url=f"{SITE_URL}downloads.html",
     unavailable="These records could not be loaded. Reload the page to try again.",
     empty="No months match these filters.",
-    scroll_hint=SCROLL_HINT,
+    scroll_hint=scroll_hint(),
 )
 ojs_define(explorer=cfg)
 

@@ -6,13 +6,15 @@ description-tr: "Türk fındığının fiyatları, ihracatı, rekoltesi ve tahmi
 ---
 
 ```{python}
+from hazelnut.site import i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
 from hazelnut.site.crops import crop_module
 
 crop = load_crops()["hazelnut"]
 stats, manifest = ph.load_page_data(SITE_DIR / "data" / crop.slug)
-eyebrow = f"Crops / {crop.name} / {ph.exchanges_phrase(crop.exchanges)}"
+eyebrow = i18n.t("overview.eyebrow", crop=i18n.crop_name(crop),
+                 exchanges=ph.exchanges_phrase(crop.exchanges))
 sources_count, sources_list = ph.sources_summary(crop_module(crop.slug).WORKBOOK_SOURCES)
 ```
 

@@ -7,7 +7,7 @@ description: "Giresun hazelnut prices, the six-month price range, export destina
 from hazelnut.forecast.dataset import SHOCK_PERIODS
 from hazelnut.site import charts
 from hazelnut.site import page_helpers as ph
-from hazelnut.site.labels import CROP_ESTIMATE_LABEL_NO_YEAR
+from hazelnut.site.labels import crop_estimate_label
 from hazelnut.site.config import SITE_DIR, load_crops
 
 crop = load_crops()["hazelnut"]
@@ -128,7 +128,7 @@ if crop_by_year is None:
 else:
     crop_df, crop_sub, crop_note = ph.crop_panel(crop_by_year, CROP_COL, prices)
     ph.raw_html(ph.panel_head_html("Bigger crop, lower price?", crop_sub))
-    charts.show(charts.crop_vs_price(crop_df, CROP_COL, CROP_ESTIMATE_LABEL_NO_YEAR.format(source=SOURCE)))
+    charts.show(charts.crop_vs_price(crop_df, CROP_COL, crop_estimate_label(SOURCE)))
     ph.raw_html(
         '<p class="foot">Giresun exchange crop estimate against the season\'s average USD '
         f"price.{' ' + ph.escape(crop_note) if crop_note else ''}</p>"

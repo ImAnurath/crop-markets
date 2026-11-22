@@ -22,6 +22,7 @@ from hazelnut.forecast.dataset import (
     target_series_try,
 )
 from hazelnut.site.config import REPO_ROOT
+from hazelnut.site.i18n import t
 
 # --- Crop hooks read by the shared site layer (site_data, validate, results, scripts) ---
 
@@ -186,75 +187,62 @@ AS_OF = {"exports_top": exports_top_as_of}
 
 
 # --- Excel workbook content for this crop ---------------------------------------------
+# Sheet names, column headers, notes and source credits are this crop's entries in
+# site/i18n/{en,tr}.yml ("hazelnut.*"), read in the active language when this module loads.
 
 PRICE, KG, SHARE, TONNES = "0.00", "#,##0", "0.0%", "#,##0"
 
+
+def _sheet(key: str, csv: str, columns: dict[str, str | None]) -> tuple[str, tuple[str, dict]]:
+    """(sheet name, (csv name, {column: (header, number format or None)}))."""
+    headers = {c: (t(f"hazelnut.column.{c}"), fmt) for c, fmt in columns.items()}
+    return t(f"hazelnut.sheet.{key}.name"), (csv, headers)
+
+
+# Sheet key -> csv and {column: number format}, in workbook order.
+_SHEETS = {
+    "prices": ("prices_monthly.csv", {"month": None, "season": None, "usd_kg": PRICE,
+                                      "try_kg": PRICE, "usd_try": "0.0000"}),
+    "ordu": ("ordu_monthly.csv", {"month": None, "season": None, "try_kg": PRICE,
+                                  "usd_kg": PRICE, "trade_days": "0"}),
+    "exports": ("exports_monthly.csv", {"month": None, "product": None, "partner": None,
+                                        "net_kg": KG, "fob_usd": KG}),
+    "top": ("exports_top.csv", {"partner": None, "net_kg": KG, "fob_usd": KG, "share": SHARE}),
+    "crop": ("crop_by_year.csv", {"year": "0", "season": None, "giresun_estimate_t": TONNES,
+                                  "giresun_registered_t": TONNES, "national_estimate_t": TONNES,
+                                  "season_avg_usd": PRICE}),
+    "range": ("price_range.csv", {"horizon": "0", "target_month": None, "q05": PRICE,
+                                  "q10": PRICE, "q50": PRICE, "q90": PRICE, "q95": PRICE,
+                                  "from_month": None, "from_usd": PRICE}),
+}
+
 # sheet -> (csv name, {column: (header, number format or None)})
-WORKBOOK_SHEETS = {
-    "Prices": ("prices_monthly.csv", {
-        "month": ("Month", None), "season": ("Season", None), "usd_kg": ("USD/kg", PRICE),
-        "try_kg": ("TL/kg", PRICE), "usd_try": ("TL per USD", "0.0000")}),
-    "Ordu": ("ordu_monthly.csv", {
-        "month": ("Month", None), "season": ("Season", None), "try_kg": ("TL/kg", PRICE),
-        "usd_kg": ("USD/kg", PRICE), "trade_days": ("Trading days", "0")}),
-    "Exports": ("exports_monthly.csv", {
-        "month": ("Month", None), "product": ("Product", None), "partner": ("Destination", None),
-        "net_kg": ("Net weight (kg)", KG), "fob_usd": ("FOB value (USD)", KG)}),
-    "Top destinations": ("exports_top.csv", {
-        "partner": ("Destination", None), "net_kg": ("Net weight (kg)", KG),
-        "fob_usd": ("FOB value (USD)", KG), "share": ("Share of exports", SHARE)}),
-    "Crop": ("crop_by_year.csv", {
-        "year": ("Year", "0"), "season": ("Season", None),
-        "giresun_estimate_t": ("Giresun estimate (t)", TONNES),
-        "giresun_registered_t": ("Giresun registered (t)", TONNES),
-        "national_estimate_t": ("National estimate (t)", TONNES),
-        "season_avg_usd": ("Season average (USD/kg)", PRICE)}),
-    "Forecast range": ("price_range.csv", {
-        "horizon": ("Horizon (months)", "0"), "target_month": ("Target month", None),
-        "q05": ("5th percentile (USD/kg)", PRICE), "q10": ("10th percentile (USD/kg)", PRICE),
-        "q50": ("Median (USD/kg)", PRICE), "q90": ("90th percentile (USD/kg)", PRICE),
-        "q95": ("95th percentile (USD/kg)", PRICE), "from_month": ("Forecast from month", None),
-        "from_usd": ("Price at forecast origin (USD/kg)", PRICE)}),
-}
+WORKBOOK_SHEETS = dict(_sheet(key, csv, cols) for key, (csv, cols) in _SHEETS.items())
 
-WORKBOOK_SHEET_NOTES = {
-    "Prices": "Monthly Giresun price, USD/kg and TL/kg",
-    "Ordu": "Monthly Ordu exchange price",
-    "Exports": "Monthly exports by destination",
-    "Top destinations": "Largest export destinations",
-    "Crop": "The Giresun exchange's crop estimate by year, and the season average price",
-    "Forecast range": "Empirical price range by horizon, in USD/kg",
-}
+WORKBOOK_SHEET_NOTES = {t(f"hazelnut.sheet.{key}.name"): t(f"hazelnut.sheet.{key}.note")
+                        for key in _SHEETS}
 
+# (provider, what we use, URL, credit and terms); the words are "hazelnut.source.<key>.*".
+_SOURCE_URLS = {
+    "comtrade": "https://comtradeplus.un.org/",
+    "faostat": "https://www.fao.org/faostat/",
+    "tobb": "https://borsa.tobb.org.tr/",
+    "giresun": "https://www.giresuntb.org.tr/",
+    "ordu": "https://docs.google.com/spreadsheets/d/1aeIzaRkKD4XvKZMRu5A4ZJywzNNUn6Ww/htmlview",
+    "open_meteo": "https://open-meteo.com/",
+    "ecb": "https://data.ecb.europa.eu/",
+    "oecd": "https://data-explorer.oecd.org/",
+}
 WORKBOOK_SOURCES = [
-    ("UN Comtrade", "Monthly export volumes and values by destination (HS 080221, 080222)",
-     "https://comtradeplus.un.org/", "Credit the source; see provider terms"),
-    ("FAOSTAT", "Annual national production statistics",
-     "https://www.fao.org/faostat/", "CC BY 4.0"),
-    ("TOBB", "Commodity exchange price records (TOBB exchange price query)",
-     "https://borsa.tobb.org.tr/", "Credit the source; see provider terms"),
-    ("Giresun Commodity Exchange", "Monthly prices, crop estimates and trade volumes",
-     "https://www.giresuntb.org.tr/", "Credit the source; see provider terms"),
-    ("Ordu Commodity Exchange", "Daily prices, published by the exchange as a public Google Sheet",
-     "https://docs.google.com/spreadsheets/d/1aeIzaRkKD4XvKZMRu5A4ZJywzNNUn6Ww/htmlview",
-     "Credit the source; see provider terms"),
-    ("Open-Meteo", "Historical daily weather (frost days)",
-     "https://open-meteo.com/", "CC BY 4.0"),
-    ("ECB", "Daily euro foreign-exchange reference rates",
-     "https://data.ecb.europa.eu/", "Free reuse with the source acknowledged"),
-    ("OECD", "Consumer price index",
-     "https://data-explorer.oecd.org/", "CC BY 4.0"),
+    (t(f"hazelnut.source.{key}.name"), t(f"hazelnut.source.{key}.what"), url,
+     t(f"hazelnut.source.{key}.terms"))
+    for key, url in _SOURCE_URLS.items()
 ]
 
 
-
 # Data explorer: each exchange's monthly sheet above (its file and column labels).
-EXPLORER_SHEETS = {"Giresun": "Prices", "Ordu": "Ordu"}
+EXPLORER_SHEETS = {"Giresun": t("hazelnut.sheet.prices.name"), "Ordu": t("hazelnut.sheet.ordu.name")}
 
 # Methods page facts that live in the forecasting reports, not in the site data.
 HOLDOUT_PERIOD = ("2024-10", "2026-09")  # reports/forecast_results.md: final holdout
-TIMING_NOTE = (
-    "A harvest's crop estimate is used only from August of that year, when it is normally "
-    "out; moving every estimate a month later changed the error ratios by at most 0.03, so "
-    "the rule shows no sign of a leak."  # reports/crop_estimate_findings.md, section 3
-)
+TIMING_NOTE = t("hazelnut.timing_note")  # reports/crop_estimate_findings.md, section 3

@@ -6,7 +6,7 @@ description: "Does a bigger hazelnut crop mean a lower price, and how much does 
 ```{python}
 from hazelnut.site import charts
 from hazelnut.site import page_helpers as ph
-from hazelnut.site.labels import CROP_ESTIMATE_LABEL_NO_YEAR, CROP_FIGURES_NOTE
+from hazelnut.site.labels import crop_estimate_label, crop_figures_note
 from hazelnut.site.config import SITE_DIR, load_crops
 
 crop = load_crops()["hazelnut"]
@@ -70,7 +70,7 @@ if crop_by_year is None:
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html(TITLE, crop_sub))
-    charts.show(charts.crop_vs_price(crop_df, CROP_COL, CROP_ESTIMATE_LABEL_NO_YEAR.format(source=SOURCE)))
+    charts.show(charts.crop_vs_price(crop_df, CROP_COL, crop_estimate_label(SOURCE)))
     notes = ["Giresun exchange crop estimate against the season's average USD price."]
     if without:
         notes.append(f"The {FROST_YEARS[0]} and {FROST_YEARS[1]} frost years carry much of "
@@ -92,8 +92,8 @@ else:
     smallest = frost_crop.nsmallest(2, CROP_COL)["year"].tolist()
     charts.show(charts.labeled_scatter(frost_crop, "frost_days", CROP_COL, "year",
                                        highlight=smallest, x_title="Frost days",
-                                       y_title=CROP_ESTIMATE_LABEL_NO_YEAR.format(source=SOURCE), y_suffix=" t"))
-    notes = [CROP_FIGURES_NOTE.format(source=SOURCE),
+                                       y_title=crop_estimate_label(SOURCE), y_suffix=" t"))
+    notes = [crop_figures_note(SOURCE),
              ph.smallest_crops_note(frost_crop, "frost_days", CROP_COL),
              "A count of cold days does not say how hard or when the frost hit; one bad "
              "night at flowering can do the damage.",

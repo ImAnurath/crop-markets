@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from hazelnut.site import page_helpers as ph
-from hazelnut.site.labels import METHOD_NAMES, method_name
+from hazelnut.site.labels import METHODS, method_name
 
 
 # --- loading ----------------------------------------------------------------------------
@@ -54,7 +54,8 @@ def test_panel_head_escapes_and_uses_h2():
 def test_method_names_are_shared_with_the_workbook():
     from hazelnut.site import workbook
 
-    assert workbook.METHOD_NAMES is METHOD_NAMES
+    assert workbook.method_name is method_name
+    assert all(method_name(m) != m for m in METHODS)  # each has a readable name
     assert method_name("chronos") == "Chronos-Bolt"
     assert method_name("mystery") == "mystery"
 
