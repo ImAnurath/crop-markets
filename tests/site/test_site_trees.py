@@ -166,6 +166,17 @@ def test_rendered_pages_carry_their_tree_language():
 
 
 @needs_both_trees
+def test_turkish_tree_has_its_own_copy_of_assets_and_data():
+    # Turkish pages use the same relative paths (../assets/site.js, the explorer's
+    # ../data/<crop>/*.csv), so each tree carries the resources.
+    for folder in ("assets", "data"):
+        en = _files(RENDERED / folder, "*")
+        assert en, f"_site/{folder} is empty"
+        assert _files(RENDERED / TR / folder, "*") == en, f"_site/tr/{folder} differs from _site/{folder}"
+    assert not (RENDERED / TR / "_site").exists(), "the Turkish render copied the English tree"
+
+
+@needs_both_trees
 def test_rendered_pages_link_their_counterparts_with_hreflang():
     bad = hreflang_problems(RENDERED, site_roots())
     assert not bad, "pages with wrong hreflang links:\n" + "\n".join(bad[:20])
