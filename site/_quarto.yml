@@ -7,10 +7,18 @@ project:
     - "**/*.qmd"
   # Copied into _site as-is: the explorer reads the CSVs client-side and the
   # Downloads page and nav button link the workbook (built by scripts/build_workbook.py).
+  # The leading "/" anchors each glob at site/; unanchored, the Turkish render (which
+  # writes into _site/tr) would also copy the English _site/data etc. into _site/tr/_site.
   resources:
-    - "data/**"
-    - "downloads/*.xlsx"
-    - "assets/**"
+    - "/data/**"
+    - "/downloads/*.xlsx"
+    - "/assets/**"
+
+# One source, two renders: _quarto-en.yml (the default) and _quarto-tr.yml hold what
+# differs per language. Render both with scripts/render_site.py (English first: a full
+# English render empties _site, including _site/tr).
+profile:
+  default: en
 
 website:
   title: "Crop Markets"
@@ -18,29 +26,10 @@ website:
   favicon: assets/favicon.svg
   page-navigation: false
   search: false
+  # The navbar items and the footer are per language, in the profile files (a profile's
+  # list is appended to this file's, so the items cannot live here too).
   navbar:
     pinned: true
-    right:
-      - text: Overview
-        href: hazelnut/index.qmd
-      - text: Dashboard
-        href: hazelnut/dashboard.qmd
-      - text: Analyses
-        href: hazelnut/analyses/index.qmd
-      - text: Data explorer
-        href: hazelnut/explorer.qmd
-      - text: Methods
-        href: methods.qmd
-      - text: Downloads
-        href: downloads.qmd
-      - text: Excel
-        href: downloads/hazelnut-market-data.xlsx
-        aria-label: Download the full Excel workbook
-  page-footer:
-    left: "Crop Markets · data refreshed weekly from public sources · [Sources and credits](/downloads.qmd#src-hazelnut)"
-    right: >-
-      Hero photo: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
-      [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons (cropped)
 
 format:
   html:
@@ -51,6 +40,7 @@ format:
     page-layout: custom
     filters:
       - filters/main-landmark.lua   # one <main> landmark per page (custom layout has none)
+      - filters/lang-meta.lua       # title-tr / description-tr on the Turkish profile
     toc: false
     code-copy: false   # no code is shown; empty OJS cells otherwise carry a stray copy button
     anchor-sections: false

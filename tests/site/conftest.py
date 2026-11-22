@@ -76,6 +76,13 @@ def _ordu_daily() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["date", "price", "special_terms", "old_lira"])
 
 
+@pytest.fixture(autouse=True)
+def english_by_default(monkeypatch):
+    """Site code runs in English unless a test sets the language (see hazelnut.site.i18n)."""
+    monkeypatch.delenv("QUARTO_PROFILE", raising=False)
+    monkeypatch.delenv("SITE_LANG", raising=False)
+
+
 @pytest.fixture
 def tiny_tables() -> dict[str, pd.DataFrame]:
     return {

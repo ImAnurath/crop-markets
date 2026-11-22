@@ -1,0 +1,30 @@
+# Turkish: rendered into site/_site/tr/ (same page paths as English, under /tr/).
+lang: tr
+
+project:
+  output-dir: _site/tr
+
+website:
+  site-url: https://imanurath.github.io/crop-markets/tr/
+  navbar:
+    right:
+      - text: Genel bakış
+        href: hazelnut/index.qmd
+      - text: Gösterge paneli
+        href: hazelnut/dashboard.qmd
+      - text: Analizler
+        href: hazelnut/analyses/index.qmd
+      - text: Veri gezgini
+        href: hazelnut/explorer.qmd
+      - text: Yöntemler
+        href: methods.qmd
+      - text: İndirmeler
+        href: downloads.qmd
+      - text: Excel
+        href: downloads/hazelnut-market-data.xlsx
+        aria-label: Excel çalışma kitabının tamamını indirin
+  page-footer:
+    left: "Crop Markets · veriler her hafta kamuya açık kaynaklardan yenilenir · [Kaynaklar ve atıflar](/downloads.qmd#src-hazelnut)"
+    right: >-
+      Kapak fotoğrafı: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
+      [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), Wikimedia Commons üzerinden (kırpılmış)

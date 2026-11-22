@@ -20,7 +20,8 @@ Point Quarto's Python engine at the venv, then render from the repo root:
 export QUARTO_PYTHON="$PWD/.venv/Scripts/python.exe"      # PowerShell: $env:QUARTO_PYTHON = "..."
 ./.venv/Scripts/python.exe scripts/build_site_data.py       # refresh site/data/ (optional)
 ./.venv/Scripts/python.exe scripts/build_workbook.py        # site/downloads/*.xlsx (gitignored)
-quarto render site                                          # -> site/_site/ (gitignored)
+export QUARTO="$HOME/tools/quarto-1.11.9/bin/quarto.exe"    # only when quarto is not on PATH
+./.venv/Scripts/python.exe scripts/render_site.py           # English -> site/_site/, Turkish -> site/_site/tr/ (gitignored)
 quarto preview site                                         # live preview on localhost
 ```
 
@@ -32,6 +33,7 @@ at `/crop-markets/`.
 
 | Path | What it is |
 |---|---|
+| `_quarto-en.yml`, `_quarto-tr.yml` | Language profiles (English is the default): `lang`, navbar items, footer; Turkish also sets its output dir (`_site/tr`) and site URL. Page prose keeps both languages in `content-visible when-profile` blocks; `title-tr`/`description-tr` front matter is applied by `filters/lang-meta.lua`. A plain `quarto render site` renders English only and empties `_site/tr`. |
 | `_quarto.yml` | Site config: navbar, footer, themes (dark listed first = the default), resources copied into `_site` (`data/**`, `downloads/*.xlsx`, `assets/**`). |
 | `_variables.yml` | Owner details (`author_name`, `author_bio`, `github_url`, `linkedin_url`); placeholders until the owner fills them in; `scripts/check_site_vars.py` (the workflow's first check) blocks every deploy until no value is empty, starts with `OWNER:`, says "fill in" or "placeholder", or is a `*_url` that is not a URL. Use with `{{< var author_name >}}`. |
 | `theme/tokens.scss` | Shared tokens and components: fonts, 8px radius, spacing scale (`--s1`..`--s9`), 1840px content width, gutters, honeycomb background, nav, buttons, `.eyebrow`, `.panel`, `.dash` 12-column grid with `.span-1`..`.span-12`, `.strip`/`.stat`, `.explore`, `.seg`, `.pill`, chart skeleton/error states. |

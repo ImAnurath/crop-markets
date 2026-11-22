@@ -257,3 +257,44 @@ def test_show_emits_a_raw_html_block_not_text_html(prices, monkeypatch):
     (obj,) = shown
     assert isinstance(obj, IPython.display.Markdown)
     assert obj.data == "```{=html}\n" + charts.to_html(fig) + "\n```\n"
+
+
+def _spec(html: str) -> dict:
+    import json
+    import re
+
+    return json.loads(re.search(r'<script type="application/json">(.*)</script>', html, re.S)[1])
+
+
+def test_english_charts_carry_no_locale(prices):
+    spec = _spec(charts.to_html(charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")))
+    assert spec["config"] == charts.CONFIG
+    assert "separators" not in spec["layout"]
+
+
+def test_turkish_charts_get_plotlys_tr_locale_and_separators(prices, monkeypatch):
+    from hazelnut.site.plotly_locales import LOCALES
+
+    monkeypatch.setenv("QUARTO_PROFILE", "tr")
+    spec = _spec(charts.to_html(charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")))
+    assert spec["layout"]["separators"] == ",."  # decimal comma, thousands dot
+    assert spec["config"] == {**charts.CONFIG, "locale": "tr", "locales": {"tr": LOCALES["tr"]}}
+    assert LOCALES["tr"]["format"]["shortMonths"][9] == "Eki"  # hover "%b %Y" -> "Eki 2026"
+
+
+def test_turkish_price_history_labels(prices, monkeypatch):
+    monkeypatch.setenv("QUARTO_PROFILE", "tr")
+    fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
+    assert _button_labels(fig.layout.updatemenus[1]) == ["5 yıl", "10 yıl", "Tümü"]
+    assert fig.data[0].hovertemplate == "%{y:.2f} $/kg<extra></extra>"  # "4,13 $/kg"
+    assert fig.layout.yaxis.ticksuffix == " $" and fig.layout.yaxis.tickprefix is None
+
+
+def test_plotly_locales_match_bundled_plotlyjs():
+    # The locale data is copied from the plotly.js that plotly.py bundles; re-copy it
+    # (src/hazelnut/site/plotly_locales.py) when the pinned plotly changes.
+    from plotly.offline import get_plotlyjs_version
+
+    from hazelnut.site.plotly_locales import PLOTLY_JS_VERSION
+
+    assert get_plotlyjs_version() == PLOTLY_JS_VERSION

@@ -191,3 +191,12 @@ def test_second_crop_uses_its_own_columns_and_gets_no_results(build_site_data, d
     assert not (out / "results").exists()
     assert "no backtest folder" in capsys.readouterr().out
     assert not (dirs[2] / "hazelnut").exists()
+
+
+def test_render_site_renders_english_before_turkish():
+    # A full English render empties site/_site, Turkish tree included.
+    render_site = _load("render_site")
+    cmds = render_site.render_commands("quarto", ["tr", "en"])
+    assert [c[-2:] for c in cmds] == [["--profile", "en"], ["--profile", "tr"]]
+    assert all(c[:2] == ["quarto", "render"] and c[2].endswith("site") for c in cmds)
+    assert render_site.render_commands("quarto", ["tr"]) == [cmds[1]]

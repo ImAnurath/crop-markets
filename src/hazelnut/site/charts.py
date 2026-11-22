@@ -29,7 +29,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
+from hazelnut.site import i18n
 from hazelnut.site.labels import OTHER_PARTNER, method_name
+from hazelnut.site.plotly_locales import LOCALES
 
 # Dark-theme tokens (global constraints). site.js swaps in the light ones.
 FG = "#eeeae4"
@@ -123,6 +125,16 @@ def _dates(months) -> pd.Series:
 
 
 PRICE_WINDOWS = (("5y", 5), ("10y", 10), ("All", None))
+
+# Task 1 spike: the price chart's strings per language. Task 2 moves them to
+# site/i18n/{en,tr}.yml and reads them through i18n.t().
+_PRICE_TEXT = {
+    "en": dict(usd_hover="$%{y:.2f} /kg<extra></extra>", usd_axis=dict(tickprefix="$"),
+               windows={}),
+    "tr": dict(usd_hover="%{y:.2f} $/kg<extra></extra>", usd_axis=dict(ticksuffix=" $"),
+               windows={"5y": "5 yıl", "10y": "10 yıl", "All": "Tümü"}),
+}
+
 _Y_PAD = 0.05  # share of the visible span added above and below the line
 
 
@@ -173,6 +185,7 @@ def price_history(
     list of (first month, last month) pairs. ``local_col``/``local_label`` come from the
     crop's ``local_currency`` in ``site/crops.yml``.
     """
+    text = _PRICE_TEXT[i18n.lang()]
     x = pd.to_datetime(prices["month"].astype(str) + "-01").reset_index(drop=True)
     usd = prices["usd_kg"].astype(float).reset_index(drop=True)
     loc = prices[local_col].astype(float).reset_index(drop=True)
@@ -184,7 +197,7 @@ def price_history(
         [
             go.Scatter(x=x, y=usd, name="USD", meta="fg", mode="lines",
                        line=line, visible=True, yaxis="y",
-                       hovertemplate="$%{y:.2f} /kg<extra></extra>"),
+                       hovertemplate=text["usd_hover"]),
             go.Scatter(x=x, y=loc, name=local_label, meta="fg", mode="lines",
                        line=line, visible=False, yaxis="y2",
                        hovertemplate="%{y:,.2f} " + local_label + "/kg<extra></extra>"),
@@ -201,7 +214,7 @@ def price_history(
             margin=dict(t=48),
             # One hover box with the month as its title (the date shows once).
             hovermode="x unified",
-            yaxis=dict(type="linear", tickprefix="$", tickformat=".2f",
+            yaxis=dict(type="linear", **text["usd_axis"], tickformat=".2f",
                        autorange=False, range=all_usd),
             # Log axis: a nominal local price can be flat for decades and then explode
             # with the currency's fall; on a log scale both stay readable.
@@ -231,7 +244,7 @@ def price_history(
                     active=len(windows) - 1,
                     x=1, xanchor="right", y=1.02, yanchor="bottom", pad=dict(t=0, r=0, b=0, l=0),
                     buttons=[
-                        dict(label=label, method="relayout",
+                        dict(label=text["windows"].get(label, label), method="relayout",
                              args=[{"xaxis.range": xr, "yaxis.range": yr,
                                     "yaxis2.range": y2r}])
                         for label, xr, yr, y2r in windows
@@ -588,13 +601,29 @@ def _plotlyjs_source() -> tuple[str, str]:
     return url, "sha256-" + base64.b64encode(digest).decode("ascii")
 
 
+def _localised(spec: dict) -> dict:
+    """``spec`` for the active language: outside English, plotly.js gets that language's
+    locale (month and day names in date ticks and hovers) and its decimal and thousands
+    separators. English specs are returned unchanged."""
+    code = i18n.lang()
+    if code == i18n.DEFAULT:
+        return spec
+    locale = LOCALES[code]
+    fmt = locale["format"]
+    return {
+        **spec,
+        "layout": {**spec.get("layout", {}), "separators": fmt["decimal"] + fmt["thousands"]},
+        "config": {**spec["config"], "locale": code, "locales": {code: locale}},
+    }
+
+
 def to_html(fig: go.Figure) -> str:
     """The figure as a placeholder ``<div>`` that ``site.js`` draws.
 
     The div is sized to the figure height (default 360px) and shows a loading
     skeleton until plotly.js arrives; the figure JSON sits in a JSON script block.
     """
-    spec = {**fig.to_plotly_json(), "config": CONFIG}
+    spec = _localised({**fig.to_plotly_json(), "config": CONFIG})
     spec.pop("frames", None)
     # "<\/" is the same string to JSON, and cannot close the script block early.
     payload = pio.to_json(spec, validate=False).replace("</", "<\\/")

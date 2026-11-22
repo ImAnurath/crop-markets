@@ -1,6 +1,8 @@
 ---
 title: "Hazelnut overview"
+title-tr: "Fındık: genel bakış"
 description: "Turkish hazelnut prices, exports, crop size and forecasts, from the Giresun and Ordu commodity exchanges and other public sources."
+description-tr: "Türk fındığının fiyatları, ihracatı, rekoltesi ve tahminleri; Giresun ve Ordu ticaret borsalarından ve diğer kamuya açık kaynaklardan."
 ---
 
 ```{python}
@@ -18,6 +20,7 @@ sources_count, sources_list = ph.sources_summary(crop_module(crop.slug).WORKBOOK
 ::: {}
 [`{python} eyebrow`]{.eyebrow}
 
+::: {.content-visible when-profile="en"}
 # Two thirds of the world's hazelnuts grow in Turkey. *This is their market.*
 
 ::: {.lede}
@@ -28,24 +31,58 @@ Thirty years of exchange prices, where the exports go, how big the crop is, and 
 [Open the dashboard <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](dashboard.qmd){.btn .pri}
 [What we found](analyses/index.qmd){.btn}
 :::
+:::
+
+::: {.content-visible when-profile="tr"}
+# Dünyadaki fındığın üçte ikisi Türkiye'de yetişiyor. *Bu da onun piyasası.*
+
+::: {.lede}
+Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, rekoltenin ne kadar büyük olduğu ve havanın ona ne yaptığı. Her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
+:::
+
+::: {.btns}
+[Gösterge panelini açın <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](dashboard.qmd){.btn .pri}
+[Neler bulduk](analyses/index.qmd){.btn}
+:::
+:::
 
 ::: {.byline}
 ::: {}
+::: {.content-visible when-profile="en"}
 [Built by]{.eyebrow} **{{< var author_name >}}** {{< var author_bio >}} · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
+:::
+::: {.content-visible when-profile="tr"}
+[Hazırlayan]{.eyebrow} **{{< var author_name >}}** {{< var author_bio >}} · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
+:::
 :::
 
 ::: {}
+::: {.content-visible when-profile="en"}
 [Sources]{.eyebrow} **`{python} sources_count`** `{python} sources_list`
+:::
+::: {.content-visible when-profile="tr"}
+[Kaynaklar]{.eyebrow} **`{python} sources_count`** `{python} sources_list`
+:::
 :::
 :::
 :::
 
+::: {.content-visible when-profile="en"}
 ```{=html}
 <figure class="photo">
   <img src="../assets/hero.jpg" width="1200" height="900" alt="Rows of hazelnut bushes on a green hillside in Giresun, Turkey">
   <figcaption>Hazelnut field, Espiye, Giresun</figcaption>
 </figure>
 ```
+:::
+::: {.content-visible when-profile="tr"}
+```{=html}
+<figure class="photo">
+  <img src="../assets/hero.jpg" width="1200" height="900" alt="Giresun'da yeşil bir yamaçta sıra sıra fındık ocakları">
+  <figcaption>Fındık bahçesi, Espiye, Giresun</figcaption>
+</figure>
+```
+:::
 :::
 
 ```{python}
@@ -60,6 +97,7 @@ ph.raw_html(
 )
 ```
 
+::: {.content-visible when-profile="en"}
 ```{=html}
 <div class="sect"><div><span class="eyebrow">Explore</span><h2>Four ways into the data</h2></div></div>
 <nav class="explore" aria-label="Explore the data">
@@ -69,3 +107,15 @@ ph.raw_html(
   <a href="../methods.qmd"><h3>Methods <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>How each number is made, in plain words, with no jargon left unexplained.</p></a>
 </nav>
 ```
+:::
+::: {.content-visible when-profile="tr"}
+```{=html}
+<div class="sect"><div><span class="eyebrow">Keşfedin</span><h2>Verilere dört giriş yolu</h2></div></div>
+<nav class="explore" aria-label="Verileri keşfedin">
+  <a href="dashboard.qmd"><h3>Gösterge paneli <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Fiyat, ihracat, rekolte ve tahmin aralığı, hepsi tek sayfada.</p></a>
+  <a href="analyses/index.qmd"><h3>Analizler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Sezonlar, ihracat pazarları, don yılları, Giresun ile Ordu karşılaştırması.</p></a>
+  <a href="explorer.qmd"><h3>Veri gezgini <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Tüm aylık kayıtlar. Filtreleyin, sonra Excel'de yanınıza alın.</p></a>
+  <a href="../methods.qmd"><h3>Yöntemler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Her sayının nasıl üretildiği, sade bir dille ve açıklanmadık terim bırakmadan.</p></a>
+</nav>
+```
+:::
