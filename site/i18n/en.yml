@@ -1,0 +1,445 @@
+# English strings for text the Python layer builds (hazelnut.site.i18n.t).
+#
+# Templates are whole sentences with named {fields}; never join fragments in code.
+# tr.yml has exactly the same keys and the same {fields} in each (tests/site/test_i18n.py).
+# Plotly placeholders such as %{y:.2f} or %{x} pass through untouched.
+# Crop-specific strings sit under the crop's slug (crop.hazelnut, hazelnut.*).
+
+na: "n/a"
+
+format:
+  decimal: "."
+  thousands: ","
+  usd: "${value}"
+  pct: "{value}%"
+  pct_signed: "{sign}{value}%"
+  month_year: "{month} {year}"
+  day_month_year: "{day} {month} {year}"
+
+month:
+  1: "January"
+  2: "February"
+  3: "March"
+  4: "April"
+  5: "May"
+  6: "June"
+  7: "July"
+  8: "August"
+  9: "September"
+  10: "October"
+  11: "November"
+  12: "December"
+
+month_short:
+  1: "Jan"
+  2: "Feb"
+  3: "Mar"
+  4: "Apr"
+  5: "May"
+  6: "Jun"
+  7: "Jul"
+  8: "Aug"
+  9: "Sep"
+  10: "Oct"
+  11: "Nov"
+  12: "Dec"
+
+list:
+  and: "{names} and {last}"
+
+span:
+  # "May to December 2018": first month's name, then the last month with its year.
+  same_year: "{first} to {last}"
+  # "September 2021 to December 2023"
+  years: "{first} to {last}"
+  # "5 to 9" forecasts, "82% to 84%"
+  values: "{low} to {high}"
+  only: "{month} only"
+
+count_word:
+  2: "two"
+  3: "three"
+  4: "four"
+  5: "five"
+
+unit:
+  usd: "USD"
+  tonnes: "t"
+  per_kg: "/kg"
+  local_per_kg: "{unit}/kg"
+  mo: "{n} mo"
+  kb: "{n} KB"
+  mb: "{n} MB"
+  months:
+    one: "{n} month"
+    other: "{n} months"
+
+stamp:
+  fresh: "Data as of {month} · refreshed weekly"
+  stale_from: "Data as of {month} · refreshed weekly (some sources from {oldest})"
+  stale_from_some_unavailable: "Data as of {month} · refreshed weekly (some sources from {oldest}, some unavailable)"
+  stale_unavailable: "Data as of {month} · refreshed weekly (some sources unavailable)"
+
+crop:
+  hazelnut:
+    name: "Hazelnut"
+    country: "Turkey"
+
+overview:
+  eyebrow: "Crops / {crop} / {exchanges}"
+  market_eyebrow: "The market this month"
+
+home:
+  crop_where: "{country} · {exchanges}"
+  crop_price: "{price}/kg in {month}"
+
+strip:
+  price_usd: "Price, USD"
+  price_local: "Price, {name}"
+  from_peak: "From the peak"
+  # "−3.5% on September" / "+31.5% on 2025"
+  change_on_month: "{change} on {month}"
+  change_on_year: "{change} on {year}"
+  since_peak: "since {month} ({price})"
+  peak_na: "peak n/a"
+  no_estimate: "no estimate yet"
+  no_earlier_year: "no earlier year to compare"
+
+exchanges:
+  one: "{name} exchange"
+  many: "{names} & {last} exchanges"
+
+sources:
+  # Provider names ending in this are grouped as "Giresun & Ordu exchanges".
+  exchange_suffix: " Commodity Exchange"
+  count:
+    one: "{n} public dataset"
+    other: "{n} public datasets"
+  caption: "Data sources and their terms"
+  provider: "Provider"
+  what: "What we use"
+  terms: "Credit and terms"
+
+panel:
+  unavailable: "This chart's data is not available in this refresh."
+
+table:
+  scroll_hint: "Scroll for more →"
+  method: "Method"
+
+crop_estimate:
+  label: "{source} crop estimate, {year}"
+  label_no_year: "{source} crop estimate"
+  figures_note: "The crop figures are the {source} exchange's estimates."
+
+price:
+  shock_first: "{name} took the price from {low} to {peak} in {span}"
+  shock_next: "{name}, from {low} to {peak} in {span}"
+  fallback: "Monthly exchange price; shaded periods are supply shocks."
+
+range:
+  subtitle: "If past {horizon}-month moves repeat, eight times in ten the {month} price lands between {low} and {high}."
+  coverage_note: "In testing, the 8-in-10 band held {pct} of the time at {span}."
+
+exports:
+  other: "Other"
+  subtitle: "{names} took {share} of export volume in the 12 months to {period}."
+  share_first: "{partner}'s share of {what} went from {first_share} in {first} to {last_share} in {last}"
+  share_next: "{partner}'s from {first_share} to {last_share}"
+  ratio_subtitle: "{a} sold for a median {median} times {b} (8 in 10 months between {low} and {high} times)."
+
+season:
+  to_date_note: "{season} is season to date ({span}), so its average is provisional."
+  to_date_label: "{season} to date"
+
+crop_price:
+  words:
+    strong_negative: "bigger crops have usually come with lower prices"
+    weak_negative: "bigger crops have loosely gone with lower prices"
+    none: "crop size alone says little about the price"
+    positive: "bigger crops have not come with lower prices"
+  subtitle:
+    strong_negative: "Over {n} seasons, bigger crops have usually come with lower prices (correlation {r})."
+    weak_negative: "Over {n} seasons, bigger crops have loosely gone with lower prices (correlation {r})."
+    none: "Over {n} seasons, crop size alone says little about the price (correlation {r})."
+    positive: "Over {n} seasons, bigger crops have not come with lower prices (correlation {r})."
+  fallback: "Crop estimate against the season's average price."
+
+scoreboard:
+  subtitle_none: "Each method's error divided by naive's (the price stays where it is): above 1 is worse. None beat naive at any horizon."
+  subtitle_some: "Each method's error divided by naive's (the price stays where it is): above 1 is worse. {under} of {total} method-horizon scores came in under 1; the forecasting analysis tests whether that is more than chance."
+  holdout_winners: "Holdout (scored once, never tuned on): {names} came in under naive at every horizon."
+  holdout_none: "Holdout (scored once, never tuned on): no method beat naive at every horizon."
+  foot: "Ratio of mean absolute errors, over {count} forecasts per horizon."
+  analysis_link: "Forecasting analysis"
+  caption: "Forecast error relative to naive, by months ahead"
+
+analyses:
+  nav_label: "Analyses"
+  eyebrow: "Crops / {crop} / {analyses} / {page}"
+  found: "What we found"
+
+seasonality:
+  subtitle: "Across {seasons} complete seasons, the average month sits between {low} ({low_month}) and {high} ({high_month}) from its season's mean; the middle half of seasons spans {spread} points in a typical month."
+
+gap:
+  median_below: "{name}'s monthly price ran a median {pct} below {ref}'s over {n} months"
+  median_above: "{name}'s monthly price ran a median {pct} above {ref}'s over {n} months"
+  band_below: "8 in 10 months fell between {low} and {high} below"
+  band_above: "8 in 10 months fell between {low} and {high} above"
+  band_mixed: "8 in 10 months fell between {low} below and {high} above"
+  outlier_note: "Left out: {months}, when {name}'s average was more than {limit} away from {ref}'s (most likely entry errors in the source)."
+  detail_discount: "{name} was dearer in {dearer} of {n} months; its widest discount was {pct}, in {month}."
+  detail_premium: "{name} was dearer in {dearer} of {n} months; its widest premium was {pct}, in {month}."
+
+frost:
+  words:
+    strong_negative: "more frost days have usually meant smaller crops"
+    weak_negative: "more frost days have loosely gone with smaller crops"
+    none: "the frost-day count says little about the crop"
+    positive: "more frost days have not meant smaller crops"
+  subtitle:
+    strong_negative: "Over {n} years, more frost days have usually meant smaller crops (correlation {r})."
+    weak_negative: "Over {n} years, more frost days have loosely gone with smaller crops (correlation {r})."
+    none: "Over {n} years, the frost-day count says little about the crop (correlation {r})."
+    positive: "Over {n} years, more frost days have not meant smaller crops (correlation {r})."
+  fallback: "Spring frost days against the {source} crop estimate."
+  fallback_no_source: "Spring frost days against the crop estimate."
+  without_note: "Without {years}, the correlation is {r} ({n} seasons)."
+  smallest_one: "The smallest crop, {years}, followed {days} frost days."
+  smallest_many: "The {count} smallest crops, {years}, followed {days} frost days."
+  partial_year: "{year} is partial: the data was built on {date}, before its frost window ended."
+
+forecast:
+  dev_some: "{under} of {total} method-horizon scores came in under 1 (below 1 beats naive), which could be chance."
+  dev_none: "None beat naive at any horizon; the closest lost by {margin}."
+  shock_none: "In shock months the errors were {low} to {high} times their calm size, naive's included; no method beat naive there."
+  shock_some: "In shock months the errors were {low} to {high} times their calm size, naive's included; {under} of {total} shock-month scores came in under 1, by at most {best}."
+  holdout_winners: "{n} forecasts per horizon, scored once, never tuned on. {names} came in under naive at every horizon; on {n} forecasts per horizon that could be chance (no significance test was run on the holdout)."
+  holdout_none: "{n} forecasts per horizon, scored once, never tuned on. No method beat naive at any horizon."
+  holdout_some: "{n} forecasts per horizon, scored once, never tuned on. No method beat naive at every horizon; {under} of {total} scores came in under 1."
+  holdout_some_lost: "{n} forecasts per horizon, scored once, never tuned on. No method beat naive at every horizon; {under} of {total} scores came in under 1, each from a method that lost at another horizon."
+  holdout_luck_note: "Each score that beat naive in the holdout had lost to naive at that same horizon in development, so these wins look like luck, not skill."
+  holdout_no_repeat_note: "None of the holdout scores that beat naive also beat it in development at the same horizon."
+  holdout_repeat_note: "{n} of the holdout scores that beat naive also beat it in development at the same horizon."
+  f3_more: "{horizon} months ahead, naive missed by {miss}/kg on average; {name}, the closest challenger, missed by {pct} more."
+  f3_less: "{horizon} months ahead, naive missed by {miss}/kg on average; {name}, the closest challenger, missed by {pct} less."
+  band_all_held: "{horizon} months ahead, the 8-in-10 range held {pct} of the time ({held} of {n} months)."
+  band_misses: "{horizon} months ahead, the 8-in-10 range held {pct} of the time ({held} of {n} months); {in_shock} of the {misses} misses fell in a shock period."
+  ranges_none: "An honest 8-in-10 range holds about 80% of the time. {method} held {held}, and no other method scored better at any horizon."
+  ranges_some: "An honest 8-in-10 range holds about 80% of the time. {method} held {held}, and {better} of {total} other scores beat it."
+
+crop_check:
+  row_on_time: "{method}, {source}, on time"
+  row_late: "{method}, {source}, a month late"
+  default_rule: "the timing rule"
+  no_leak: "Moving every crop estimate a month later changed the scores by at most {shift}, so {rule} shows no sign of a leak; at that month-late timing the {sources} estimate scored worse in {worse} of {total} method-horizon pairs."
+  leak: "Moving every crop estimate a month later changed the scores by up to {shift}, so results under {rule} may have gained from a leak; at that month-late timing the {sources} estimate scored worse in {worse} of {total} method-horizon pairs."
+
+lira:
+  split_below: "In the {crisis} months its error was {pct} below naive's; in {calm} months it was within {within} of naive's."
+  split_below_range: "In the {crisis} months its error was {low} to {high} below naive's; in {calm} months it was within {within} of naive's."
+  split_above: "In the {crisis} months its error was {pct} above naive's; in {calm} months it was within {within} of naive's."
+  split_above_range: "In the {crisis} months its error was {low} to {high} above naive's; in {calm} months it was within {within} of naive's."
+  split_mixed: "In the {crisis} months its error was between {low} below and {high} above naive's; in {calm} months it was within {within} of naive's."
+  period:
+    calm: "calm"
+    crisis: "crisis"
+  p_part: "{name}: p = {ps} at {horizons} months"
+  lead_none: "In percent terms nothing beat naive at {span}"
+  lead_some: "In percent terms {beat} of {total} methods beat naive at {span}"
+  tail_lower: "at {horizons} months {trend} had {pct} lower error, {caveat}"
+  tail_lower_range: "at {horizons} months {trend} had {low} to {high} lower error, {caveat}"
+  tail_mixed: "at {horizons} months {trend} had between {low} higher and {high} lower error, {caveat}"
+  tail_higher: "at {horizons} months {trend} had {low} to {high} higher error"
+  default_caveat: "which is suggestive only"
+
+explorer:
+  outlier_one: "{months}: {name}'s price was more than {limit} away from {ref}'s, most likely an entry error in the source. It is shown as published."
+  outlier_many: "{months}: {name}'s price was more than {limit} away from {ref}'s, most likely entry errors in the source. They are shown as published."
+  outlier_link: "See the exchanges analysis"
+
+downloads:
+  workbook_missing: "The workbook is not available in this refresh."
+  button: "Download the workbook (.xlsx, {size})"
+  sheets_caption: "Sheets in the workbook"
+  sheet: "Sheet"
+  holds: "What it holds"
+
+methods_page:
+  fact_dev: "Development period, walk-forward in {currency}, {count} forecasts per horizon: {finding}"
+  fact_holdout: "Holdout, {first} to {last}: {finding}"
+  fact_range: "The 8-in-10 range from past price moves held {held} of the time in the backtest, at {horizons} months ahead."
+  holdout_none: "The final months of the backtest were set aside before any method was built."
+  holdout_one: "For {crop} the holdout is {span}. It was set aside before any method was built."
+  holdout_many: "For {crop} the holdout is {span}{more}. Each was set aside before any method was built."
+  holdout_more: "; for {crop}, {span}"
+  holdout_span: "{first} to {last} ({months})"
+
+method:
+  naive: "Naive"
+  seasonal_naive: "Seasonal naive"
+  sarima: "SARIMA"
+  sarimax: "SARIMAX"
+  season_reg: "Season regression"
+  lightgbm: "LightGBM"
+  chronos: "Chronos-Bolt"
+  naive_emp: "Naive range (past moves)"
+  naive_vol: "Naive range, volatility-scaled"
+  lightgbm_q: "LightGBM quantiles"
+
+chart:
+  usd: "USD"
+  usd_tickprefix: "$"
+  usd_ticksuffix: ""
+  window:
+    y5: "5y"
+    y10: "10y"
+    all: "All"
+  price:
+    usd_hover: "$%{y:.2f} /kg<extra></extra>"
+    local_hover: "%{y:,.2f} {unit}/kg<extra></extra>"
+  range:
+    band_hover: "%{x}<br>$%{y:.2f}<extra>%{meta}</extra>"
+    nine_in_ten: "9 in 10"
+    eight_in_ten: "8 in 10"
+    middle: "Middle"
+    middle_hover: "%{x}<br>middle $%{y:.2f}<extra></extra>"
+    todays_price: "Today's price"
+    today: "Today"
+    today_hover: "%{x}<br>today $%{y:.2f}<extra></extra>"
+    tick: "+{n} mo"
+  exports:
+    hover: "%{y}<br>%{x:.1%} of exports<br>%{customdata[0]:,.0f} t · $%{customdata[1]:,.0f}m<extra></extra>"
+  crop:
+    hover: "%{text}<br>%{x:,.0f} t crop<br>$%{y:.2f} /kg season average<extra></extra>"
+    earlier: "Earlier seasons"
+    season_average: "Season average"
+  season:
+    average_month: "Average month"
+    hover: "%{customdata[0]}<br>average %{y:+.1%}<br>middle half of seasons %{customdata[1]:+.1%} to %{customdata[2]:+.1%}<extra></extra>"
+    middle_half: "Middle half of seasons"
+  compare_hover: "{name} $%{y:,.2f} /kg<extra></extra>"
+  usd_hover: "{name} $%{y:.2f}<extra></extra>"
+  gap: "Gap"
+  median: "Median {value}"
+  highlighted: "Highlighted"
+  other_years: "Other years"
+  actual: "Actual"
+  band:
+    low: "Range low"
+    range: "8-in-10 range"
+    range_hover: "range $%{customdata:.2f} to $%{y:.2f}<extra></extra>"
+    actual_hover: "actual $%{y:.2f}<extra></extra>"
+    outside: "Outside the range"
+
+workbook:
+  not_available: "Not available in this refresh."
+  holdout_label: "Holdout, scored once, never tuned on"
+  ratio_note: "Ratio to naive = MAE / naive MAE; below 1 beats naive."
+  unknown_month: "unknown"
+  sheet:
+    readme: "README"
+    scoreboard: "Scoreboard"
+    sources: "Sources"
+  note:
+    readme: "What each sheet holds, the as-of date and any stale sources"
+    scoreboard: "Backtest accuracy by method; holdout table scored once, never tuned on"
+    sources: "Data providers, what we use and credit"
+  column:
+    method: "Method"
+    horizon: "Horizon (months)"
+    n: "Forecasts scored"
+    mae: "MAE (USD/kg)"
+    ratio: "Ratio to naive"
+  title: "{crop} market data ({country})"
+  as_of: "Data as of {month}"
+  sheet_header: "Sheet"
+  contents_header: "Contents"
+  note_unavailable: "{note} (not available in this refresh)"
+  stale_title: "Stale outputs (kept from an earlier refresh)"
+  stale_as_of: "stale, as of {month}"
+  no_data: "no data"
+  sources_url: "URL"
+
+# --- Hazelnut -----------------------------------------------------------------------------
+hazelnut:
+  sheet:
+    prices:
+      name: "Prices"
+      note: "Monthly Giresun price, USD/kg and TL/kg"
+    ordu:
+      name: "Ordu"
+      note: "Monthly Ordu exchange price"
+    exports:
+      name: "Exports"
+      note: "Monthly exports by destination"
+    top:
+      name: "Top destinations"
+      note: "Largest export destinations"
+    crop:
+      name: "Crop"
+      note: "The Giresun exchange's crop estimate by year, and the season average price"
+    range:
+      name: "Forecast range"
+      note: "Empirical price range by horizon, in USD/kg"
+  column:
+    month: "Month"
+    season: "Season"
+    usd_kg: "USD/kg"
+    try_kg: "TL/kg"
+    usd_try: "TL per USD"
+    trade_days: "Trading days"
+    product: "Product"
+    partner: "Destination"
+    net_kg: "Net weight (kg)"
+    fob_usd: "FOB value (USD)"
+    share: "Share of exports"
+    year: "Year"
+    giresun_estimate_t: "Giresun estimate (t)"
+    giresun_registered_t: "Giresun registered (t)"
+    national_estimate_t: "National estimate (t)"
+    season_avg_usd: "Season average (USD/kg)"
+    horizon: "Horizon (months)"
+    target_month: "Target month"
+    q05: "5th percentile (USD/kg)"
+    q10: "10th percentile (USD/kg)"
+    q50: "Median (USD/kg)"
+    q90: "90th percentile (USD/kg)"
+    q95: "95th percentile (USD/kg)"
+    from_month: "Forecast from month"
+    from_usd: "Price at forecast origin (USD/kg)"
+  source:
+    comtrade:
+      name: "UN Comtrade"
+      what: "Monthly export volumes and values by destination (HS 080221, 080222)"
+      terms: "Credit the source; see provider terms"
+    faostat:
+      name: "FAOSTAT"
+      what: "Annual national production statistics"
+      terms: "CC BY 4.0"
+    tobb:
+      name: "TOBB"
+      what: "Commodity exchange price records (TOBB exchange price query)"
+      terms: "Credit the source; see provider terms"
+    giresun:
+      name: "Giresun Commodity Exchange"
+      what: "Monthly prices, crop estimates and trade volumes"
+      terms: "Credit the source; see provider terms"
+    ordu:
+      name: "Ordu Commodity Exchange"
+      what: "Daily prices, published by the exchange as a public Google Sheet"
+      terms: "Credit the source; see provider terms"
+    open_meteo:
+      name: "Open-Meteo"
+      what: "Historical daily weather (frost days)"
+      terms: "CC BY 4.0"
+    ecb:
+      name: "ECB"
+      what: "Daily euro foreign-exchange reference rates"
+      terms: "Free reuse with the source acknowledged"
+    oecd:
+      name: "OECD"
+      what: "Consumer price index"
+      terms: "CC BY 4.0"
+  timing_note: "A harvest's crop estimate is used only from August of that year, when it is normally out; moving every estimate a month later changed the error ratios by at most 0.03, so the rule shows no sign of a leak."

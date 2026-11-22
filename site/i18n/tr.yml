@@ -1,0 +1,402 @@
+# Turkish strings for text the Python layer builds (hazelnut.site.i18n.t).
+#
+# Same keys and the same {fields} as en.yml (tests/site/test_i18n.py). An entry still
+# waiting for translation is the literal "TODO": the Turkish build shows the English
+# text there, and a deploy that includes Turkish (SITE_DEPLOY=en,tr) fails on it.
+# The owner reviews all Turkish before deploy.
+
+na: "yok"
+format:
+  decimal: ","
+  thousands: "."
+  usd: "{value} $"
+  pct: "%{value}"
+  pct_signed: "{sign}%{value}"
+  month_year: "{month} {year}"
+  day_month_year: "{day} {month} {year}"
+month:
+  1: "Ocak"
+  2: "Şubat"
+  3: "Mart"
+  4: "Nisan"
+  5: "Mayıs"
+  6: "Haziran"
+  7: "Temmuz"
+  8: "Ağustos"
+  9: "Eylül"
+  10: "Ekim"
+  11: "Kasım"
+  12: "Aralık"
+month_short:
+  1: "Oca"
+  2: "Şub"
+  3: "Mar"
+  4: "Nis"
+  5: "May"
+  6: "Haz"
+  7: "Tem"
+  8: "Ağu"
+  9: "Eyl"
+  10: "Eki"
+  11: "Kas"
+  12: "Ara"
+list:
+  and: "{names} ve {last}"
+span:
+  same_year: "{first}–{last}"
+  years: "{first} – {last}"
+  values: "{low}–{high}"
+  only: "yalnızca {month}"
+count_word:
+  2: "iki"
+  3: "üç"
+  4: "dört"
+  5: "beş"
+unit:
+  usd: "USD"
+  tonnes: "t"
+  per_kg: "/kg"
+  local_per_kg: "{unit}/kg"
+  mo: "{n} ay"
+  kb: "{n} KB"
+  mb: "{n} MB"
+  months:
+    one: "{n} ay"
+    other: "{n} ay"
+stamp:
+  fresh: "Veriler {month} itibarıyla · haftalık güncellenir"
+  stale_from: "Veriler {month} itibarıyla · haftalık güncellenir (bazı kaynaklar {oldest} tarihli)"
+  stale_from_some_unavailable: "Veriler {month} itibarıyla · haftalık güncellenir (bazı kaynaklar {oldest} tarihli, bazılarına ulaşılamadı)"
+  stale_unavailable: "Veriler {month} itibarıyla · haftalık güncellenir (bazı kaynaklara ulaşılamadı)"
+crop:
+  hazelnut:
+    name: "Fındık"
+    country: "Türkiye"
+overview:
+  eyebrow: "Ürünler / {crop} / {exchanges}"
+  market_eyebrow: "Bu ayki piyasa"
+home:
+  crop_where: "TODO"
+  crop_price: "TODO"
+strip:
+  price_usd: "Fiyat, USD"
+  price_local: "Fiyat, {name}"
+  from_peak: "Zirveden bu yana"
+  change_on_month: "{month} ayına göre {change}"
+  change_on_year: "{year} yılına göre {change}"
+  since_peak: "zirve: {month} ({price})"
+  peak_na: "zirve yok"
+  no_estimate: "henüz tahmin yok"
+  no_earlier_year: "karşılaştırılacak önceki yıl yok"
+exchanges:
+  one: "{name} borsası"
+  many: "{names} ve {last} borsaları"
+sources:
+  exchange_suffix: " Ticaret Borsası"
+  count:
+    one: "{n} kamuya açık veri seti"
+    other: "{n} kamuya açık veri seti"
+  caption: "TODO"
+  provider: "TODO"
+  what: "TODO"
+  terms: "TODO"
+panel:
+  unavailable: "TODO"
+table:
+  scroll_hint: "TODO"
+  method: "TODO"
+crop_estimate:
+  label: "{source} rekolte tahmini, {year}"
+  label_no_year: "{source} rekolte tahmini"
+  figures_note: "TODO"
+price:
+  shock_first: "TODO"
+  shock_next: "TODO"
+  fallback: "TODO"
+range:
+  subtitle: "TODO"
+  coverage_note: "TODO"
+exports:
+  other: "TODO"
+  subtitle: "TODO"
+  share_first: "TODO"
+  share_next: "TODO"
+  ratio_subtitle: "TODO"
+season:
+  to_date_note: "TODO"
+  to_date_label: "TODO"
+crop_price:
+  words:
+    strong_negative: "TODO"
+    weak_negative: "TODO"
+    none: "TODO"
+    positive: "TODO"
+  subtitle:
+    strong_negative: "TODO"
+    weak_negative: "TODO"
+    none: "TODO"
+    positive: "TODO"
+  fallback: "TODO"
+scoreboard:
+  subtitle_none: "TODO"
+  subtitle_some: "TODO"
+  holdout_winners: "TODO"
+  holdout_none: "TODO"
+  foot: "TODO"
+  analysis_link: "TODO"
+  caption: "TODO"
+analyses:
+  nav_label: "TODO"
+  eyebrow: "TODO"
+  found: "TODO"
+seasonality:
+  subtitle: "TODO"
+gap:
+  median_below: "TODO"
+  median_above: "TODO"
+  band_below: "TODO"
+  band_above: "TODO"
+  band_mixed: "TODO"
+  outlier_note: "TODO"
+  detail_discount: "TODO"
+  detail_premium: "TODO"
+frost:
+  words:
+    strong_negative: "TODO"
+    weak_negative: "TODO"
+    none: "TODO"
+    positive: "TODO"
+  subtitle:
+    strong_negative: "TODO"
+    weak_negative: "TODO"
+    none: "TODO"
+    positive: "TODO"
+  fallback: "TODO"
+  fallback_no_source: "TODO"
+  without_note: "TODO"
+  smallest_one: "TODO"
+  smallest_many: "TODO"
+  partial_year: "TODO"
+forecast:
+  dev_some: "TODO"
+  dev_none: "TODO"
+  shock_none: "TODO"
+  shock_some: "TODO"
+  holdout_winners: "TODO"
+  holdout_none: "TODO"
+  holdout_some: "TODO"
+  holdout_some_lost: "TODO"
+  holdout_luck_note: "TODO"
+  holdout_no_repeat_note: "TODO"
+  holdout_repeat_note: "TODO"
+  f3_more: "TODO"
+  f3_less: "TODO"
+  band_all_held: "TODO"
+  band_misses: "TODO"
+  ranges_none: "TODO"
+  ranges_some: "TODO"
+crop_check:
+  row_on_time: "TODO"
+  row_late: "TODO"
+  default_rule: "TODO"
+  no_leak: "TODO"
+  leak: "TODO"
+lira:
+  split_below: "TODO"
+  split_below_range: "TODO"
+  split_above: "TODO"
+  split_above_range: "TODO"
+  split_mixed: "TODO"
+  period:
+    calm: "TODO"
+    crisis: "TODO"
+  p_part: "TODO"
+  lead_none: "TODO"
+  lead_some: "TODO"
+  tail_lower: "TODO"
+  tail_lower_range: "TODO"
+  tail_mixed: "TODO"
+  tail_higher: "TODO"
+  default_caveat: "TODO"
+explorer:
+  outlier_one: "TODO"
+  outlier_many: "TODO"
+  outlier_link: "TODO"
+downloads:
+  workbook_missing: "TODO"
+  button: "TODO"
+  sheets_caption: "TODO"
+  sheet: "TODO"
+  holds: "TODO"
+methods_page:
+  fact_dev: "TODO"
+  fact_holdout: "TODO"
+  fact_range: "TODO"
+  holdout_none: "TODO"
+  holdout_one: "TODO"
+  holdout_many: "TODO"
+  holdout_more: "TODO"
+  holdout_span: "TODO"
+method:
+  naive: "TODO"
+  seasonal_naive: "TODO"
+  sarima: "TODO"
+  sarimax: "TODO"
+  season_reg: "TODO"
+  lightgbm: "TODO"
+  chronos: "TODO"
+  naive_emp: "TODO"
+  naive_vol: "TODO"
+  lightgbm_q: "TODO"
+chart:
+  usd: "USD"
+  usd_tickprefix: ""
+  usd_ticksuffix: " $"
+  window:
+    y5: "5 yıl"
+    y10: "10 yıl"
+    all: "Tümü"
+  price:
+    usd_hover: "%{y:.2f} $/kg<extra></extra>"
+    local_hover: "%{y:,.2f} {unit}/kg<extra></extra>"
+  range:
+    band_hover: "TODO"
+    nine_in_ten: "TODO"
+    eight_in_ten: "TODO"
+    middle: "TODO"
+    middle_hover: "TODO"
+    todays_price: "TODO"
+    today: "TODO"
+    today_hover: "TODO"
+    tick: "TODO"
+  exports:
+    hover: "TODO"
+  crop:
+    hover: "TODO"
+    earlier: "TODO"
+    season_average: "TODO"
+  season:
+    average_month: "TODO"
+    hover: "TODO"
+    middle_half: "TODO"
+  compare_hover: "TODO"
+  usd_hover: "TODO"
+  gap: "TODO"
+  median: "TODO"
+  highlighted: "TODO"
+  other_years: "TODO"
+  actual: "TODO"
+  band:
+    low: "TODO"
+    range: "TODO"
+    range_hover: "TODO"
+    actual_hover: "TODO"
+    outside: "TODO"
+workbook:
+  not_available: "TODO"
+  holdout_label: "TODO"
+  ratio_note: "TODO"
+  unknown_month: "TODO"
+  sheet:
+    readme: "TODO"
+    scoreboard: "TODO"
+    sources: "TODO"
+  note:
+    readme: "TODO"
+    scoreboard: "TODO"
+    sources: "TODO"
+  column:
+    method: "TODO"
+    horizon: "TODO"
+    n: "TODO"
+    mae: "TODO"
+    ratio: "TODO"
+  title: "TODO"
+  as_of: "TODO"
+  sheet_header: "TODO"
+  contents_header: "TODO"
+  note_unavailable: "TODO"
+  stale_title: "TODO"
+  stale_as_of: "TODO"
+  no_data: "TODO"
+  sources_url: "TODO"
+hazelnut:
+  sheet:
+    prices:
+      name: "TODO"
+      note: "TODO"
+    ordu:
+      name: "TODO"
+      note: "TODO"
+    exports:
+      name: "TODO"
+      note: "TODO"
+    top:
+      name: "TODO"
+      note: "TODO"
+    crop:
+      name: "TODO"
+      note: "TODO"
+    range:
+      name: "TODO"
+      note: "TODO"
+  column:
+    month: "TODO"
+    season: "TODO"
+    usd_kg: "TODO"
+    try_kg: "TODO"
+    usd_try: "TODO"
+    trade_days: "TODO"
+    product: "TODO"
+    partner: "TODO"
+    net_kg: "TODO"
+    fob_usd: "TODO"
+    share: "TODO"
+    year: "TODO"
+    giresun_estimate_t: "TODO"
+    giresun_registered_t: "TODO"
+    national_estimate_t: "TODO"
+    season_avg_usd: "TODO"
+    horizon: "TODO"
+    target_month: "TODO"
+    q05: "TODO"
+    q10: "TODO"
+    q50: "TODO"
+    q90: "TODO"
+    q95: "TODO"
+    from_month: "TODO"
+    from_usd: "TODO"
+  source:
+    comtrade:
+      name: "UN Comtrade"
+      what: "TODO"
+      terms: "TODO"
+    faostat:
+      name: "FAOSTAT"
+      what: "TODO"
+      terms: "TODO"
+    tobb:
+      name: "TOBB"
+      what: "TODO"
+      terms: "TODO"
+    giresun:
+      name: "Giresun Ticaret Borsası"
+      what: "TODO"
+      terms: "TODO"
+    ordu:
+      name: "Ordu Ticaret Borsası"
+      what: "TODO"
+      terms: "TODO"
+    open_meteo:
+      name: "Open-Meteo"
+      what: "TODO"
+      terms: "TODO"
+    ecb:
+      name: "ECB"
+      what: "TODO"
+      terms: "TODO"
+    oecd:
+      name: "OECD"
+      what: "TODO"
+      terms: "TODO"
+  timing_note: "TODO"
