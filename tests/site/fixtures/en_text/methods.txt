@@ -1,0 +1,95 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Methods
+How the numbers on this site are made: a plain-language glossary of the forecasting terms, what the tests found, and how the weekly refresh works.
+Methods
+How every number is made
+The terms used across the site in plain words, what the forecast tests found, and how the weekly refresh keeps the data current without publishing broken numbers.
+Glossary
+The words, in plain language
+Naive forecast
+The simplest forecast there is: the price stays where it is. Next month's forecast and the one six months out are both this month's price.
+It is the benchmark every other method has to beat. A method that cannot beat it adds nothing.
+MAE (mean absolute error)
+How far off the forecasts were on average, ignoring direction, in the price's own units such as US dollars per kilo. A forecast $0.20 too high and one $0.20 too low both count as $0.20 of error.
+Ratio vs naive
+A method's MAE divided by naive's MAE on the same months. Below 1 means it beat naive; 1.03 means its errors were 3% larger.
+The reports call the same comparison skill: skill = 1 − ratio, so a skill above 0 beats naive.
+Walk-forward backtest
+A replay of history. At each month of the test, every method sees only the data up to that month, makes its forecasts, and is scored against what actually happened. Then the clock moves on a month and it starts again.
+Because nothing after the forecast month is used, the scores show how a method would really have done.
+Timing rules (no look-ahead)
+Each input is used only from the month it would really have been known, not the month it describes. Export figures, published about three months late, are used three months late; a crop estimate is used from the month it is normally announced.
+Without these rules a backtest quietly uses tomorrow's news and looks better than it could ever be in practice.
+Holdout, scored once
+For hazelnut the holdout is October 2024 to September 2026 (24 months). It was set aside before any method was built. Methods were developed and compared on the earlier months only. The holdout was then scored once, at the end, and nothing was changed afterwards: hence the label "scored once, never tuned on".
+With so few months it is a sanity check, not a new ranking.
+80% range and coverage
+Instead of one number, a range the price should land in eight times out of ten (the site writes it 8-in-10). Coverage is how often it really did in the backtest.
+An honest 80% range covers about 80% of months. Much less means the range is too narrow and overconfident; much more means it is wider than it needs to be. The range on this site is today's price stretched by the moves prices have made over the same number of months in the past.
+Season (September to August)
+Prices and crops are grouped by marketing season, the September-to-August year that exporters work on, not by calendar year.
+A season is labelled by its two years: 2025/26 runs from September 2025 to August 2026.
+Turkish lira data only
+Old lira
+On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. Lira prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.
+Lira prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.
+Glossary
+The forecasting methods, in plain language
+Seasonal naive
+Takes the latest price and applies the average percentage change that prices made, in past years, from this calendar month to the same number of months ahead. It uses only the price history.
+SARIMA
+A classic statistical model of the price history. It looks for a steady drift, for patterns that follow from recent months, and for a yearly cycle. It is fitted to the log of the price and uses nothing but the price itself.
+SARIMAX
+SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (US dollars to lira). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.
+Chronos-Bolt
+A ready-made forecasting model (the small size of Amazon's Chronos-Bolt) that was trained on many other time series. We use it as it comes, with no training on our data. It reads only the price history and its forecast is its median guess.
+LightGBM
+A machine-learning method built from many small decision trees. For each number of months ahead it learns the price change from a row of inputs: the price level and its recent changes, the calendar month, the months since the crop estimate came out, the change in the crop estimate, spring frost days, export growth, the volume traded on the exchange, and exchange-rate moves. Its settings were fixed in advance and it is refitted every month.
+Season regression
+Forecasts the average price of the coming season, not single months. It fits a straight line to past seasons: how much the season's average price changed against how much the crop estimate changed. It needs the crop estimate, so before the estimate comes out in August the naive forecast stands in.
+MAPE (mean absolute percentage error)
+How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with lira prices across decades of inflation, because a percentage stays comparable.
+Pinball loss
+The score for a range forecast. A quantile is a cut-off the price should stay below a set share of the time (the 90th percentile: nine times in ten). Each quantile is penalised for how far the price lands from it, unevenly on purpose: for the 90th, a price above the forecast costs nine times a price below it. The site averages it over five quantiles; lower is better.
+Skill
+How much better a forecast did than a baseline: 1 minus its error divided by the baseline's. Above 0 beats the baseline, 0 ties it, and below 0 is worse. For point forecasts the error is MAE and the baseline is naive; for ranges it is pinball loss and the baseline is the naive range.
+Statistical tests (p-value)
+The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.
+FOB (free on board)
+An export's value counted at the port of departure, before freight and insurance to the buyer are added. The export values on this site are FOB.
+In practice
+What the tests found
+Hazelnut
+What the forecast tests found
+Development period, walk-forward in USD, 231 to 236 forecasts per horizon: None beat naive at any horizon; the closest lost by 2% to 3%.
+Holdout, October 2024 to September 2026: 24 forecasts per horizon, scored once, never tuned on. No method beat naive at every horizon; 5 of 18 scores came in under 1, each from a method that lost at another horizon.
+A harvest's crop estimate is used only from August of that year, when it is normally out; moving every estimate a month later changed the error ratios by at most 0.03, so the rule shows no sign of a leak.
+The 8-in-10 range from past price moves held 82% to 84% of the time in the backtest, at 1, 3 and 6 months ahead.
+Hazelnut forecasting analysis: every table behind these lines.
+Weekly refresh
+How the data stays current
+Every week, in four steps
+Nothing reaches the site until it has passed the checks.
+Fetch. An automated job downloads every source again. Each source is fetched on its own, so one that fails does not stop the others.
+Build, with fallback. The site's tables are rebuilt from the fresh data. A table whose source failed, or that came out more than 10% shorter than last time (a sign of a partial download), keeps its last good version from the previous refresh and is marked stale. The core tables (the monthly price series, the price range and the headline numbers) have no fallback: if they cannot be rebuilt, the run stops.
+Validate. A gate checks the data before anything is published: the monthly price series has every month from January 2005 to the latest, with no duplicates, and every price and exchange rate is above zero; the price range is positive and in order; the headline numbers are all valid numbers; and the latest month is no more than 3 months old. If any check fails, the run stops and the site already online stays as it was.
+Publish. The pages, charts and Excel workbook are rebuilt from the checked data. The forecast models are not re-run each week: the scoreboards come from the saved backtest results, and only the price range, which is cheap to compute, is recalculated from the latest prices.
+The as-of stamp
+How fresh the numbers are, on every page.
+Data as of <month> · refreshed weekly
+The month is the latest month of the crop's exchange price series.
+If a table is running on an older copy because its source failed, the stamp adds "(some sources from <month>)", naming the oldest such month, or "(some sources unavailable)" if a table has no earlier copy yet. The workbook's README sheet lists each stale table and its date.
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

@@ -1,0 +1,69 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut dashboard
+Giresun hazelnut prices, the six-month price range, export destinations, crop size against price, and how the forecasts scored against naive.
+Crops / Hazelnut / Dashboard
+The price, and what we can honestly say about it
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+Giresun in-shell price
+The 2014 frost took the price from $2.92 to $7.59 in 14 months; the 2025 short crop, from $3.69 to $7.56 in 9 months.
+Shaded: the 2005, 2014-15 and 2025 supply shocks. The TL view uses a log scale.
+Where the price could be in 6 months
+If past 6-month moves repeat, eight times in ten the April 2027 price lands between $2.95 and $5.83.
+Range tested in USD only
+In testing, the 8-in-10 band held 83% of the time at 6 months.
+Where the exports go
+Italy and Germany took 51% of export volume in the 12 months to December 2025.
+Share of export volume (net weight). Source: UN Comtrade.
+Bigger crop, lower price?
+Over 32 seasons, bigger crops have usually come with lower prices (correlation −0.56).
+Giresun exchange crop estimate against the season's average USD price. 2026/27 is season to date (September to October 2026), so its average is provisional.
+Forecast scoreboard
+Each method's error divided by naive's (the price stays where it is): above 1 is worse. None beat naive at any horizon.
+Forecast error relative to naive, by months ahead
+Method
+1 mo
+3 mo
+6 mo
+Naive
+1.00
+1.00
+1.00
+Seasonal naive
+1.02
+1.04
+1.03
+SARIMA
+1.04
+1.02
+1.04
+SARIMAX
+1.12
+1.02
+1.04
+Chronos-Bolt
+1.08
+1.07
+1.06
+LightGBM
+1.05
+1.13
+1.11
+Season regression
+3.16
+1.63
+1.09
+Ratio of mean absolute errors, over 231 to 236 forecasts per horizon. Holdout (scored once, never tuned on): no method beat naive at every horizon. Forecasting analysis
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

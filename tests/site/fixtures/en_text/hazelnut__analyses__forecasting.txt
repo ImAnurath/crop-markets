@@ -1,0 +1,379 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut price forecasting
+Every forecasting method we tried against naive (the price stays where it is): the development scoreboard, calm and shock months, the holdout, ranges, crop estimates and the lira.
+Crops / Hazelnut / Analyses / Forecasting
+Can anything beat "the price stays where it is"?
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+What we found
+Nothing we tried beat naive, the forecast that next month's price is this month's, at 1, 3 or 6 months ahead in the development period. On the holdout (scored once, never tuned on) no method beat it at every horizon. In supply shocks the errors grew 2.0 to 2.7 times, naive's included. What can honestly be offered is a range: the spread of past moves gave an 8-in-10 range that held 84% of the time 3 months ahead.
+Point forecasts, USD
+The scoreboard
+Development period: error against naive
+None beat naive at any horizon; the closest lost by 2% to 3%.
+[data-scroll-hint] Scroll for more →
+Development-period error divided by naive's, by months ahead
+Method
+1 mo
+3 mo
+6 mo
+Naive
+1.000
+1.000
+1.000
+Seasonal naive
+1.022
+1.041
+1.031
+SARIMA
+1.043
+1.019
+1.039
+SARIMAX
+1.122
+1.022
+1.043
+Chronos-Bolt
+1.082
+1.072
+1.064
+LightGBM
+1.054
+1.134
+1.106
+Season regression
+3.159
+1.633
+1.094
+Mean absolute error divided by naive's on the same forecasts; above 1 is worse. 231 to 236 monthly forecasts per horizon. Naive's own error: $0.23 / $0.46 / $0.71 per kg at 1 / 3 / 6 months.
+Calm months against shock months
+In shock months the errors were 2.0 to 2.7 times their calm size, naive's included; 3 of 18 shock-month scores came in under 1, by at most 6%.
+[data-scroll-hint] Scroll for more →
+Error divided by naive's in calm and shock months, by months ahead
+Calm months
+Shock months
+Method
+1 mo
+3 mo
+6 mo
+1 mo
+3 mo
+6 mo
+Naive
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+Seasonal naive
+1.048
+1.040
+1.048
+0.961
+1.043
+0.976
+SARIMA
+1.059
+1.013
+1.030
+1.004
+1.037
+1.068
+SARIMAX
+1.144
+1.022
+1.042
+1.070
+1.024
+1.047
+Chronos-Bolt
+1.078
+1.049
+1.044
+1.091
+1.143
+1.122
+LightGBM
+1.064
+1.073
+1.043
+1.030
+1.316
+1.299
+Season regression
+3.796
+1.799
+1.143
+1.665
+1.137
+0.942
+Shock periods by target month: 2005, 2014-15 and 2025. Each period is scored against naive on its own months. The season regression is left out of the error multiple above: its errors are already large in calm months.
+3 months ahead: forecasts against the price
+3 months ahead, naive missed by $0.46/kg on average; SARIMA, the closest challenger, missed by 2% more.
+Development period, target months April 2005 to September 2024, USD per kg. SARIMA is the method other than naive with the lowest 3-month error. Both forecasts trail the turns. Shaded: supply shocks.
+Holdout: scored once, never tuned on
+24 forecasts per horizon, scored once, never tuned on. No method beat naive at every horizon; 5 of 18 scores came in under 1, each from a method that lost at another horizon.
+[data-scroll-hint] Scroll for more →
+Holdout error divided by naive's, scored once, never tuned on
+Method
+1 mo
+3 mo
+6 mo
+Naive
+1.000
+1.000
+1.000
+Seasonal naive
+1.031
+1.063
+1.031
+SARIMA
+0.953
+1.016
+1.011
+SARIMAX
+1.048
+1.013
+1.009
+Chronos-Bolt
+1.146
+0.998
+0.992
+LightGBM
+0.948
+1.044
+1.216
+Season regression
+3.084
+1.148
+0.824
+Each score that beat naive in the holdout had lost to naive at that same horizon in development, so these wins look like luck, not skill. Many of these months fall in the 2025 price spike, so one or two big misses move every number: read it as a sanity check, not a new ranking.
+Crop estimates: national instead of Giresun, and a month later
+Moving every crop estimate a month later changed the scores by at most 0.03, so the August rule shows no sign of a leak; at that month-late timing the national estimate scored worse in 4 of 6 method-horizon pairs.
+[data-scroll-hint] Scroll for more →
+Error divided by naive's with the crop estimate on time and a month late
+Method and crop input
+1 mo
+3 mo
+6 mo
+LightGBM, Giresun, on time
+1.054
+1.134
+1.106
+LightGBM, Giresun, a month late
+1.058
+1.108
+1.086
+LightGBM, National, a month late
+1.061
+1.137
+1.122
+SARIMAX, Giresun, on time
+1.122
+1.022
+1.043
+SARIMAX, Giresun, a month late
+1.120
+1.016
+1.039
+SARIMAX, National, a month late
+1.131
+1.014
+1.032
+Development period. "On time" is the standard rule: a year's crop estimate is used from August of that year. "A month late" uses every estimate one month later (the 2018 Giresun estimate from November), to test that rule for a leak; the national rows use that late timing too, so they are not the report's main comparison. At the standard timing, the crop-estimate report found the national estimate worse than Giresun's at every method and horizon.
+Ranges, USD
+How wide the honest range is
+The 8-in-10 range, 3 months ahead
+3 months ahead, the 8-in-10 range held 84% of the time (197 of 234 months); 7 of the 37 misses fell in a shock period.
+Naive range (past moves): the price 3 months earlier times the 10th and 90th percentiles of all earlier 3-month moves. Development period, USD per kg; marked months fell outside the range.
+Range methods compared
+An honest 8-in-10 range holds about 80% of the time. Naive range (past moves) held 82% to 84%, and no other method scored better at any horizon.
+[data-scroll-hint] Scroll for more →
+Range forecasts: coverage, width and skill by months ahead
+8 in 10 held
+9 in 10 held
+8-in-10 width
+Skill
+Method
+1 mo
+3 mo
+6 mo
+1 mo
+3 mo
+6 mo
+1 mo
+3 mo
+6 mo
+1 mo
+3 mo
+6 mo
+Naive range (past moves)
+82%
+84%
+83%
+91%
+92%
+90%
+$0.69
+$1.62
+$2.55
+0.00
+0.00
+0.00
+SARIMA
+87%
+85%
+84%
+91%
+91%
+90%
+$0.88
+$1.78
+$2.63
+0.00
+−0.03
+−0.03
+Chronos-Bolt
+83%
+83%
+78%
+90%
+86%
+85%
+$0.85
+$1.48
+$2.15
+−0.05
+−0.06
+−0.03
+Naive range, volatility-scaled
+79%
+79%
+80%
+88%
+88%
+90%
+$0.74
+$1.60
+$2.63
+−0.04
+−0.07
+−0.10
+LightGBM quantiles
+56%
+50%
+45%
+70%
+66%
+62%
+$0.45
+$0.77
+$1.13
+−0.10
+−0.22
+−0.24
+Held: share of months the actual price fell inside the range. Width: the average 8-in-10 range, USD per kg. Skill: 1 minus the method's pinball loss (averaged over five quantiles) divided by the first row's; above 0 would beat it. Development period.
+Lira prices
+Forecasting in lira
+Last USD price × the lira's depreciation trend
+In the crisis months its error was 7% to 39% below naive's; in calm months it was within 2% of naive's.
+MAPE divided by lira naive's, development period (36-month trend). Lira crises: May to December 2018 and September 2021 to December 2023. This is the lira's own depreciation trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no hazelnut-market signal.
+Lira forecasts against lira naive
+In percent terms nothing beat naive at 1 month; at 3 and 6 months the depreciation-trend forecasts had 3% to 7% lower error, suggestive (6 variants tried).
+[data-scroll-hint] Scroll for more →
+Lira forecasts: error divided by lira naive's, all months
+MAPE ÷ naive's
+MAE ÷ naive's
+Method
+1 mo
+3 mo
+6 mo
+1 mo
+3 mo
+6 mo
+Lira naive
+1.00
+1.00
+1.00
+1.00
+1.00
+1.00
+Lira drift, 36 m
+1.07
+1.12
+1.17
+1.08
+0.99
+0.86
+Lira drift, 12 m
+1.14
+1.22
+1.30
+1.17
+1.10
+0.93
+USD naive × FX drift, 36 m
+1.00
+0.97
+0.93
+1.02
+0.90
+0.75
+USD naive × FX drift, 12 m
+1.01
+0.98
+0.96
+1.01
+0.89
+0.78
+USD naive × inflation gap
+1.01
+0.97
+0.94
+1.04
+0.91
+0.74
+USD naive × FX spot
+1.05
+0.99
+0.99
+1.04
+0.96
+0.97
+USD naive × spot + drift, 36 m
+1.06
+0.97
+0.94
+1.06
+0.89
+0.75
+SARIMA on lira
+1.06
+1.08
+1.08
+1.04
+0.94
+0.84
+LightGBM on lira
+1.05
+1.12
+1.17
+1.04
+0.98
+0.88
+Development period, all months. MAPE is the fair measure here; MAE is dominated by the high-inflation years. Diebold-Mariano test on |log error| against lira naive, all months: FX drift, 36 m: p = 0.70 / 0.06 / 0.01 at 1 / 3 / 6 months; inflation rule: p = 0.94 / 0.05 / 0.01 at 1 / 3 / 6 months. Six FX variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for the calm or crisis months alone would be approximate (their months are not consecutive) and are not shown. The sixth variant, spot plus 12-month drift, is in lira.csv.
+All analyses
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

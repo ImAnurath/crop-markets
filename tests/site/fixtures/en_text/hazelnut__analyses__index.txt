@@ -1,0 +1,32 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut analyses
+Seasons, export markets, crop size and frost, the Giresun and Ordu exchanges, and how the price forecasts scored.
+Crops / Hazelnut / Analyses
+What the data says, and how sure we are
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+Each analysis opens with what we found in plain words, then shows the charts and tables behind it. Every number on these pages is computed from the same data the dashboard uses.
+[aria-label] Analyses
+Seasonality
+Does the price follow the harvest calendar? A little, and less than you might think.
+Exports
+Where the shelled nuts go, how that has shifted, and what a kilo of kernels earns.
+Crop and frost
+Bigger crops, lower prices, and how much a count of spring frost days explains.
+Giresun and Ordu
+Two exchanges, one market: how far apart their prices run.
+Forecasting
+Every method we tried against "the price stays where it is", and an honest range.
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

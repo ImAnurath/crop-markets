@@ -1,0 +1,29 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Giresun and Ordu exchanges
+The Giresun and Ordu commodity exchanges’ hazelnut prices side by side, and how far apart they run month to month.
+Crops / Hazelnut / Analyses / Giresun and Ordu
+Two exchanges, one market: Giresun against Ordu
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+What we found
+Ordu's price has run below Giresun's in most months: a median 9.7% lower over 307 months, and higher in only 13. Over the years the two lines rise and fall together, so either exchange tells the same story about the market, at a different level.
+Giresun and Ordu prices
+Ordu's monthly price ran a median 9.7% below Giresun's over 307 months; 8 in 10 months fell between 3.1% and 17.2% below.
+USD per kg, in-shell. Giresun: the exchange's monthly average. Ordu: the monthly average of the exchange's daily price sheet, converted at Giresun's monthly rate, so it has no USD value past Giresun's latest month. The gap is measured in TL, which both exchanges quote. Left out: June 2007 and January 2024, when Ordu's average was more than 50% away from Giresun's (most likely entry errors in the source).
+How far Ordu sits from Giresun
+Ordu was dearer in 13 of 307 months; its widest discount was 30.1%, in April 2026.
+Ordu's monthly price divided by Giresun's, minus one, in TL. Ordu's sheet agrees closely with TOBB's Ordu Levant series on the days both report a price. Giresun-quality nuts usually fetch a premium over Levant, which may explain much of the gap. Left out: June 2007 and January 2024, when Ordu's average was more than 50% away from Giresun's (most likely entry errors in the source).
+All analyses
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

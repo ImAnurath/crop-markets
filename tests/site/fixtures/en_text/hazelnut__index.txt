@@ -1,0 +1,49 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut overview
+Turkish hazelnut prices, exports, crop size and forecasts, from the Giresun and Ordu commodity exchanges and other public sources.
+Crops / Hazelnut / Giresun & Ordu exchanges
+Two thirds of the world’s hazelnuts grow in Turkey. This is their market.
+Thirty years of exchange prices, where the exports go, how big the crop is, and what the weather did to it. Collected automatically every week, cleaned, and tested without hindsight.
+Open the dashboard What we found
+Built by Ozan Berk Gultegin Data analysis of Turkish crop markets. · GitHub · LinkedIn
+Sources 8 public datasets Giresun & Ordu exchanges, UN Comtrade, FAOSTAT, TOBB, Open-Meteo, ECB, OECD
+[alt] Rows of hazelnut bushes on a green hillside in Giresun, Turkey
+Hazelnut field, Espiye, Giresun
+The market this monthData as of October 2026 · refreshed weekly (some sources from December 2025)
+Price, USD
+$4.13 /kg
+−3.5% on September
+Price, lira
+204.14 TL/kg
+−1.9% on September
+From the peak
+−45.5%
+since May 2015 ($7.59)
+Giresun crop estimate, 2026
+86,440 t
++31.5% on 2025
+Explore
+Four ways into the data
+[aria-label] Explore the data
+Dashboard
+Price, exports, crop and the forecast range, all on one page.
+Analyses
+Seasons, export markets, frost years, Giresun against Ordu.
+Data explorer
+Every monthly record. Filter it, then take it with you in Excel.
+Methods
+How each number is made, in plain words, with no jargon left unexplained.
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)
