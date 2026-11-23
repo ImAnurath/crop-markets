@@ -283,7 +283,7 @@ def test_turkish_charts_get_plotlys_tr_locale_and_separators(prices, turkish):
 
 def test_turkish_price_history_labels(prices, turkish):
     fig = charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL")
-    assert _button_labels(fig.layout.updatemenus[1]) == ["5 yıl", "10 yıl", "Tümü"]
+    assert _button_labels(fig.layout.updatemenus[1]) == ["5Y", "10Y", "Tümü"]
     assert fig.data[0].hovertemplate == "%{y:.2f} $/kg<extra></extra>"  # "4,13 $/kg"
     assert fig.layout.yaxis.ticksuffix == " $" and fig.layout.yaxis.tickprefix is None
 
@@ -296,3 +296,183 @@ def test_plotly_locales_match_bundled_plotlyjs():
     from hazelnut.site.plotly_locales import PLOTLY_JS_VERSION
 
     assert get_plotlyjs_version() == PLOTLY_JS_VERSION
+
+
+# --- every chart in Turkish -------------------------------------------------------------
+
+def _page_label(key: str) -> str:
+    """A label a page passes to a chart builder (site/i18n "hazelnut.chart.*")."""
+    from hazelnut.site.i18n import t
+
+    return t(f"hazelnut.chart.{key}")
+
+
+def _all_figures(prices) -> dict:
+    """Every chart builder, called the way the pages call it (labels from site/i18n)."""
+    import numpy as np
+
+    from hazelnut.site.i18n import t
+    from hazelnut.site.labels import OTHER_PARTNER, method_name
+
+    months = ["2005-01", "2005-02", "2005-03"]
+    rng = pd.DataFrame({"horizon": [1, 3], "target_month": ["2026-10", "2026-12"],
+                        "q05": [3.7, 3.2], "q10": [3.9, 3.4], "q50": [4.3, 4.3],
+                        "q90": [4.8, 5.4], "q95": [5.1, 5.8],
+                        "from_month": ["2026-09"] * 2, "from_usd": [4.28] * 2})
+    top = pd.DataFrame({"partner": ["İtalya", OTHER_PARTNER], "net_kg": [3e6, 1e6],
+                        "fob_usd": [3e7, 1e7], "share": [0.31, 0.69]})
+    crop = pd.DataFrame({"year": [2024, 2025], "season": ["2024/25", "2025/26"],
+                         "giresun_estimate_t": [600000.0, 650000.0],
+                         "season_avg_usd": [4.1, 3.9]})
+    prof = pd.DataFrame({"month": [9, 10], "label": ["Eylül", "Ekim"], "mean": [-0.035, 0.02],
+                         "q25": [-0.1, -0.05], "q75": [0.02, 0.05], "seasons": [3, 3]})
+    f3 = pd.DataFrame({"target_month": months[:2], "actual": [4.7, 4.8], "naive": [4.1, 5.3],
+                       "best_other": [4.15, 5.31]})
+    band = pd.DataFrame({"target_month": months, "actual": [4.0, 7.0, 5.0],
+                         "q10": [3.0, 3.0, 5.0], "q90": [5.0, 5.0, 6.0]})
+    scatter = pd.DataFrame({"year": [2004, 2014], "frost_days": [8.7, 2.3],
+                            "crop_t": [11480.0, 24456.0]})
+    wide = pd.DataFrame({_page_label("calm_months"): [1.02, 0.99],
+                         _page_label("lira_crises"): [0.93, 0.61]}, index=[1, 3])
+    crop_label = t("crop_estimate.label_no_year", source="Giresun")
+    return {
+        "price_history": charts.price_history(prices, SHOCK_PERIODS, "try_kg", "TL"),
+        "price_range_fig": charts.price_range_fig(rng),
+        "bar_top": charts.bar_top(top),
+        "crop_vs_price": charts.crop_vs_price(crop, "giresun_estimate_t", crop_label),
+        "season_profile": charts.season_profile(prof),
+        "share_lines": charts.share_lines(pd.DataFrame({"İtalya": [0.1, 0.3]}, index=[2000, 2025])),
+        "compare_lines": charts.compare_lines(months, [1.0, 2.0, 3.0], [1.0, np.nan, 2.0],
+                                              _page_label("shelled_exports"),
+                                              _page_label("giresun_in_shell")),
+        "gap_line": charts.gap_line(months, [-0.1, -0.2, 0.0], median=-0.1),
+        "labeled_scatter": charts.labeled_scatter(
+            scatter, "frost_days", "crop_t", "year", highlight=[2004],
+            x_title=_page_label("frost_days"), y_title=crop_label,
+            y_suffix=" " + t("unit.tonnes")),
+        "forecast_vs_actual": charts.forecast_vs_actual(f3, method_name("season_reg")),
+        "range_band": charts.range_band(band),
+        "ratio_bars": charts.ratio_bars(wide, highlight=_page_label("lira_crises")),
+    }
+
+
+# Figure keys whose strings a reader sees (legend, hover, bar and tick labels, buttons,
+# axis titles); "text" also covers axis titles ({"title": {"text": ...}}).
+_VISIBLE = {"name", "hovertemplate", "texttemplate", "text", "ticktext", "label", "tickprefix",
+            "ticksuffix", "customdata"}
+
+
+def _visible_strings(node, seen: bool = False) -> list[str]:
+    if isinstance(node, dict):
+        return [s for k, v in node.items() for s in _visible_strings(v, seen or k in _VISIBLE)]
+    if isinstance(node, (list, tuple)):
+        return [s for v in node for s in _visible_strings(v, seen)]
+    return [node] if seen and isinstance(node, str) else []
+
+
+def _words(text: str) -> set[str]:
+    import re
+
+    text = re.sub(r"%\{[^}]*\}|\{\w+\}|<[^>]*>", " ", text)  # placeholders and tags
+    return {w.lower() for w in re.findall(r"[^\W\d_]{2,}", text)}
+
+
+# The site/i18n strings charts show, and the chart labels pages pass in.
+_CHART_KEYS = ("chart.", "method.", "exports.other", "unit.mo", "unit.tonnes",
+               "season.to_date_label", "crop_estimate.label", "hazelnut.chart.")
+
+
+def _english_chart_words() -> set[str]:
+    """Words of the English chart strings that their Turkish strings do not also use
+    (USD, kg, SARIMA, Giresun... read the same in both)."""
+    from hazelnut.site import i18n
+
+    en, tr = i18n.strings("en"), i18n.strings("tr")
+    keys = [k for k in en if k.startswith(_CHART_KEYS)]
+    shared = set().union(*(_words(tr[k]) for k in keys))
+    return set().union(*(_words(en[k]) for k in keys)) - shared
+
+
+def _figure_words(figs: dict) -> dict[str, set[str]]:
+    return {name: set().union(*map(_words, _visible_strings(fig.to_plotly_json())))
+            for name, fig in figs.items()}
+
+
+def test_chart_strings_have_turkish_drafts():
+    from hazelnut.site import i18n
+
+    todo = [k for k, v in i18n.strings("tr").items()
+            if k.startswith(_CHART_KEYS) and v == i18n.TODO]
+    assert todo == []
+
+
+def test_turkish_figures_contain_no_english_template_words(prices, monkeypatch):
+    from hazelnut.site import i18n
+
+    english = _english_chart_words()
+    # The check bites: built in English, every figure but one shows these words (the
+    # share lines show only partner names, which are data).
+    en_hits = {k: w & english for k, w in _figure_words(_all_figures(prices)).items()}
+    assert [k for k, v in en_hits.items() if not v] == ["share_lines"]
+
+    monkeypatch.setattr(i18n, "LANG", "tr")
+    tr_hits = {k: w & english for k, w in _figure_words(_all_figures(prices)).items()}
+    assert {k: v for k, v in tr_hits.items() if v} == {}
+
+
+def test_every_turkish_chart_gets_the_tr_locale_and_separators(prices, turkish):
+    for name, fig in _all_figures(prices).items():
+        spec = _spec(charts.to_html(fig))
+        assert spec["layout"]["separators"] == ",.", name
+        assert spec["config"]["locale"] == "tr", name
+
+
+def test_turkish_percents_put_the_sign_first(prices, turkish):
+    figs = _all_figures(prices)
+    bar = figs["bar_top"].data[0]
+    assert bar.texttemplate == "%{text}" and list(bar.text) == ["%69", "%31"]  # bottom-up
+    assert "%{customdata[2]}" in bar.hovertemplate and bar.customdata[1][2] == "%31,0"
+
+    season = figs["season_profile"]
+    assert season.layout.yaxis.tickformat is None
+    assert {"−%10", "%0", "+%4"} <= set(season.layout.yaxis.ticktext)
+    assert list(season.data[0].customdata[0][3:]) == ["−%3,5", "−%10,0", "+%2,0"]
+    assert "%{customdata[3]}" in season.data[0].hovertemplate
+
+    gap = figs["gap_line"]
+    assert {"−%20", "−%10", "%0"} <= set(gap.layout.yaxis.ticktext)
+    assert list(gap.data[0].customdata) == ["−%10,0", "−%20,0", "%0,0"]
+    assert gap.data[0].hovertemplate == "%{customdata}<extra></extra>"
+    assert gap.data[1].name == "Medyan −%10,0"
+
+    share = figs["share_lines"]
+    assert share.layout.yaxis.ticktext[:2] == ("%0", "%5")
+    assert list(share.data[0].customdata) == ["%10", "%30"]
+    assert share.data[0].hovertemplate == "İtalya %{customdata}<extra></extra>"
+
+
+def test_turkish_percent_ticks_sit_on_round_values(turkish):
+    ticks = charts._pct_axis(-0.034, 0.081, signed=True)
+    assert ticks["tickmode"] == "array"
+    assert ticks["tickvals"] == [-0.04, -0.02, 0.0, 0.02, 0.04, 0.06, 0.08, 0.1]
+    assert ticks["ticktext"][:3] == ["−%4", "−%2", "%0"]
+    fine = charts._pct_axis(0.0, 0.012)  # steps under one percent get a decimal
+    assert fine["ticktext"][:3] == ["%0,0", "%0,2", "%0,4"]
+
+
+def test_turkish_tonne_axes_write_thousands_in_full(prices, turkish):
+    figs = _all_figures(prices)
+    assert figs["crop_vs_price"].layout.xaxis.tickformat == ",.0f"  # 650.000 t, not 650k t
+    assert figs["labeled_scatter"].layout.yaxis.tickformat == ",.0f"
+
+
+def test_english_percents_stay_plotly_formats(prices):
+    figs = _all_figures(prices)
+    assert figs["bar_top"].data[0].texttemplate == "%{x:.0%}"
+    assert "%{x:.1%} of exports" in figs["bar_top"].data[0].hovertemplate
+    assert figs["season_profile"].layout.yaxis.tickformat == "+.0%"
+    assert "average %{y:+.1%}" in figs["season_profile"].data[0].hovertemplate
+    assert figs["gap_line"].layout.yaxis.tickformat == "+.0%"
+    assert figs["share_lines"].layout.yaxis.tickformat == ".0%"
+    assert figs["share_lines"].data[0].hovertemplate == "İtalya %{y:.0%}<extra></extra>"
+    assert figs["crop_vs_price"].layout.xaxis.tickformat == "~s"

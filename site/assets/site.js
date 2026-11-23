@@ -156,8 +156,7 @@
   function fail(div) {
     div.classList.remove("chart-skeleton");
     div.classList.add("chart-error");
-    div.textContent = "This chart could not load (the charting library did not download). " +
-      "Reload the page to try again; the numbers are also in the Excel workbook.";
+    div.textContent = STR["chart-failed"] || "";
   }
 
   function draw(div, t) {

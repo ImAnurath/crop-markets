@@ -116,3 +116,12 @@ def test_switch_works_with_blocked_storage_and_is_absent_without_a_counterpart()
     out = run(SITE_JS, strings=STRINGS, storage="throws", clickAfterHash="")
     assert out["switch"]["clickedHref"] == TR_PAGE and out["stored"] == "THREW"
     assert run(SITE_JS, strings=STRINGS, alternates={})["switch"] is None
+
+
+def test_a_chart_that_cannot_load_says_so_in_the_pages_language():
+    # The words come from the page's strings block, so site.js holds no visible text.
+    out = run(SITE_JS, lang="tr", url=TR_PAGE, chart=True,
+              strings={**STRINGS, "chart-failed": "Bu grafik yüklenemedi."})
+    assert out["chart"] == {"requested": "https://cdn.example/plotly.min.js",
+                            "text": "Bu grafik yüklenemedi."}
+    assert run(SITE_JS, chart=True, strings=STRINGS)["chart"]["text"] == ""

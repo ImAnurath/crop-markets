@@ -192,7 +192,8 @@ def _strings(page: Path) -> dict:
 def test_rendered_pages_carry_their_language_strings_for_site_js():
     for rel in ("index.html", "hazelnut/analyses/exports.html"):
         en, tr = _strings(RENDERED / rel), _strings(RENDERED / TR / rel)
-        assert en["theme-toggle"] and tr["theme-toggle"] and en["theme-toggle"] != tr["theme-toggle"]
+        for key in ("theme-toggle", "chart-failed"):
+            assert en[key] and tr[key] and en[key] != tr[key], key
         for s in (en, tr):
             langs = s["lang-switch"]["langs"]
             assert [x["lang"] for x in langs] == [TR, "en"]
@@ -240,3 +241,30 @@ def test_only_the_root_serves_the_404_page_and_robots_txt():
         assert block and "<h1" in block.group(1), f"404 page has no {lang} block"
         hrefs = [h.replace("/./", "/") for h in re.findall(r'href="([^"]+)"', block.group(1))]
         assert home in hrefs, f"404 {lang} block does not link {home}: {hrefs}"
+
+
+CHART_JSON = re.compile(r'<div class="chart[^"]*"[^>]*\bdata-plotly\b[^>]*>'
+                        r'<script type="application/json">(.*?)</script></div>', re.S)
+
+
+def _chart_specs(page: Path) -> list[dict]:
+    return [json.loads(s) for s in CHART_JSON.findall(page.read_text(encoding="utf-8"))]
+
+
+@needs_both_trees
+def test_rendered_turkish_charts_are_turkish_and_english_ones_carry_no_locale():
+    from tests.site.test_charts import _english_chart_words, _visible_strings, _words
+
+    english = _english_chart_words()
+    found = 0
+    for rel in sorted(_files(RENDERED / TR, "*.html")):
+        en, tr = _chart_specs(RENDERED / rel), _chart_specs(RENDERED / TR / rel)
+        assert len(en) == len(tr), rel
+        for spec in en:
+            assert "separators" not in spec["layout"] and "locale" not in spec["config"], rel
+        for spec in tr:
+            found += 1
+            assert spec["layout"]["separators"] == ",." and spec["config"]["locale"] == "tr", rel
+            words = set().union(*map(_words, _visible_strings(spec)))
+            assert not words & english, (rel, sorted(words & english))
+    assert found >= 14  # dashboard 4, analyses 10

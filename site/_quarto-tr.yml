@@ -33,6 +33,7 @@ website:
 # filters/lang-links.lua. The switch lists each language by its code; a link's title is
 # written in the language it leads to, so it reads the same on both sides.
 site-strings:
+  chart-failed: "Bu grafik yüklenemedi (grafik kütüphanesi indirilemedi). Yeniden denemek için sayfayı yenileyin; rakamlar Excel çalışma kitabında da var."
   theme-toggle: "Açık / koyu tema"
   lang-switch:
     label: "Dil"

@@ -7,6 +7,7 @@ description: "Where Turkey's shelled hazelnut exports go, how the destinations h
 from hazelnut.site import charts
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.i18n import t
 
 crop = load_crops()["hazelnut"]
 data_dir = SITE_DIR / "data" / crop.slug
@@ -90,7 +91,8 @@ else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.ratio_subtitle(
         ratio, "A kilo of shelled exports", "the exchange's in-shell price")))
     charts.show(charts.compare_lines(uv["month"], uv["usd_per_kg"], uv["usd_kg"],
-                                     "Shelled exports", "Giresun in-shell"))
+                                     t("hazelnut.chart.shelled_exports"),
+                                     t("hazelnut.chart.giresun_in_shell")))
     ph.raw_html(
         '<p class="foot">Shelled exports: <a href="../../methods.qmd#fob">FOB</a> value divided by net weight, all destinations '
         "(UN Comtrade). Giresun in-shell: the exchange's monthly average. Shelling roughly "

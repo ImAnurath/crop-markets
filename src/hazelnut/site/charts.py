@@ -135,6 +135,52 @@ def _usd_axis() -> dict:
     marks = {"tickprefix": t("chart.usd_tickprefix"), "ticksuffix": t("chart.usd_ticksuffix")}
     return {k: v for k, v in marks.items() if v}
 
+
+# --- percents ---------------------------------------------------------------------------
+# Plotly's d3 formats (".0%") always put the % sign after the number. Where the active
+# language does too (English: "31%", "+3.5%"), charts keep those formats; where it puts
+# the sign first (Turkish: "%31", "−%3,5"), every percent a chart shows is formatted in
+# Python (i18n.fmt_pct) and handed over as text: tick labels, bar labels and hover values.
+
+def _d3_percents() -> bool:
+    """True when Plotly's own percent formats write percents the active language's way."""
+    return t("format.pct") == "{value}%" and t("format.pct_signed") == "{sign}{value}%"
+
+
+def _pct_texts(values, dp: int, signed: bool = False) -> list[str | None]:
+    """``values`` (fractions) as the active language's percents; a gap stays None."""
+    return [None if v is None or pd.isna(v) else i18n.fmt_pct(float(v), dp, signed=signed)
+            for v in values]
+
+
+# Plotly's own tick spacing: about one tick per 40px of a y axis, here ~300px long.
+_PCT_TICKS = 7.5
+
+
+def _pct_axis(lo: float, hi: float, signed: bool = False) -> dict:
+    """Percent ticks for a y axis showing fractions from ``lo`` to ``hi``: Plotly's
+    tickformat where it fits the language, else ticks at round steps (1, 2 or 5 x 10^n)
+    labelled in Python."""
+    if _d3_percents():
+        return {"tickformat": ("+" if signed else "") + ".0%"}
+    if not (math.isfinite(lo) and math.isfinite(hi)):
+        return {}
+    span = hi - lo or abs(hi) or 0.01
+    mag = 10 ** math.floor(math.log10(span / _PCT_TICKS))
+    step = next(m * mag for m in (1, 2, 5, 10) if m * mag >= span / _PCT_TICKS * (1 - 1e-9))
+    dp = max(0, -math.floor(math.log10(step * 100) + 1e-9))  # 0.5% steps get one decimal
+    first, last = math.floor(lo / step + 1e-9), math.ceil(hi / step - 1e-9)
+    vals = [round(k * step, 10) + 0.0 for k in range(first, last + 1)]  # + 0.0: no -0.0
+    return {"tickmode": "array", "tickvals": vals,
+            "ticktext": _pct_texts(vals, dp, signed=signed)}
+
+
+def _span(*series) -> tuple[float, float]:
+    """The lowest and highest value over ``series``, ignoring gaps."""
+    values = pd.concat([pd.Series(list(s), dtype=float) for s in series]).dropna()
+    return (float(values.min()), float(values.max())) if len(values) else (math.nan, math.nan)
+
+
 _Y_PAD = 0.05  # share of the visible span added above and below the line
 
 
@@ -318,14 +364,22 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     is_other = top["partner"] == OTHER_PARTNER
     top = pd.concat([top[is_other], top[~is_other].sort_values("share", ascending=True)])
     names = top["partner"].where(top["partner"] != OTHER_PARTNER, other_partner_label())
+    tonnes, musd = top["net_kg"] / 1000, top["fob_usd"] / 1e6
+    if _d3_percents():
+        label = dict(text=top["share"], texttemplate="%{x:.0%}")
+        custom, share = list(zip(tonnes, musd)), "%{x:.1%}"
+    else:
+        label = dict(text=_pct_texts(top["share"], 0), texttemplate="%{text}")
+        custom = list(zip(tonnes, musd, _pct_texts(top["share"], 1)))
+        share = "%{customdata[2]}"
     fig = go.Figure(
         go.Bar(
             x=top["share"], y=names, orientation="h", meta="fg",
             marker=dict(color=FG, opacity=0.8, line=dict(width=0)),
-            text=top["share"], texttemplate="%{x:.0%}", textposition="outside",
+            **label, textposition="outside",
             textfont=dict(family=MONO, size=11, color=MUTED), cliponaxis=False,
-            customdata=list(zip(top["net_kg"] / 1000, top["fob_usd"] / 1e6)),
-            hovertemplate=t("chart.exports.hover"),
+            customdata=custom,
+            hovertemplate=t("chart.exports.hover", share=share),
         )
     )
     fig.update_layout(
@@ -370,7 +424,8 @@ def crop_vs_price(crop: pd.DataFrame, x_col: str, x_title: str) -> go.Figure:
     fig.update_layout(
         layout(
             height=300,
-            xaxis=dict(showgrid=False, tickformat="~s", ticksuffix=" " + t("unit.tonnes"),
+            xaxis=dict(showgrid=False, tickformat=t("chart.tonnes_tickformat"),
+                       ticksuffix=" " + t("unit.tonnes"),
                        title=dict(text=x_title)),
             yaxis=dict(**_usd_axis(), tickformat=".2f",
                        title=dict(text=t("chart.crop.season_average"))),
@@ -389,18 +444,26 @@ def season_profile(profile: pd.DataFrame) -> go.Figure:
     for lab, lo, hi in zip(labels, profile["q25"], profile["q75"]):
         wx += [lab, lab, None]
         wy += [float(lo), float(hi), None]
+    custom = [profile["label"], profile["q25"], profile["q75"]]
+    if _d3_percents():
+        pcts = dict(mean="%{y:+.1%}", low="%{customdata[1]:+.1%}", high="%{customdata[2]:+.1%}")
+    else:
+        custom += [_pct_texts(profile[c], 1, signed=True) for c in ("mean", "q25", "q75")]
+        pcts = dict(mean="%{customdata[3]}", low="%{customdata[4]}", high="%{customdata[5]}")
     fig = go.Figure([
         go.Bar(x=labels, y=[float(v) for v in profile["mean"]], name=t("chart.season.average_month"),
                meta="fg", marker=dict(color=FG, opacity=0.8, line=dict(width=0)),
-               customdata=list(zip(profile["label"], profile["q25"], profile["q75"])),
-               hovertemplate=t("chart.season.hover")),
+               customdata=list(zip(*custom)),
+               hovertemplate=t("chart.season.hover", **pcts)),
         go.Scatter(x=wx, y=wy, mode="lines", name=t("chart.season.middle_half"), meta="fg",
                    line=dict(color=FG, width=1.5), opacity=0.45, hoverinfo="skip"),
     ])
     fig.update_layout(layout(
         height=320, showlegend=True, bargap=0.45, margin=dict(t=40),
         xaxis=dict(type="category"),
-        yaxis=dict(tickformat="+.0%", showgrid=True),
+        # the bars start at 0
+        yaxis=dict(**_pct_axis(*_span([0], profile["mean"], profile["q25"], profile["q75"]),
+                               signed=True), showgrid=True),
     ))
     return fig
 
@@ -409,22 +472,27 @@ def share_lines(shares: pd.DataFrame, highlight: str | None = None) -> go.Figure
     """One line per column (a partner's share by year), labelled at its last point;
     ``highlight`` is drawn in amber."""
     x = [int(y) for y in shares.index]
+    d3 = _d3_percents()
     traces = []
     for col in shares.columns:
         hl = col == highlight
+        pct = {} if d3 else {"customdata": _pct_texts(shares[col], 0)}
         traces.append(go.Scatter(
             x=x, y=[float(v) for v in shares[col]], name=str(col), mode="lines+text",
             text=[""] * (len(x) - 1) + [str(col)], textposition="middle right",
             textfont=dict(family=FONT, size=12, color=MUTED), cliponaxis=False,
             meta="accent" if hl else "fg", opacity=1 if hl else 0.75,
             line=dict(color=ACCENT if hl else FG, width=2 if hl else 1.5),
-            hovertemplate=f"{html.escape(str(col))} %{{y:.0%}}<extra></extra>",
+            hovertemplate=f"{html.escape(str(col))} {'%{y:.0%}' if d3 else '%{customdata}'}"
+                          "<extra></extra>",
+            **pct,
         ))
     fig = go.Figure(traces)
     fig.update_layout(layout(
         height=340, hovermode="x unified", margin=dict(r=96),
         xaxis=dict(tickformat="d"),
-        yaxis=dict(tickformat=".0%", rangemode="tozero"),
+        yaxis=dict(**_pct_axis(*_span([0], *(shares[c] for c in shares.columns))),
+                   rangemode="tozero"),
     ))
     return fig
 
@@ -468,10 +536,12 @@ def gap_line(x, gap, median: float) -> go.Figure:
     xs = pd.Series(s.index.to_timestamp())
     ys = [None if pd.isna(v) else float(v) for v in s]
     label = t("chart.median", value=i18n.fmt_pct(median, 1, signed=True))
+    hover = (dict(hovertemplate="%{y:+.1%}<extra></extra>") if _d3_percents() else
+             dict(customdata=_pct_texts(ys, 1, signed=True),
+                  hovertemplate="%{customdata}<extra></extra>"))
     fig = go.Figure([
         go.Scatter(x=xs, y=ys, name=t("chart.gap"), mode="lines", meta="fg",
-                   line=dict(color=FG, width=1.5), connectgaps=False,
-                   hovertemplate="%{y:+.1%}<extra></extra>"),
+                   line=dict(color=FG, width=1.5), connectgaps=False, **hover),
         go.Scatter(x=[xs.min(), xs.max()], y=[median, median], name=label, mode="lines",
                    meta="accent", line=dict(color=ACCENT, width=1.5, dash="dash"),
                    hoverinfo="skip"),
@@ -479,7 +549,7 @@ def gap_line(x, gap, median: float) -> go.Figure:
     fig.update_layout(layout(
         height=280, showlegend=True, hovermode="x unified", margin=dict(t=40),
         xaxis=dict(type="date", hoverformat="%b %Y"),
-        yaxis=dict(tickformat="+.0%"),
+        yaxis=_pct_axis(*_span([0, median], ys), signed=True),  # with the zero line
         shapes=[_ref_shape(0)],
     ))
     return fig
@@ -489,7 +559,8 @@ def labeled_scatter(df: pd.DataFrame, x: str, y: str, label: str, highlight: Seq
                     *, x_title: str = "", y_title: str = "", x_hover: str = ",.1f",
                     y_hover: str = ",.0f", y_suffix: str = "") -> go.Figure:
     """Points of ``y`` against ``x``; rows whose ``label`` is in ``highlight`` are amber and
-    labelled. Rows missing either value are left out."""
+    labelled. Rows missing either value are left out. The y ticks use the tonne-axis
+    format ("chart.tonnes_tickformat"): the pages plot crop sizes there."""
     d = df.dropna(subset=[x, y])
     is_hl = d[label].isin(list(highlight))
     hover = (f"%{{text}}<br>{html.escape(x_title)} %{{x:{x_hover}}}<br>"
@@ -510,7 +581,8 @@ def labeled_scatter(df: pd.DataFrame, x: str, y: str, label: str, highlight: Seq
     fig.update_layout(layout(
         height=320,
         xaxis=dict(title=dict(text=x_title), showgrid=False),
-        yaxis=dict(title=dict(text=y_title), tickformat="~s", ticksuffix=y_suffix),
+        yaxis=dict(title=dict(text=y_title), tickformat=t("chart.tonnes_tickformat"),
+                   ticksuffix=y_suffix),
     ))
     return fig
 

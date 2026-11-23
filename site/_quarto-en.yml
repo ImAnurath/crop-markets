@@ -29,6 +29,7 @@ website:
 # filters/lang-links.lua. The switch lists each language by its code; a link's title is
 # written in the language it leads to, so it reads the same on both sides.
 site-strings:
+  chart-failed: "This chart could not load (the charting library did not download). Reload the page to try again; the numbers are also in the Excel workbook."
   theme-toggle: "Switch light / dark"
   lang-switch:
     label: "Language"

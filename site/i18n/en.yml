@@ -309,15 +309,20 @@ chart:
     today: "Today"
     today_hover: "%{x}<br>today $%{y:.2f}<extra></extra>"
     tick: "+{n} mo"
+  # d3 number format of tonne axes: "~s" writes 650k, ",.0f" writes 650,000 in full.
+  tonnes_tickformat: "~s"
   exports:
-    hover: "%{y}<br>%{x:.1%} of exports<br>%{customdata[0]:,.0f} t · $%{customdata[1]:,.0f}m<extra></extra>"
+    # {share}: the destination's share of exports, filled in by the chart code (Plotly
+    # writes "31.0%"; a language that puts the sign first gets it from Python).
+    hover: "%{y}<br>{share} of exports<br>%{customdata[0]:,.0f} t · $%{customdata[1]:,.0f}m<extra></extra>"
   crop:
     hover: "%{text}<br>%{x:,.0f} t crop<br>$%{y:.2f} /kg season average<extra></extra>"
     earlier: "Earlier seasons"
     season_average: "Season average"
   season:
     average_month: "Average month"
-    hover: "%{customdata[0]}<br>average %{y:+.1%}<br>middle half of seasons %{customdata[1]:+.1%} to %{customdata[2]:+.1%}<extra></extra>"
+    # {mean}, {low}, {high}: signed percents, filled in by the chart code (as {share} above).
+    hover: "%{customdata[0]}<br>average {mean}<br>middle half of seasons {low} to {high}<extra></extra>"
     middle_half: "Middle half of seasons"
   compare_hover: "{name} $%{y:,.2f} /kg<extra></extra>"
   usd_hover: "{name} $%{y:.2f}<extra></extra>"
@@ -442,4 +447,11 @@ hazelnut:
       name: "OECD"
       what: "Consumer price index"
       terms: "CC BY 4.0"
+  # Labels the hazelnut analysis pages pass to their charts (legends, axis titles).
+  chart:
+    frost_days: "Frost days"
+    shelled_exports: "Shelled exports"
+    giresun_in_shell: "Giresun in-shell"
+    calm_months: "Calm months"
+    lira_crises: "Lira crises"
   timing_note: "A harvest's crop estimate is used only from August of that year, when it is normally out; moving every estimate a month later changed the error ratios by at most 0.03, so the rule shows no sign of a leak."

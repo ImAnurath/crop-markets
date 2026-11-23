@@ -8,6 +8,7 @@ from hazelnut.site import charts
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.labels import crop_estimate_label, crop_figures_note
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.i18n import t
 
 crop = load_crops()["hazelnut"]
 data_dir = SITE_DIR / "data" / crop.slug
@@ -91,8 +92,9 @@ else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL, SOURCE)))
     smallest = frost_crop.nsmallest(2, CROP_COL)["year"].tolist()
     charts.show(charts.labeled_scatter(frost_crop, "frost_days", CROP_COL, "year",
-                                       highlight=smallest, x_title="Frost days",
-                                       y_title=crop_estimate_label(SOURCE), y_suffix=" t"))
+                                       highlight=smallest, x_title=t("hazelnut.chart.frost_days"),
+                                       y_title=crop_estimate_label(SOURCE),
+                                       y_suffix=" " + t("unit.tonnes")))
     notes = [crop_figures_note(SOURCE),
              ph.smallest_crops_note(frost_crop, "frost_days", CROP_COL),
              "A count of cold days does not say how hard or when the frost hit; one bad "

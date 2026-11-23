@@ -8,6 +8,7 @@ from hazelnut.forecast.dataset import LIRA_CRISES, SHOCK_PERIODS
 from hazelnut.site import charts
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.i18n import t
 from hazelnut.site.labels import method_name
 
 crop = load_crops()["hazelnut"]
@@ -272,8 +273,8 @@ if lira is None:
 else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.lira_split_subtitle(lira, LIRA_TREND)))
     wide = ph.lira_split(lira, LIRA_TREND, ("calm", "crisis"))
-    wide.columns = ["Calm months", "Lira crises"]
-    charts.show(charts.ratio_bars(wide, highlight="Lira crises"))
+    wide.columns = [t("hazelnut.chart.calm_months"), t("hazelnut.chart.lira_crises")]
+    charts.show(charts.ratio_bars(wide, highlight=wide.columns[1]))
     ph.raw_html(
         '<p class="foot"><a href="../../methods.qmd#mape">MAPE</a> divided by lira naive\'s, development period (36-month trend). '
         f"Lira crises: {ph.periods_label(LIRA_CRISES)}. This is the lira's own depreciation "

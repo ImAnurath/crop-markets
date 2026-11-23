@@ -50,6 +50,9 @@ for (const [lang, dataHref] of Object.entries(c.alternates || {})) {
   l.setAttribute("rel", "alternate"); l.setAttribute("hreflang", lang); l.setAttribute("data-href", dataHref);
   links[lang] = l;
 }
+// c.chart: one chart placeholder, whose plotly.js download fails (see the end).
+const chart = c.chart ? element("div") : null;
+if (chart) chart.setAttribute("data-plotly-src", "https://cdn.example/plotly.min.js");
 const tools = element("div");
 const theme = element("button");
 tools.appendChild(theme);
@@ -74,7 +77,11 @@ const document = {
     if (m) return links[m[1]] || null;
     return null;
   },
-  querySelectorAll: (sel) => (sel === ".quarto-color-scheme-toggle" ? [theme] : []),
+  querySelectorAll(sel) {
+    if (sel === ".quarto-color-scheme-toggle") return [theme];
+    if (sel === "[data-plotly]" && chart) return [chart];
+    return [];
+  },
 };
 const ctx = {
   document, location, URL, Storage, JSON, Object, Array, String, WeakSet, Math, parseInt, parseFloat,
@@ -110,6 +117,12 @@ if (box) {
     out.switch.clickedHref = a.href;
   }
   out.switch.themeTitle = theme.getAttribute("title");
+}
+// The chart: site.js asked for plotly.js; the download fails.
+if (chart) {
+  const s = document.head.children.find((e) => e.tagName === "SCRIPT");
+  if (s && s.onerror) s.onerror();
+  out.chart = { requested: s ? s.src : null, text: chart.textContent };
 }
 try { out.stored = ctx.localStorage ? ctx.localStorage.getItem("crop-markets-lang") : null; } catch (e) { out.stored = "THREW"; }
 process.stdout.write(JSON.stringify(out));
