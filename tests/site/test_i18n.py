@@ -171,3 +171,79 @@ def test_english_crop_names_match_crops_yml():
     for crop in load_crops().values():
         assert i18n.t(f"crop.{crop.slug}.name") == crop.name
         assert i18n.t(f"crop.{crop.slug}.country") == crop.country
+
+
+def test_unsigned_negative_percent_keeps_the_hyphen_in_english():
+    assert i18n.fmt_pct(-0.03) == "-3%"
+
+
+def test_unsigned_negative_percent_uses_the_minus_sign_in_turkish(turkish):
+    assert i18n.fmt_pct(-0.03) == "−%3"
+    assert i18n.fmt_pct(-0.315, 1) == "−%31,5"
+    assert i18n.fmt_pct(0.03) == "%3"
+
+
+# --- country names ----------------------------------------------------------------------
+
+def test_country_key_folds_comtrade_names():
+    assert i18n.country_key("Côte d'Ivoire") == "cote_d_ivoire"
+    assert i18n.country_key("Serbia and Montenegro (...2005)") == "serbia_and_montenegro_2005"
+    assert i18n.country_key("USA") == "usa"
+    assert i18n.country_key("usa") == "usa"
+
+
+def test_every_english_country_entry_is_its_own_comtrade_name():
+    # So country_name leaves every English page exactly as it was.
+    countries = {k: v for k, v in i18n.strings("en").items() if k.startswith("country.")}
+    assert len(countries) >= 160
+    for key, name in countries.items():
+        assert key == f"country.{i18n.country_key(name)}"
+        assert i18n.country_name(name) == name
+
+
+def test_every_destination_in_the_site_data_has_a_country_entry():
+    import pandas as pd
+
+    path = i18n.SITE_DIR / "data" / "hazelnut" / "exports_monthly.csv"
+    if not path.exists():
+        pytest.skip("no site data")
+    partners = set(pd.read_csv(path)["partner"].astype(str))
+    assert {p for p in partners if not i18n.has(f"country.{i18n.country_key(p)}")} == set()
+
+
+def test_country_names_in_turkish(turkish):
+    assert i18n.country_name("Italy") == "İtalya"
+    assert i18n.country_name("USA") == "ABD"
+    assert i18n.country_name("Côte d'Ivoire") == "Fildişi Sahili"
+    assert i18n.country_name("italy") == "İtalya"  # a key works as well as a name
+
+
+def test_a_country_without_an_entry_is_shown_as_it_is(turkish):
+    assert i18n.country_name("Atlantis") == "Atlantis"
+
+
+def test_crop_source_names():
+    assert i18n.crop_source_name("national") == "national"
+    assert i18n.crop_source_name("giresun") == "giresun"
+
+
+def test_crop_source_names_in_turkish(turkish):
+    assert i18n.crop_source_name("national") == "ulusal"
+
+
+# --- case -------------------------------------------------------------------------------
+
+def test_case_in_english():
+    assert i18n.upper_first("italy took") == "Italy took"
+    assert i18n.upper_first("") == ""
+    assert i18n.lower("Hazelnut") == "hazelnut"
+    assert i18n.lower("Iris") == "iris"
+
+
+def test_case_in_turkish_keeps_dotted_and_dotless_i(turkish):
+    assert i18n.upper_first("ikinci don") == "İkinci don"
+    assert i18n.upper_first("ılık kış") == "Ilık kış"
+    assert i18n.upper_first("2014 donu") == "2014 donu"
+    assert i18n.lower("İNCİR") == "incir"
+    assert i18n.lower("IĞDIR") == "ığdır"
+    assert i18n.lower("Fındık") == "fındık"

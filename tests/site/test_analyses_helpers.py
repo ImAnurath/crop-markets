@@ -538,3 +538,25 @@ def test_shock_multiple_and_band_held():
     band = pd.DataFrame({"target_month": ["2005-01", "2005-02"], "actual": [1.0, 5.0],
                          "q10": [0.5, 0.5], "q90": [2.0, 2.0]})
     assert ph.band_held(band) == (0.5, 1, 2)
+
+
+# --- Turkish ----------------------------------------------------------------------------
+
+def test_share_shift_subtitle_in_turkish_names_destinations_in_turkish(turkish):
+    shares = ph.yearly_shares(_exports(), "shelled", top=2).rename(
+        columns={"A": "Italy", "B": "Germany"})
+    assert ph.share_shift_subtitle(shares, "iç fındık ihracat hacmi") == (
+        "İtalya pazarının iç fındık ihracat hacmi içindeki payı 2000 yılında %29 iken 2001 "
+        "yılında %55 oldu; Almanya pazarının payı ise %57 iken %36 oldu.")
+
+
+def test_crop_check_in_turkish_names_the_national_estimate(turkish):
+    t = ph.crop_check_table(_dev_for_check(), _check(), main_source="giresun")
+    assert list(dict.fromkeys(t["row"]))[:3] == [
+        "SARIMAX, Giresun, zamanında", "SARIMAX, Giresun, bir ay gecikmeli",
+        "SARIMAX, Ulusal, bir ay gecikmeli"]
+    sub = ph.crop_check_subtitle(_dev_for_check(), _check(), main_source="giresun")
+    assert sub == ("Her rekolte tahminini bir ay sonraya kaydırmak puanları en fazla 0,03 "
+                   "değiştirdi; yani zamanlama kuralı bir veri sızıntısı belirtisi göstermiyor. "
+                   "Bir ay gecikmeli bu zamanlamada ulusal rekolte tahmini, 4 yöntem-ufuk "
+                   "çiftinin 3 tanesinde daha kötü puan aldı.")

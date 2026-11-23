@@ -291,8 +291,7 @@ def price_subtitle(prices: pd.DataFrame, named_shocks: Sequence[tuple[str, tuple
                        span=_months(m.months)))
     if not parts:
         return t("price.fallback")
-    text = "; ".join(parts) + "."
-    return text[0].upper() + text[1:]
+    return i18n.upper_first("; ".join(parts) + ".")
 
 
 def shock_years_label(shocks: Sequence[tuple[str, str]]) -> str:
@@ -333,7 +332,8 @@ def exports_subtitle(top: pd.DataFrame, period_end: str, n: int = 2) -> str:
     """"Italy and Germany took 51% of export volume in the 12 months to December 2025."
     The "Other" bucket is never named as a destination."""
     named = top[top["partner"] != OTHER_PARTNER].sort_values("share", ascending=False).head(n)
-    return t("exports.subtitle", names=_join_names(named["partner"].astype(str)),
+    return t("exports.subtitle",
+             names=_join_names([i18n.country_name(p) for p in named["partner"].astype(str)]),
              share=fmt_pct(float(named["share"].sum())), period=period_end)
 
 
@@ -603,10 +603,12 @@ def share_shift_subtitle(shares: pd.DataFrame, what: str, n: int = 2) -> str:
         a = fmt_pct(float(shares.loc[first, partner]))
         b = fmt_pct(float(shares.loc[last, partner]))
         if not parts:
-            parts.append(t("exports.share_first", partner=partner, what=what, first_share=a,
+            parts.append(t("exports.share_first", partner=i18n.country_name(partner), what=what,
+                           first_share=a,
                            first=first, last_share=b, last=last))
         else:
-            parts.append(t("exports.share_next", partner=partner, first_share=a, last_share=b))
+            parts.append(t("exports.share_next", partner=i18n.country_name(partner),
+                           first_share=a, last_share=b))
     return "; ".join(parts) + "."
 
 
@@ -942,6 +944,11 @@ def band_subtitle(band: pd.DataFrame, shocks: Sequence[tuple[str, str]], horizon
              in_shock=int((~held & shock).sum()), misses=misses)
 
 
+def _source_label(source: str) -> str:
+    """A crop-estimate source as a table label: "national" -> "National"."""
+    return i18n.upper_first(i18n.crop_source_name(source))
+
+
 def crop_check_table(dev: pd.DataFrame, check: pd.DataFrame, main_source: str) -> pd.DataFrame:
     """Rows for the crop-estimate check: per method, the ``main_source`` estimate on time
     (``dev``), then each source's estimate a month late (``check``). Columns row, horizon,
@@ -950,11 +957,11 @@ def crop_check_table(dev: pd.DataFrame, check: pd.DataFrame, main_source: str) -
     for m in dict.fromkeys(check["method"]):
         name = method_name(str(m))
         d = dev[dev["method"] == m]
-        on_time = t("crop_check.row_on_time", method=name, source=main_source.capitalize())
+        on_time = t("crop_check.row_on_time", method=name, source=_source_label(main_source))
         rows += [(on_time, int(h), float(r)) for h, r in zip(d["horizon"], d["ratio"])]
         for src in dict.fromkeys(check["crop_source"]):
             c = check[(check["method"] == m) & (check["crop_source"] == src)]
-            late = t("crop_check.row_late", method=name, source=str(src).capitalize())
+            late = t("crop_check.row_late", method=name, source=_source_label(str(src)))
             rows += [(late, int(h), float(r)) for h, r in zip(c["horizon"], c["ratio"])]
     return pd.DataFrame(rows, columns=["row", "horizon", "ratio"])
 
@@ -975,7 +982,8 @@ def crop_check_subtitle(dev: pd.DataFrame, check: pd.DataFrame, main_source: str
     others = check[check["crop_source"] != main_source]
     cmp = others.set_index(["method", "horizon"]).join(late.rename("main"), how="inner")
     worse = int((cmp["ratio"] > cmp["main"]).sum())
-    sources = _join_names(list(dict.fromkeys(others["crop_source"].astype(str))))
+    sources = _join_names([i18n.crop_source_name(s)
+                           for s in dict.fromkeys(others["crop_source"].astype(str))])
     return t("crop_check.no_leak" if shift <= tolerance else "crop_check.leak",
              shift=i18n.fmt_number(shift, 2), rule=t("crop_check.default_rule") if rule is None else rule,
              sources=sources, worse=worse, total=len(cmp))
@@ -1260,7 +1268,7 @@ def holdout_glossary_sentence(periods: Sequence[tuple[str, tuple[str, str]]]) ->
     spans = []
     for name, (a, b) in periods:
         n = (pd.Period(b, "M") - pd.Period(a, "M")).n + 1
-        spans.append((name.lower(), t("methods_page.holdout_span", first=month_label(a),
+        spans.append((i18n.lower(name), t("methods_page.holdout_span", first=month_label(a),
                                       last=month_label(b), months=_months(n))))
     (crop, span), rest = spans[0], spans[1:]
     if not rest:

@@ -476,3 +476,20 @@ def test_english_percents_stay_plotly_formats(prices):
     assert figs["share_lines"].layout.yaxis.tickformat == ".0%"
     assert figs["share_lines"].data[0].hovertemplate == "İtalya %{y:.0%}<extra></extra>"
     assert figs["crop_vs_price"].layout.xaxis.tickformat == "~s"
+
+
+def test_destination_names_are_turkish_in_turkish_charts(turkish):
+    top = pd.DataFrame({"partner": ["Italy", "Germany", "Other"], "net_kg": [3e7, 2e7, 1e7],
+                        "fob_usd": [1, 1, 1], "share": [0.5, 0.3, 0.2]})
+    assert list(charts.bar_top(top).data[0].y) == ["Diğer", "Almanya", "İtalya"]
+    fig = charts.share_lines(pd.DataFrame({"Italy": [0.1, 0.3]}, index=[2000, 2025]),
+                             highlight="Italy")
+    line = fig.data[0]
+    assert line.name == "İtalya" and line.text[-1] == "İtalya"
+    assert line.hovertemplate.startswith("İtalya ") and line.meta == "accent"
+
+
+def test_destination_names_are_unchanged_in_english_charts():
+    top = pd.DataFrame({"partner": ["Italy", "Other"], "net_kg": [3e7, 1e7],
+                        "fob_usd": [1, 1], "share": [0.6, 0.4]})
+    assert list(charts.bar_top(top).data[0].y) == ["Other", "Italy"]

@@ -314,3 +314,11 @@ def test_sources_summary_and_exchanges_in_turkish(turkish):
 
         i18n.LANG = "en"
         importlib.reload(hazelnut_data)
+
+
+def test_holdout_glossary_in_turkish_lowers_the_crop_name(turkish):
+    two = ph.holdout_glossary_sentence([("Fındık", ("2024-10", "2026-09")),
+                                        ("İncir", ("2025-01", "2025-12"))])
+    assert two == ("Ayrılmış test dönemi fındık için Ekim 2024 – Eylül 2026 (24 ay); incir için "
+                   "Ocak 2025 – Aralık 2025 (12 ay). Her biri, hiçbir yöntem kurulmadan önce "
+                   "ayrıldı.")

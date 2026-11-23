@@ -18,6 +18,7 @@ from __future__ import annotations
 import math
 import os
 import re
+import unicodedata
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
 
@@ -122,6 +123,52 @@ def crop_country(crop) -> str:
     return t(key) if has(key) else crop.country
 
 
+def country_key(name: str) -> str:
+    """The ``country.<key>`` of a country name: folded to ASCII, lower case, every run of
+    other characters as ``_`` ("Côte d'Ivoire" -> ``cote_d_ivoire``). A key passes
+    through unchanged."""
+    ascii_ = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "_", ascii_.lower()).strip("_")
+
+
+def country_name(name: str) -> str:
+    """An export destination's name in the active language, from its UN Comtrade name (or
+    its ``country.<key>``). A name without an entry is returned as it is."""
+    key = f"country.{country_key(name)}"
+    return t(key) if has(key) else name
+
+
+def crop_source_name(source: str) -> str:
+    """A crop-estimate source key from the results ("national") in words, from
+    ``crop_source.<key>``; a key without an entry is returned as it is."""
+    key = f"crop_source.{source}"
+    return t(key) if has(key) else source
+
+
+# Turkish dotted and dotless i: Python's str.upper/lower map i -> I and İ -> i̇.
+_TR_UPPER = {"i": "İ", "ı": "I"}
+_TR_LOWER = {"İ": "i", "I": "ı"}
+
+
+def upper_first(text: str) -> str:
+    """``text`` with its first letter in upper case, by the active language's rules
+    ("ikinci" -> "İkinci" in Turkish)."""
+    if not text:
+        return text
+    first = text[0]
+    if LANG == "tr" and first in _TR_UPPER:
+        return _TR_UPPER[first] + text[1:]
+    return first.upper() + text[1:]
+
+
+def lower(text: str) -> str:
+    """``text`` in lower case, by the active language's rules ("IĞDIR" -> "ığdır" in
+    Turkish)."""
+    if LANG == "tr":
+        text = "".join(_TR_LOWER.get(c, c) for c in text)
+    return text.lower()
+
+
 def plural(key: str, n: int, **values) -> str:
     """``t(key.one)`` when ``n`` is 1, else ``t(key.other)``, with ``n`` filled in."""
     return t(f"{key}.one" if n == 1 else f"{key}.other", n=n, **values)
@@ -204,7 +251,8 @@ def fmt_pct(x, dp: int = 0, *, signed: bool = False) -> str:
     """A fraction as a percent with ``dp`` decimals: ``31.5%`` / ``%31,5``.
 
     ``signed`` adds the sign: ``+31.5%``, ``−3.5%`` (``−%3,5``); a value that rounds to
-    zero has none."""
+    zero has none. Unsigned, a negative value takes ``format.pct_minus``: ``-3%`` in
+    English, as its pages have always shown, ``−%3`` in Turkish."""
     if _missing(x):
         return _na()
     v = x * 100
@@ -215,7 +263,7 @@ def fmt_pct(x, dp: int = 0, *, signed: bool = False) -> str:
         return t("format.pct_signed", sign="+" if p > 0 else MINUS, value=_plain(abs(p), dp))
     body = _plain(v, dp)
     if body.startswith("-"):
-        return t("format.pct_signed", sign="-", value=body[1:])
+        return t("format.pct_signed", sign=t("format.pct_minus"), value=body[1:])
     return t("format.pct", value=body)
 
 

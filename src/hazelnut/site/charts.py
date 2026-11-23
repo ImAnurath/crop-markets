@@ -363,7 +363,8 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     # Plotly draws the first category at the bottom: "Other" first, then smallest to largest.
     is_other = top["partner"] == OTHER_PARTNER
     top = pd.concat([top[is_other], top[~is_other].sort_values("share", ascending=True)])
-    names = top["partner"].where(top["partner"] != OTHER_PARTNER, other_partner_label())
+    names = [other_partner_label() if p == OTHER_PARTNER else i18n.country_name(p)
+             for p in top["partner"].astype(str)]
     tonnes, musd = top["net_kg"] / 1000, top["fob_usd"] / 1e6
     if _d3_percents():
         label = dict(text=top["share"], texttemplate="%{x:.0%}")
@@ -476,14 +477,15 @@ def share_lines(shares: pd.DataFrame, highlight: str | None = None) -> go.Figure
     traces = []
     for col in shares.columns:
         hl = col == highlight
+        name = i18n.country_name(str(col))
         pct = {} if d3 else {"customdata": _pct_texts(shares[col], 0)}
         traces.append(go.Scatter(
-            x=x, y=[float(v) for v in shares[col]], name=str(col), mode="lines+text",
-            text=[""] * (len(x) - 1) + [str(col)], textposition="middle right",
+            x=x, y=[float(v) for v in shares[col]], name=name, mode="lines+text",
+            text=[""] * (len(x) - 1) + [name], textposition="middle right",
             textfont=dict(family=FONT, size=12, color=MUTED), cliponaxis=False,
             meta="accent" if hl else "fg", opacity=1 if hl else 0.75,
             line=dict(color=ACCENT if hl else FG, width=2 if hl else 1.5),
-            hovertemplate=f"{html.escape(str(col))} {'%{y:.0%}' if d3 else '%{customdata}'}"
+            hovertemplate=f"{html.escape(name)} {'%{y:.0%}' if d3 else '%{customdata}'}"
                           "<extra></extra>",
             **pct,
         ))
