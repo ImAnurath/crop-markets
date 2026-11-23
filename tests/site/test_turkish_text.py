@@ -4,6 +4,10 @@ holds none of a compact list of common English words.
 
 Pages join TRANSLATED as their Turkish prose lands (Task 6 batches). Names that stay as
 they are in Turkish (sources, method names, the site's brand) are removed before the scan.
+
+The stop-word list catches untranslated sentences. It does not catch short English
+fragments made of words outside the list (a lone label such as "Calm"), and it never sees
+chart text inside Plotly's JSON (scripts are dropped); tests/site/test_charts.py covers those.
 """
 
 import importlib.util
@@ -29,11 +33,11 @@ TRANSLATED = (
 ROOT_TR_BLOCKS = ("404.html",)
 
 # Common English words that are not also Turkish words ("on" is ten, "it" a dog, "not" a
-# note, "has" pure, "at" a horse, so they are left out).
+# note, "has" pure, "at" a horse, "can" soul, "be" a letter name, so they are left out).
 ENGLISH_WORDS = frozenset("""
-    the and of to in is are was were with for from this that which these those or be been
+    the and of to in is are was were with for from this that which these those or been
     by its into than then there their they we our you your what how where when why will
-    would can could only also more most all each every about after before over under
+    would could only also more most all each every about after before over under
     price prices season seasons seasonal export exports exported crop crops market markets
     forecast forecasts forecasting month months year years week weekly data page range
     error errors method methods chart charts dashboard overview analyses analysis explorer

@@ -54,7 +54,7 @@ Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, rekoltenin ne kadar 
 [Built by]{.eyebrow} **{{< var author_name >}}** {{< var author_bio >}} · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
 :::
 ::: {.content-visible when-profile="tr"}
-[Hazırlayan]{.eyebrow} **{{< var author_name >}}** Türkiye'nin tarım ürünü piyasaları üzerine veri analizi. · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
+[Hazırlayan]{.eyebrow} **{{< var author_name >}}** {{< var author_bio_tr >}} · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
 :::
 :::
 
