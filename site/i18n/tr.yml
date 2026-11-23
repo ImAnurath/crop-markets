@@ -78,9 +78,24 @@ crop:
   hazelnut:
     name: "Fındık"
     country: "Türkiye"
+    local_name: "TL"
 overview:
   eyebrow: "Ürünler / {crop} / {exchanges}"
   market_eyebrow: "Bu ayki piyasa"
+dashboard:
+  eyebrow: "Ürünler / {crop} / Gösterge paneli"
+  h1: "Fiyat ve onun hakkında dürüstçe söyleyebileceklerimiz"
+  price_foot: "Gölgeli alanlar: {years} arz şokları. {local} görünümünde logaritmik ölçek kullanılır."
+  range_title: "Fiyat 6 ay sonra nerede olabilir"
+  range_fallback: "Bu büyüklükteki geçmiş fiyat hareketlerinin kapsadığı aralık."
+  range_note: "Aralık yalnızca {currencies} için test edildi"
+  exports_title: "İhracat nereye gidiyor"
+  exports_fallback: "Hacme göre başlıca pazarlar, son 12 ay."
+  exports_foot: "İhracat hacmindeki pay (net ağırlık). Kaynak: UN Comtrade."
+  crop_title: "Rekolte büyüyünce fiyat düşer mi?"
+  crop_foot: "{source} borsasının rekolte tahminine karşı sezonun ortalama USD fiyatı."
+  scoreboard_title: "Tahmin puan tablosu"
+  scoreboard_fallback: "Her yöntemin hatası, naif tahminin hatasına göre."
 home:
   crop_where: "{country} · {exchanges}"
   crop_price: "{month} itibarıyla {price}/kg"
@@ -417,6 +432,11 @@ hazelnut:
     giresun_in_shell: "Giresun kabuklu"
     calm_months: "Sakin aylar"
     lira_crises: "Lira krizleri"
+  dashboard:
+    price_title: "Giresun kabuklu fındık fiyatı"
+    shock:
+      y2014: "2014 donu"
+      y2025: "2025'teki düşük rekolte"
   timing_note: "Bir hasadın rekolte tahmini yalnızca, normalde açıklandığı o yılın Ağustos ayından itibaren kullanılır; her tahmini bir ay sonraya kaydırmak hata oranlarını en fazla 0,03 değiştirdi, yani bu kural bir veri sızıntısı belirtisi göstermiyor."
 
 # --- Ülkeler -----------------------------------------------------------------------------

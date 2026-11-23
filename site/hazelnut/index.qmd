@@ -36,10 +36,10 @@ Thirty years of exchange prices, where the exports go, how big the crop is, and 
 :::
 
 ::: {.content-visible when-profile="tr"}
-# Dünyadaki fındığın üçte ikisi Türkiye'de yetişiyor. *Bu da onun piyasası.*
+# Dünyadaki fındığın üçte ikisi Türkiye'de yetişiyor. *İşte o fındığın piyasası.*
 
 ::: {.lede}
-Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, rekoltenin ne kadar büyük olduğu ve havanın ona ne yaptığı. Her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
+Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, rekoltenin ne kadar büyük olduğu ve havanın rekolteyi nasıl etkilediği. Hepsi her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
 :::
 
 ::: {.btns}
@@ -54,7 +54,7 @@ Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, rekoltenin ne kadar 
 [Built by]{.eyebrow} **{{< var author_name >}}** {{< var author_bio >}} · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
 :::
 ::: {.content-visible when-profile="tr"}
-[Hazırlayan]{.eyebrow} **{{< var author_name >}}** {{< var author_bio >}} · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
+[Hazırlayan]{.eyebrow} **{{< var author_name >}}** Türkiye'nin tarım ürünü piyasaları üzerine veri analizi. · [GitHub]({{< var github_url >}}) · [LinkedIn]({{< var linkedin_url >}})
 :::
 :::
 
@@ -92,7 +92,7 @@ ph.raw_html(
     ph.market_meta_html(manifest)
     + ph.market_strip_html(
         stats,
-        local_name="lira",
+        local_name=i18n.t(f"crop.{crop.slug}.local_name"),
         local=crop.local_currency,
         crop_source=crop.exchanges[0],  # the crop estimate is the first exchange's (Giresun)
     )
@@ -117,7 +117,7 @@ ph.raw_html(
   <a href="dashboard.qmd"><h3>Gösterge paneli <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Fiyat, ihracat, rekolte ve tahmin aralığı, hepsi tek sayfada.</p></a>
   <a href="analyses/index.qmd"><h3>Analizler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Sezonlar, ihracat pazarları, don yılları, Giresun ile Ordu karşılaştırması.</p></a>
   <a href="explorer.qmd"><h3>Veri gezgini <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Tüm aylık kayıtlar. Filtreleyin, sonra Excel'de yanınıza alın.</p></a>
-  <a href="../methods.qmd"><h3>Yöntemler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Her sayının nasıl üretildiği, sade bir dille ve açıklanmadık terim bırakmadan.</p></a>
+  <a href="../methods.qmd"><h3>Yöntemler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Her sayının nasıl üretildiği; sade bir dille, açıklanmamış terim bırakmadan.</p></a>
 </nav>
 ```
 :::

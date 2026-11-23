@@ -1,5 +1,6 @@
 ---
 title: "Page not found"
+title-tr: "Sayfa bulunamadı"
 ---
 
 <!-- Quarto writes this page's links against the site path (/crop-markets/), because
@@ -32,7 +33,7 @@ still lives under the same few pages.]{.lede}
 hâlâ aynı birkaç sayfada duruyor.]{.lede}
 
 ::: {.btns}
-[Başa dön <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](tr/index.html){.btn .pri}
+[Ana sayfaya dönün <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg>](tr/index.html){.btn .pri}
 :::
 :::
 :::

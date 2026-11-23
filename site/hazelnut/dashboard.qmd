@@ -1,12 +1,15 @@
 ---
 title: "Hazelnut dashboard"
+title-tr: "Fındık gösterge paneli"
 description: "Giresun hazelnut prices, the six-month price range, export destinations, crop size against price, and how the forecasts scored against naive."
+description-tr: "Giresun fındık fiyatları, altı aylık fiyat aralığı, ihracat pazarları, rekoltenin fiyatla ilişkisi ve tahminlerin naif tahmine karşı aldığı puanlar."
 ---
 
 ```{python}
 from hazelnut.forecast.dataset import SHOCK_PERIODS
-from hazelnut.site import charts
+from hazelnut.site import charts, i18n
 from hazelnut.site import page_helpers as ph
+from hazelnut.site.i18n import t
 from hazelnut.site.labels import crop_estimate_label
 from hazelnut.site.config import SITE_DIR, load_crops
 
@@ -33,7 +36,7 @@ holdout = ph.read_csv_or_none(data_dir / "results" / "scoreboard_holdout.csv",
 ranges = ph.read_csv_or_none(data_dir / "results" / "ranges.csv")
 
 # The shocks the price subtitle names (hazelnut copy); dates come from SHOCK_PERIODS.
-SHOCK_NAMES = {"2014": "the 2014 frost", "2025": "the 2025 short crop"}
+SHOCK_NAMES = {y: t(f"{crop.slug}.dashboard.shock.y{y}") for y in ("2014", "2025")}
 named_shocks = [(SHOCK_NAMES[a[:4]], (a, b)) for a, b in SHOCK_PERIODS if a[:4] in SHOCK_NAMES]
 RANGE_METHOD = "naive_emp"  # price_range.csv is the empirical-naive range (site_data.py)
 ```
@@ -45,8 +48,8 @@ if manifest is not None:
              f'{ph.escape(ph.as_of_stamp(manifest))}</span>')
 ph.raw_html(
     '<div class="dash-head"><div>'
-    f'<span class="eyebrow">Crops / {ph.escape(crop.name)} / Dashboard</span>'
-    "<h1>The price, and what we can honestly say about it</h1></div>"
+    f'<span class="eyebrow">{ph.escape(t("dashboard.eyebrow", crop=i18n.crop_name(crop)))}</span>'
+    f'<h1>{ph.escape(t("dashboard.h1"), quote=False)}</h1></div>'
     f"{stamp}</div>"
 )
 ```
@@ -56,17 +59,19 @@ ph.raw_html(
 ::: {#panel-price .panel .span-8}
 ```{python}
 ph.raw_html(ph.panel_head_html(
-    "Giresun in-shell price",
+    t(f"{crop.slug}.dashboard.price_title"),
     ph.price_subtitle(prices, named_shocks) if prices is not None
-    else "Monthly exchange price; shaded periods are supply shocks.",
+    else t("price.fallback"),
 ))
 if prices is None:
     ph.raw_html(ph.unavailable_html())
 else:
     charts.show(charts.price_history(prices, SHOCK_PERIODS, local.column, local.label))
     ph.raw_html(
-        f'<p class="foot">Shaded: the {ph.shock_years_label(SHOCK_PERIODS)} supply shocks. '
-        f"The {ph.escape(local.label)} view uses a log scale.</p>"
+        '<p class="foot">'
+        + ph.escape(t("dashboard.price_foot", years=ph.shock_years_label(SHOCK_PERIODS),
+                      local=local.label), quote=False)
+        + "</p>"
     )
 ```
 :::
@@ -74,9 +79,9 @@ else:
 ::: {#panel-range .panel .span-4}
 ```{python}
 ph.raw_html(ph.panel_head_html(
-    "Where the price could be in 6 months",
+    t("dashboard.range_title"),
     ph.range_subtitle(price_range) if price_range is not None
-    else "The range past price moves of this size have covered.",
+    else t("dashboard.range_fallback"),
 ))
 range_label = ph.range_currencies_label(crop.range_currencies)
 show_range = price_range is not None and "usd" in crop.range_currencies
@@ -91,7 +96,7 @@ if show_range:
     # Shown instead of the chart while the price chart is on a currency the range was
     # not tested in (the script at the end of the page listens to its USD/TL buttons).
     ph.raw_html(f'<div class="range-note" role="status" data-currencies="{range_label}">'
-                f"Range tested in {range_label} only</div>")
+                f'{ph.escape(t("dashboard.range_note", currencies=range_label), quote=False)}</div>')
 ```
 :::
 
@@ -107,43 +112,41 @@ if show_range:
 ```{python}
 period = ph.output_month_label(manifest, "exports_top")
 ph.raw_html(ph.panel_head_html(
-    "Where the exports go",
+    t("dashboard.exports_title"),
     ph.exports_subtitle(exports_top, period) if exports_top is not None and period
-    else "Top destinations by volume, last 12 months.",
+    else t("dashboard.exports_fallback"),
 ))
 if exports_top is None:
     ph.raw_html(ph.unavailable_html())
 else:
     charts.show(charts.bar_top(exports_top))
-    ph.raw_html('<p class="foot">Share of export volume (net weight). Source: UN Comtrade.</p>')
+    ph.raw_html(f'<p class="foot">{ph.escape(t("dashboard.exports_foot"), quote=False)}</p>')
 ```
 :::
 
 ::: {#panel-crop .panel .span-4}
 ```{python}
 if crop_by_year is None:
-    ph.raw_html(ph.panel_head_html("Bigger crop, lower price?",
-                                   "Crop estimate against the season's average price."))
+    ph.raw_html(ph.panel_head_html(t("dashboard.crop_title"), t("crop_price.fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
     crop_df, crop_sub, crop_note = ph.crop_panel(crop_by_year, CROP_COL, prices)
-    ph.raw_html(ph.panel_head_html("Bigger crop, lower price?", crop_sub))
+    ph.raw_html(ph.panel_head_html(t("dashboard.crop_title"), crop_sub))
     charts.show(charts.crop_vs_price(crop_df, CROP_COL, crop_estimate_label(SOURCE)))
-    ph.raw_html(
-        '<p class="foot">Giresun exchange crop estimate against the season\'s average USD '
-        f"price.{' ' + ph.escape(crop_note) if crop_note else ''}</p>"
-    )
+    foot = t("dashboard.crop_foot", source=SOURCE) + (" " + crop_note if crop_note else "")
+    ph.raw_html(f'<p class="foot">{ph.escape(foot, quote=False)}</p>')
 ```
 :::
 
 ::: {#panel-scoreboard .panel .span-4}
 ```{python}
 if scoreboard is None:
-    ph.raw_html(ph.panel_head_html("Forecast scoreboard",
-                                   "Each method's error relative to naive."))
+    ph.raw_html(ph.panel_head_html(t("dashboard.scoreboard_title"),
+                                   t("dashboard.scoreboard_fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
-    ph.raw_html(ph.panel_head_html("Forecast scoreboard", ph.scoreboard_subtitle(scoreboard)))
+    ph.raw_html(ph.panel_head_html(t("dashboard.scoreboard_title"),
+                                   ph.scoreboard_subtitle(scoreboard)))
     ph.raw_html(ph.scoreboard_html(scoreboard, holdout, "analyses/forecasting.qmd",
                                    methods_href="../methods.qmd"))
 ```

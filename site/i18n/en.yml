@@ -87,10 +87,28 @@ crop:
   hazelnut:
     name: "Hazelnut"
     country: "Turkey"
+    # The local currency's name in the overview's price tile ("Price, lira").
+    local_name: "lira"
 
 overview:
   eyebrow: "Crops / {crop} / {exchanges}"
   market_eyebrow: "The market this month"
+
+dashboard:
+  eyebrow: "Crops / {crop} / Dashboard"
+  h1: "The price, and what we can honestly say about it"
+  price_foot: "Shaded: the {years} supply shocks. The {local} view uses a log scale."
+  range_title: "Where the price could be in 6 months"
+  range_fallback: "The range past price moves of this size have covered."
+  # Shown instead of the range chart while the price chart is on another currency.
+  range_note: "Range tested in {currencies} only"
+  exports_title: "Where the exports go"
+  exports_fallback: "Top destinations by volume, last 12 months."
+  exports_foot: "Share of export volume (net weight). Source: UN Comtrade."
+  crop_title: "Bigger crop, lower price?"
+  crop_foot: "{source} exchange crop estimate against the season's average USD price."
+  scoreboard_title: "Forecast scoreboard"
+  scoreboard_fallback: "Each method's error relative to naive."
 
 home:
   crop_where: "{country} · {exchanges}"
@@ -463,6 +481,13 @@ hazelnut:
     giresun_in_shell: "Giresun in-shell"
     calm_months: "Calm months"
     lira_crises: "Lira crises"
+  # The hazelnut dashboard's price panel: its title, and the shocks its subtitle names
+  # (keyed by the first year of a SHOCK_PERIODS entry).
+  dashboard:
+    price_title: "Giresun in-shell price"
+    shock:
+      y2014: "the 2014 frost"
+      y2025: "the 2025 short crop"
   timing_note: "A harvest's crop estimate is used only from August of that year, when it is normally out; moving every estimate a month later changed the error ratios by at most 0.03, so the rule shows no sign of a leak."
 
 # --- Countries ---------------------------------------------------------------------------

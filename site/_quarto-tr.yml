@@ -1,6 +1,12 @@
 # Turkish: rendered into site/_site/tr/ (same page paths as English, under /tr/).
 lang: tr
 
+# Quarto's own interface strings that its Turkish translation leaves in English
+# (skip link) or misspells ("Internet sitesi", the navbar's aria-label).
+language:
+  skip-to-content: "Ana içeriğe geç"
+  navigation-site-label: "Site"
+
 project:
   output-dir: _site/tr
 
