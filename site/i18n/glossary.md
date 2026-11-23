@@ -1,6 +1,6 @@
 # Glossary: English to Turkish
 
-Fixed term pairs that every translator must use. The owner (a native speaker) confirms this list once, before `tr.yml` and the Turkish prose are translated at scale. Not a page: `site/_quarto.yml` renders only `*.qmd`.
+Fixed term pairs that every translator must use. Confirmed by the owner (a native speaker) on 2026-11-23, as drafted, including the "Already used in drafts" terms and the `4,13 $/kg` format. Not a page: `site/_quarto.yml` renders only `*.qmd`.
 
 | English | Turkish |
 |---|---|
@@ -38,13 +38,13 @@ Fixed term pairs that every translator must use. The owner (a native speaker) co
 
 - Decimal comma, thousands dot: `4,13`, `86.440 t`, `%31,5`.
 - Percent sign goes before the number: `%3,5`, `−%3,5`.
-- USD: `4,13 $/kg` in prose and tiles (owner to confirm). Local currency label stays `TL`.
+- USD: `4,13 $/kg` in prose and tiles. Local currency label stays `TL`.
 - Months: Ocak, Şubat, Mart, Nisan, Mayıs, Haziran, Temmuz, Ağustos, Eylül, Ekim, Kasım, Aralık. Short: Oca, Şub, Mar, Nis, May, Haz, Tem, Ağu, Eyl, Eki, Kas, Ara.
 - Seasons stay `2025/26`.
 
 ## Already used in drafts
 
-Terms earlier tasks drafted in `tr.yml` and `_quarto-tr.yml` that the table lacks. Confirm or correct them in the same pass.
+Terms earlier tasks drafted in `tr.yml` and `_quarto-tr.yml` that the table lacks. Confirmed with the table.
 
 | English | Turkish (draft) |
 |---|---|
