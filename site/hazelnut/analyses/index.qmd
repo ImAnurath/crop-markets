@@ -1,29 +1,27 @@
 ---
 title: "Hazelnut analyses"
+title-tr: "Fındık analizleri"
 description: "Seasons, export markets, crop size and frost, the Giresun and Ordu exchanges, and how the price forecasts scored."
+description-tr: "Sezonlar, ihracat pazarları, rekolte ve don, Giresun ve Ordu borsaları ve fiyat tahminlerinin aldığı puanlar."
 ---
 
 ```{python}
+from hazelnut.site import i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.i18n import t
 
 crop = load_crops()["hazelnut"]
 manifest = ph.read_json_or_none(SITE_DIR / "data" / crop.slug / "manifest.json")
 
-# Title and one-line summary per analysis (hazelnut copy); the list and its order come
-# from crops.yml `analyses`.
-ENTRIES = {
-    "seasonality": ("Seasonality",
-                    "Does the price follow the harvest calendar? A little, and less than you might think."),
-    "exports": ("Exports",
-                "Where the shelled nuts go, how that has shifted, and what a kilo of kernels earns."),
-    "crop-and-frost": ("Crop and frost",
-                       "Bigger crops, lower prices, and how much a count of spring frost days explains."),
-    "exchanges": ("Giresun and Ordu",
-                  "Two exchanges, one market: how far apart their prices run."),
-    "forecasting": ("Forecasting",
-                    "Every method we tried against \"the price stays where it is\", and an honest range."),
-}
+# Title and one-line summary per analysis (hazelnut copy, hazelnut.analyses.<slug> in
+# site/i18n); the list and its order come from crops.yml `analyses`.
+def entry(slug):
+    key = f"{crop.slug}.analyses.{slug.replace('-', '_')}"
+    return (t(f"{key}.title"), t(f"{key}.summary"))
+
+ENTRIES = {slug: entry(slug) for slug in crop.analyses
+           if i18n.has(f"{crop.slug}.analyses.{slug.replace('-', '_')}.title")}
 
 stamp = ""
 if manifest is not None:
@@ -31,12 +29,10 @@ if manifest is not None:
              f'{ph.escape(ph.as_of_stamp(manifest))}</span>')
 ph.raw_html(
     '<div class="dash-head"><div>'
-    f'<span class="eyebrow">Crops / {ph.escape(crop.name)} / Analyses</span>'
-    "<h1>What the data says, and how sure we are</h1></div>"
+    f'<span class="eyebrow">{ph.escape(t("analyses.index_eyebrow", crop=i18n.crop_name(crop)))}</span>'
+    f'<h1>{ph.escape(t("analyses.h1"), quote=False)}</h1></div>'
     f"{stamp}</div>"
-    '<p class="lede">Each analysis opens with what we found in plain words, then shows the '
-    "charts and tables behind it. Every number on these pages is computed from the same "
-    "data the dashboard uses.</p>"
+    f'<p class="lede">{ph.escape(t("analyses.lede"), quote=False)}</p>'
 )
 ```
 

@@ -27,6 +27,12 @@ TRANSLATED = (
     "index.html",
     "hazelnut/index.html",
     "hazelnut/dashboard.html",
+    "hazelnut/analyses/index.html",
+    "hazelnut/analyses/seasonality.html",
+    "hazelnut/analyses/exports.html",
+    "hazelnut/analyses/crop-and-frost.html",
+    "hazelnut/analyses/exchanges.html",
+    "hazelnut/analyses/forecasting.html",
 )
 # Root-only bilingual pages (GitHub Pages serves only the root 404): their lang="tr"
 # block is scanned. Their navbar and footer are the English tree's by design.
@@ -55,6 +61,8 @@ ALLOWED = (
 )
 # A word, but not a suffix after an apostrophe ("1'in", "Türkiye'de").
 _WORD = re.compile(r"(?<![\w'’])[^\W\d_]+")
+# snapshot_text.py writes an attribute's value as "[name] value" on its own line.
+_ATTR_MARKER = re.compile(r"^\[[\w:-]+\] ")
 
 
 def _snapshot_module():
@@ -78,7 +86,8 @@ def english_lines(text: str) -> list[str]:
     """Each line of ``text`` that holds English words, as "line  <- words"."""
     out = []
     for line in text.splitlines():
-        found = english_words(line)
+        # The extractor's "[attribute-name] value" marker is not page text; its value is.
+        found = english_words(_ATTR_MARKER.sub("", line))
         if found:
             out.append(f"{line[:120]}  <- {', '.join(found)}")
     return out
@@ -95,6 +104,12 @@ def test_english_words_skips_turkish_and_allowed_names():
     assert english_words("Türkiye'de the price, için") == ["the", "price"]
     assert english_words("SARIMA ile naif tahmin; Prices in TL") == ["Prices", "in"]
     assert english_words("1'in üzeri, Türkiye’de") == []
+
+
+def test_english_lines_reads_attribute_values_not_their_names():
+    assert english_lines("[data-scroll-hint] Devamı için kaydırın →") == []
+    assert english_lines("[aria-label] Toggle dark mode") == [
+        "[aria-label] Toggle dark mode  <- Toggle"]
 
 
 def test_tr_block_takes_only_the_turkish_block():

@@ -1,10 +1,12 @@
 ---
 title: "Hazelnut exports"
+title-tr: "Fındık ihracatı"
 description: "Where Turkey's shelled hazelnut exports go, how the destinations have shifted since 2000, and what a kilo of kernels earns against the exchange price."
+description-tr: "Türkiye'nin iç fındık ihracatı nereye gidiyor, pazarlar 2000'den bu yana nasıl değişti ve bir kilo iç fındık borsa fiyatına göre ne kazandırıyor."
 ---
 
 ```{python}
-from hazelnut.site import charts
+from hazelnut.site import charts, i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
 from hazelnut.site.i18n import t
@@ -13,6 +15,7 @@ crop = load_crops()["hazelnut"]
 data_dir = SITE_DIR / "data" / crop.slug
 manifest = ph.read_json_or_none(data_dir / "manifest.json")
 stamp = ph.as_of_stamp(manifest) if manifest is not None else None
+K = f"{crop.slug}.analyses.exports"  # this page's strings in site/i18n
 
 PRODUCT = "shelled"  # the bulk of the trade; in-shell exports are a few thousand tonnes a year
 TOP = 3              # destinations drawn as lines
@@ -43,22 +46,21 @@ if shares is not None:
     first, last = shares.index[0], shares.index[-1]
     lead, second = shares.columns[0], shares.columns[1] if len(shares.columns) > 1 else None
     both = shares.loc[last, list(shares.columns[:2])].sum()
-    who = f"{lead} and {second}" if second else lead
-    parts.append(
-        f"{who} took {round(both * 100)}% of shelled export volume in {last}. "
-        f"{lead}'s share has gone from "
-        f"{round(shares.loc[first, lead] * 100)}% in {first} to "
-        f"{round(shares.loc[last, lead] * 100)}%"
-        + (f", while {second}'s went from {round(shares.loc[first, second] * 100)}% to "
-           f"{round(shares.loc[last, second] * 100)}%." if second else ".")
-    )
+    pct = lambda partner, year: i18n.fmt_pct(float(shares.loc[year, partner]))  # noqa: E731
+    who = i18n.join_names([i18n.country_name(p) for p in (lead, second) if p])
+    parts.append(t(f"{K}.found_top", who=who, share=i18n.fmt_pct(float(both)), year=last))
+    lead_values = dict(lead=i18n.country_name(lead), lead_first=pct(lead, first), first=first,
+                       lead_last=pct(lead, last))
+    if second:
+        parts.append(t(f"{K}.found_lead_second", second=i18n.country_name(second),
+                       second_first=pct(second, first), second_last=pct(second, last),
+                       **lead_values))
+    else:
+        parts.append(t(f"{K}.found_lead", **lead_values))
 if ratio is not None:
-    parts.append(
-        f"A kilo of shelled nuts has sold abroad for about {ratio.median:.1f} times the "
-        "exchange's in-shell price, roughly the two kilos of nuts in shell it takes to make one."
-    )
-found = " ".join(parts) or "Export destinations and unit values, from UN Comtrade."
-ph.raw_html(ph.analysis_head_html(crop.name, "Exports", "Where the hazelnuts go",
+    parts.append(t(f"{K}.found_ratio", ratio=i18n.fmt_number(ratio.median, 1)))
+found = " ".join(parts) or t(f"{K}.found_fallback")
+ph.raw_html(ph.analysis_head_html(i18n.crop_name(crop), t(f"{K}.title"), t(f"{K}.h1"),
                                   found, stamp))
 ```
 
@@ -66,44 +68,45 @@ ph.raw_html(ph.analysis_head_html(crop.name, "Exports", "Where the hazelnuts go"
 
 ::: {#panel-destinations .panel .span-7}
 ```{python}
-TITLE = "Destinations over time"
+TITLE = t(f"{K}.destinations_title")
 if shares is None:
-    ph.raw_html(ph.panel_head_html(TITLE, "Each destination's share of shelled export volume, by year."))
+    ph.raw_html(ph.panel_head_html(TITLE, t(f"{K}.destinations_fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
-    ph.raw_html(ph.panel_head_html(TITLE, ph.share_shift_subtitle(shares, "shelled export volume")))
+    ph.raw_html(ph.panel_head_html(TITLE, ph.share_shift_subtitle(shares, t(f"{K}.share_what"))))
     charts.show(charts.share_lines(shares, highlight=shares.columns[0]))
-    ph.raw_html(
-        f'<p class="foot">Share of shelled export volume (net weight) by calendar year, for the '
-        f"{len(shares.columns)} largest destinations of {shares.index[-1]}; complete years only, "
-        "the rest went elsewhere. Source: UN Comtrade.</p>"
-    )
+    foot = t(f"{K}.destinations_foot", n=len(shares.columns), year=shares.index[-1])
+    ph.raw_html(f'<p class="foot">{ph.escape(foot, quote=False)}</p>')
 ```
 :::
 
 ::: {#panel-unit-value .panel .span-5}
 ```{python}
-TITLE = "What a kilo of kernels earns"
+TITLE = t(f"{K}.unit_value_title")
 if uv is None or ratio is None or ratio.n == 0:
-    ph.raw_html(ph.panel_head_html(TITLE, "Export value per kilo against the exchange price."))
+    ph.raw_html(ph.panel_head_html(TITLE, t(f"{K}.unit_value_fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.ratio_subtitle(
-        ratio, "A kilo of shelled exports", "the exchange's in-shell price")))
+        ratio, t(f"{K}.ratio_a"), t(f"{K}.ratio_b"))))
     charts.show(charts.compare_lines(uv["month"], uv["usd_per_kg"], uv["usd_kg"],
                                      t("hazelnut.chart.shelled_exports"),
                                      t("hazelnut.chart.giresun_in_shell")))
-    ph.raw_html(
-        '<p class="foot">Shelled exports: <a href="../../methods.qmd#fob">FOB</a> value divided by net weight, all destinations '
-        "(UN Comtrade). Giresun in-shell: the exchange's monthly average. Shelling roughly "
-        "halves the weight, which accounts for most of the gap; in-shell exports are too "
-        "small to compare.</p>"
-    )
+    fob = '<a href="../../methods.qmd#fob">FOB</a>'
+    ph.raw_html(f'<p class="foot">{t(f"{K}.unit_value_foot", fob=fob)}</p>')
 ```
 :::
 
 :::
 
+::: {.content-visible when-profile="en"}
 ```{=html}
 <p class="back"><a href="index.qmd">All analyses</a></p>
 ```
+:::
+
+::: {.content-visible when-profile="tr"}
+```{=html}
+<p class="back"><a href="index.qmd">Tüm analizler</a></p>
+```
+:::
