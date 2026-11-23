@@ -91,7 +91,7 @@ strip:
   change_on_month: "{month} ayına göre {change}"
   change_on_year: "{year} yılına göre {change}"
   since_peak: "zirve: {month} ({price})"
-  peak_na: "zirve yok"
+  peak_na: "zirve verisi yok"
   no_estimate: "henüz tahmin yok"
   no_earlier_year: "karşılaştırılacak önceki yıl yok"
 exchanges:
@@ -121,13 +121,13 @@ price:
   fallback: "Aylık borsa fiyatı; gölgeli dönemler arz şoklarıdır."
 range:
   subtitle: "Geçmişteki {horizon} aylık hareketler tekrarlanırsa {month} fiyatı 10'da 8 olasılıkla {low} ile {high} arasında olur."
-  coverage_note: "Testlerde {span} ilerisi için 10'da 8 aralığının kapsama oranı {pct} oldu."
+  coverage_note: "Testlerde {span} ileride 10'da 8 aralığının kapsama oranı {pct} oldu."
 exports:
   other: "Diğer"
-  subtitle: "{names}, {period} itibarıyla son 12 ayda ihracat hacminin {share} kadarını aldı."
+  subtitle: "{names}, {period} ile biten 12 ayda ihracat hacminden {share} pay aldı."
   share_first: "{partner} pazarının {what} içindeki payı {first} yılında {first_share} iken {last} yılında {last_share} oldu"
   share_next: "{partner} pazarının payı ise {first_share} iken {last_share} oldu"
-  ratio_subtitle: "{a}, {b} karşısında medyan {median} kat değerle satıldı (10 ayın 8'inde {low} ile {high} kat arası)."
+  ratio_subtitle: "{a}, {b} ile kıyaslandığında medyan {median} kat fiyatla satıldı (10 ayın 8'inde {low} ile {high} kat arası)."
 season:
   to_date_note: "{season} sezonu henüz sürüyor ({span}); bu yüzden ortalaması geçicidir."
   to_date_label: "{season} (sürüyor)"
@@ -140,7 +140,7 @@ crop_price:
   subtitle:
     strong_negative: "{n} sezon boyunca büyük rekoltelere genellikle daha düşük fiyatlar eşlik etti (korelasyon {r})."
     weak_negative: "{n} sezon boyunca büyük rekoltelerle düşük fiyatlar arasında zayıf bir bağ görüldü (korelasyon {r})."
-    none: "{n} sezon boyunca rekoltenin büyüklüğü tek başına fiyat hakkında pek bir şey söylemedi (korelasyon {r})."
+    none: "{n} sezon boyunca rekoltenin büyüklüğü tek başına fiyat hakkında pek bir şey söylemiyor (korelasyon {r})."
     positive: "{n} sezon boyunca büyük rekoltelere daha düşük fiyatlar eşlik etmedi (korelasyon {r})."
   fallback: "Rekolte tahmini ve sezonun ortalama fiyatı."
 scoreboard:
@@ -150,20 +150,20 @@ scoreboard:
   holdout_none: "Ayrılmış test dönemi (bir kez puanlandı, hiç ayarlanmadı): hiçbir yöntem her ufukta naif tahmini geçemedi."
   foot: "Ortalama mutlak hataların oranı; her ufukta {count} tahmin."
   analysis_link: "Tahmin analizi"
-  caption: "Naif tahmine göre tahmin hatası, kaç ay ileriye bakıldığına göre"
+  caption: "Naif tahmine kıyasla tahmin hatası, kaç ay ileriye bakıldığına göre"
 analyses:
   nav_label: "Analizler"
   eyebrow: "Ürünler / {crop} / {analyses} / {page}"
   found: "Bulgularımız"
 seasonality:
-  subtitle: "{seasons} tam sezon boyunca ortalama ay, sezon ortalamasından {low} ({low_month}) ile {high} ({high_month}) arasında sapıyor; tipik bir ayda sezonların orta yarısı {spread} puanlık bir aralığa yayılıyor."
+  subtitle: "{seasons} tam sezon boyunca ortalama ay, sezon ortalamasından {low} ({low_month}) ile {high} ({high_month}) arasında sapıyor; tipik bir ayda sezonların orta yarısı {spread} yüzde puanlık bir aralığa yayılıyor."
 gap:
   median_below: "{n} ay boyunca {name} borsasının aylık fiyatı, {ref} borsasına göre medyan olarak {pct} daha düşük seyretti"
   median_above: "{n} ay boyunca {name} borsasının aylık fiyatı, {ref} borsasına göre medyan olarak {pct} daha yüksek seyretti"
-  band_below: "10 ayın 8'inde fark {low} ile {high} arasında, aşağı yöndeydi"
-  band_above: "10 ayın 8'inde fark {low} ile {high} arasında, yukarı yöndeydi"
-  band_mixed: "10 ayın 8'inde fark {low} aşağı ile {high} yukarı arasındaydı"
-  outlier_note: "Hariç tutulan aylar: {months}. Bu aylarda {name} borsasının ortalaması {ref} borsasından {limit} üzerinde sapıyordu (büyük olasılıkla kaynaktaki veri giriş hataları)."
+  band_below: "10 ayın 8'inde fiyat {low} ile {high} arasında daha düşüktü"
+  band_above: "10 ayın 8'inde fiyat {low} ile {high} arasında daha yüksekti"
+  band_mixed: "10 ayın 8'inde fiyat {low} daha düşük ile {high} daha yüksek arasındaydı"
+  outlier_note: "Hariç tutulan aylar: {months}. Bu aylarda {name} borsasının ortalaması ile {ref} borsasınınki arasındaki fark {limit} sınırını aşıyordu (büyük olasılıkla kaynaktaki veri giriş hataları)."
   detail_discount: "{name} borsası {n} ayın {dearer} tanesinde daha pahalıydı; en büyük iskontosu {pct} oldu ({month})."
   detail_premium: "{name} borsası {n} ayın {dearer} tanesinde daha pahalıydı; en büyük primi {pct} oldu ({month})."
 frost:
@@ -175,7 +175,7 @@ frost:
   subtitle:
     strong_negative: "{n} yıl boyunca donlu gün arttıkça rekolte genellikle küçüldü (korelasyon {r})."
     weak_negative: "{n} yıl boyunca donlu günlerle küçük rekolteler arasında zayıf bir bağ görüldü (korelasyon {r})."
-    none: "{n} yıl boyunca donlu gün sayısı tek başına rekolte hakkında pek bir şey söylemedi (korelasyon {r})."
+    none: "{n} yıl boyunca donlu gün sayısı tek başına rekolte hakkında pek bir şey söylemiyor (korelasyon {r})."
     positive: "{n} yıl boyunca donlu günlerin artması rekoltenin küçülmesi anlamına gelmedi (korelasyon {r})."
   fallback: "İlkbahardaki donlu gün sayısı ve {source} rekolte tahmini."
   fallback_no_source: "İlkbahardaki donlu gün sayısı ve rekolte tahmini."
@@ -192,29 +192,29 @@ forecast:
   holdout_none: "Her ufukta {n} tahmin; bir kez puanlandı, hiç ayarlanmadı. Hiçbir yöntem hiçbir ufukta naif tahmini geçemedi."
   holdout_some: "Her ufukta {n} tahmin; bir kez puanlandı, hiç ayarlanmadı. Hiçbir yöntem her ufukta naif tahmini geçemedi; {total} puanın {under} tanesi 1'in altında kaldı."
   holdout_some_lost: "Her ufukta {n} tahmin; bir kez puanlandı, hiç ayarlanmadı. Hiçbir yöntem her ufukta naif tahmini geçemedi; {total} puanın {under} tanesi 1'in altında kaldı, ancak her biri başka bir ufukta kaybeden bir yöntemden geldi."
-  holdout_luck_note: "Ayrılmış test döneminde naif tahmini geçen her puan, geliştirme döneminde aynı ufukta naif tahmine kaybetmişti; bu yüzden bu kazançlar beceriden çok şansa benziyor."
+  holdout_luck_note: "Ayrılmış test döneminde naif tahmini geçen her puan, geliştirme döneminde aynı ufukta naif tahmine kaybetmişti; bu yüzden bu kazançlar beceri değil, şans gibi görünüyor."
   holdout_no_repeat_note: "Ayrılmış test döneminde naif tahmini geçen puanların hiçbiri, geliştirme döneminde aynı ufukta onu geçmemişti."
   holdout_repeat_note: "Ayrılmış test döneminde naif tahmini geçen puanların {n} tanesi, geliştirme döneminde de aynı ufukta onu geçmişti."
   f3_more: "{horizon} ay ileride naif tahmin ortalama {miss}/kg saptı; en yakın rakip {name} ise {pct} daha fazla saptı."
   f3_less: "{horizon} ay ileride naif tahmin ortalama {miss}/kg saptı; en yakın rakip {name} ise {pct} daha az saptı."
   band_all_held: "{horizon} ay ileride 10'da 8 aralığı {n} ayın {held} tanesinde tuttu ({pct})."
   band_misses: "{horizon} ay ileride 10'da 8 aralığı {n} ayın {held} tanesinde tuttu ({pct}); aralığın dışında kalan {misses} ayın {in_shock} tanesi bir şok dönemine denk geldi."
-  ranges_none: "Dürüst bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu ve başka hiçbir yöntem hiçbir ufukta daha iyi puan almadı."
-  ranges_some: "Dürüst bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu; diğer {total} puanın {better} tanesi onu geçti."
+  ranges_none: "Doğru kurulmuş bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu ve başka hiçbir yöntem hiçbir ufukta daha iyi puan almadı."
+  ranges_some: "Doğru kurulmuş bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu; diğer {total} puanın {better} tanesi onu geçti."
 crop_check:
   row_on_time: "{method}, {source}, zamanında"
   row_late: "{method}, {source}, bir ay gecikmeli"
   default_rule: "zamanlama kuralı"
   no_leak: "Her rekolte tahminini bir ay sonraya kaydırmak puanları en fazla {shift} değiştirdi; yani {rule} bir veri sızıntısı belirtisi göstermiyor. Bir ay gecikmeli bu zamanlamada {sources} rekolte tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
-  leak: "Her rekolte tahminini bir ay sonraya kaydırmak puanları {shift} kadar değiştirdi; yani {rule} ile elde edilen sonuçlar bir veri sızıntısından yararlanmış olabilir. Bir ay gecikmeli bu zamanlamada {sources} rekolte tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
+  leak: "Her rekolte tahminini bir ay sonraya kaydırmak puanları {shift} değerine varan ölçüde değiştirdi; yani {rule} ile elde edilen sonuçlar bir veri sızıntısından yararlanmış olabilir. Bir ay gecikmeli bu zamanlamada {sources} rekolte tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
 crop_source:
   national: "ulusal"
 lira:
-  split_below: "Hatası, {crisis} aylarında naif tahmininkinden {pct} düşüktü; {calm} aylarda naif tahmininkine en fazla {within} uzaktı."
-  split_below_range: "Hatası, {crisis} aylarında naif tahmininkinden {low} ile {high} arasında düşüktü; {calm} aylarda naif tahmininkine en fazla {within} uzaktı."
-  split_above: "Hatası, {crisis} aylarında naif tahmininkinden {pct} yüksekti; {calm} aylarda naif tahmininkine en fazla {within} uzaktı."
-  split_above_range: "Hatası, {crisis} aylarında naif tahmininkinden {low} ile {high} arasında yüksekti; {calm} aylarda naif tahmininkine en fazla {within} uzaktı."
-  split_mixed: "Hatası, {crisis} aylarında naif tahmininkinden {low} düşük ile {high} yüksek arasındaydı; {calm} aylarda naif tahmininkine en fazla {within} uzaktı."
+  split_below: "Hatası, {crisis} aylarında naif tahmininkinden {pct} düşüktü; {calm} aylarda naif tahmininkinden en fazla {within} farklıydı."
+  split_below_range: "Hatası, {crisis} aylarında naif tahmininkinden {low} ile {high} arasında düşüktü; {calm} aylarda naif tahmininkinden en fazla {within} farklıydı."
+  split_above: "Hatası, {crisis} aylarında naif tahmininkinden {pct} yüksekti; {calm} aylarda naif tahmininkinden en fazla {within} farklıydı."
+  split_above_range: "Hatası, {crisis} aylarında naif tahmininkinden {low} ile {high} arasında yüksekti; {calm} aylarda naif tahmininkinden en fazla {within} farklıydı."
+  split_mixed: "Hatası, {crisis} aylarında naif tahmininkinden {low} düşük ile {high} yüksek arasındaydı; {calm} aylarda naif tahmininkinden en fazla {within} farklıydı."
   period:
     calm: "sakin"
     crisis: "kriz"
@@ -223,12 +223,12 @@ lira:
   lead_some: "Yüzde olarak bakıldığında {span} ileride {total} yöntemin {beat} tanesi naif tahmini geçti"
   tail_lower: "{horizons} ay ileride {trend} {pct} daha düşük hata verdi, {caveat}"
   tail_lower_range: "{horizons} ay ileride {trend} {low} ile {high} arasında daha düşük hata verdi, {caveat}"
-  tail_mixed: "{horizons} ay ileride {trend} hatası {low} daha yüksek ile {high} daha düşük arasında kaldı, {caveat}"
+  tail_mixed: "{horizons} ay ileride {trend} {low} daha yüksek ile {high} daha düşük arasında hata verdi, {caveat}"
   tail_higher: "{horizons} ay ileride {trend} {low} ile {high} arasında daha yüksek hata verdi"
   default_caveat: "ancak bu yalnızca bir ipucu"
 explorer:
-  outlier_one: "{months}: {name} borsasının fiyatı {ref} borsasından {limit} üzerinde sapıyordu; büyük olasılıkla kaynaktaki bir veri giriş hatası. Yayımlandığı gibi gösteriliyor."
-  outlier_many: "{months}: {name} borsasının fiyatı {ref} borsasından {limit} üzerinde sapıyordu; büyük olasılıkla kaynaktaki veri giriş hataları. Yayımlandıkları gibi gösteriliyorlar."
+  outlier_one: "{months}: {name} borsasının fiyatı ile {ref} borsasınınki arasındaki fark {limit} sınırını aşıyordu; büyük olasılıkla kaynaktaki bir veri giriş hatası. Yayımlandığı gibi gösteriliyor."
+  outlier_many: "{months}: {name} borsasının fiyatı ile {ref} borsasınınki arasındaki fark {limit} sınırını aşıyordu; büyük olasılıkla kaynaktaki veri giriş hataları. Yayımlandıkları gibi gösteriliyorlar."
   outlier_link: "Borsalar analizine bakın"
 downloads:
   workbook_missing: "Çalışma kitabı bu güncellemede yok."
@@ -348,10 +348,10 @@ hazelnut:
       note: "En büyük ihracat pazarları"
     crop:
       name: "Rekolte"
-      note: "Giresun borsasının yıllara göre rekolte tahmini ve sezon ortalama fiyatı"
+      note: "Giresun borsasının yıllara göre rekolte tahmini ve sezonun ortalama fiyatı"
     range:
       name: "Tahmin aralığı"
-      note: "Ufka göre deneysel fiyat aralığı, USD/kg"
+      note: "Ufka göre, geçmiş fiyat hareketlerinden kurulan fiyat aralığı, USD/kg"
   column:
     month: "Ay"
     season: "Sezon"
@@ -362,7 +362,7 @@ hazelnut:
     product: "Ürün"
     partner: "Pazar"
     net_kg: "Net ağırlık (kg)"
-    fob_usd: "FOB değer (USD)"
+    fob_usd: "FOB değeri (USD)"
     share: "İhracattaki payı"
     year: "Yıl"
     giresun_estimate_t: "Giresun tahmini (t)"
@@ -417,7 +417,7 @@ hazelnut:
     giresun_in_shell: "Giresun kabuklu"
     calm_months: "Sakin aylar"
     lira_crises: "Lira krizleri"
-  timing_note: "Bir hasadın rekolte tahmini, normalde açıklandığı o yılın Ağustos ayından itibaren kullanılır; her tahmini bir ay sonraya kaydırmak hata oranlarını en fazla 0,03 değiştirdi, yani bu kural bir veri sızıntısı belirtisi göstermiyor."
+  timing_note: "Bir hasadın rekolte tahmini yalnızca, normalde açıklandığı o yılın Ağustos ayından itibaren kullanılır; her tahmini bir ay sonraya kaydırmak hata oranlarını en fazla 0,03 değiştirdi, yani bu kural bir veri sızıntısı belirtisi göstermiyor."
 
 # --- Ülkeler -----------------------------------------------------------------------------
 # Export destinations (UN Comtrade names in en.yml), keyed by i18n.country_key.

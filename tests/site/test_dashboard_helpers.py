@@ -302,5 +302,5 @@ def test_price_subtitle_in_turkish_raises_a_dotted_i(turkish):
 
 def test_exports_subtitle_in_turkish_names_destinations_in_turkish(turkish):
     assert ph.exports_subtitle(TOP, "Aralık 2025") == (
-        "İtalya ve Almanya, Aralık 2025 itibarıyla son 12 ayda ihracat hacminin %51 kadarını aldı."
+        "İtalya ve Almanya, Aralık 2025 ile biten 12 ayda ihracat hacminden %51 pay aldı."
     )
