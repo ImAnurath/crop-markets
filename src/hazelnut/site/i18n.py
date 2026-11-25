@@ -24,7 +24,7 @@ from functools import lru_cache
 
 import yaml
 
-from hazelnut.site.config import SITE_DIR
+from hazelnut.site.config import SITE_DIR, SITE_URL
 
 LANGS = ("en", "tr")
 DEFAULT = "en"
@@ -51,6 +51,12 @@ def lang() -> str:
 
 
 LANG = lang()
+
+
+def site_url() -> str:
+    """The active language's site root: ``SITE_URL`` for English, ``SITE_URL`` + ``tr/``
+    for Turkish (the profiles' ``website.site-url``)."""
+    return SITE_URL if LANG == DEFAULT else f"{SITE_URL}{LANG}/"
 
 
 # --- strings ----------------------------------------------------------------------------

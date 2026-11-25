@@ -12,7 +12,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
-from hazelnut.site.config import SITE_URL, CropConfig
+from hazelnut.site import i18n
+from hazelnut.site.config import CropConfig
 from hazelnut.site.crops import crop_module
 from hazelnut.site.i18n import crop_country, crop_name, month_label, t
 from hazelnut.site.labels import method_name
@@ -103,9 +104,12 @@ def generic_notes() -> dict[str, str]:
     return {_sheet_name(k): t(f"workbook.note.{k}") for k in ("scoreboard", "sources")}
 
 
-def workbook_filename(slug: str) -> str:
-    """The workbook's file name under ``site/downloads/``: ``<slug>-market-data.xlsx``."""
-    return f"{slug}-market-data.xlsx"
+def workbook_filename(slug: str, lang: str | None = None) -> str:
+    """The workbook's file name under ``site/downloads/`` in ``lang`` (default: the active
+    language): ``<slug>-market-data.xlsx`` in English, ``<slug>-market-data-<lang>.xlsx``
+    in another language."""
+    lang = lang or i18n.LANG
+    return f"{slug}-market-data.xlsx" if lang == i18n.DEFAULT else f"{slug}-market-data-{lang}.xlsx"
 
 
 def sheet_notes(slug: str) -> dict[str, str]:
@@ -157,7 +161,11 @@ def _sources(ws, sources) -> None:
             c.alignment = Alignment(vertical="top")
 
 
-def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig, site_url: str = SITE_URL) -> Path:
+def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig,
+                   site_url: str | None = None) -> Path:
+    """Write the crop's workbook in the active language; ``site_url`` (default: the active
+    language's site root) goes on the README sheet."""
+    site_url = site_url or i18n.site_url()
     data_dir, out_path = Path(data_dir), Path(out_path)
     try:
         manifest = json.loads((data_dir / "manifest.json").read_text(encoding="utf-8"))

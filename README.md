@@ -76,7 +76,7 @@ Needs Quarto CLI 1.11.9 and the venv with `requirements-site.txt` and `pip insta
 ```bash
 export QUARTO_PYTHON="$PWD/.venv/Scripts/python.exe"   # PowerShell: $env:QUARTO_PYTHON = "..."
 ./.venv/Scripts/python.exe scripts/build_site_data.py    # refresh site/data/ (needs data/interim)
-./.venv/Scripts/python.exe scripts/build_workbook.py     # site/downloads/*.xlsx
+./.venv/Scripts/python.exe scripts/build_workbook.py     # site/downloads/*.xlsx (English and -tr)
 quarto render site                                       # -> site/_site/
 quarto preview site                                      # or serve site/_site
 ```

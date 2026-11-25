@@ -6,7 +6,9 @@ project:
     - "*.qmd"
     - "**/*.qmd"
   # Copied into _site as-is: the explorer reads the CSVs client-side and the
-  # Downloads page and nav button link the workbook (built by scripts/build_workbook.py).
+  # Downloads page and nav button link the workbook (built by scripts/build_workbook.py,
+  # one file per language: <slug>-market-data.xlsx and <slug>-market-data-tr.xlsx; the
+  # glob carries both into each tree).
   # The leading "/" anchors each glob at site/; unanchored, the Turkish render (which
   # writes into _site/tr) would also copy the English _site/data etc. into _site/tr/_site.
   resources:

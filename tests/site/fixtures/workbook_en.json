@@ -1,0 +1,100 @@
+{
+  "README": {
+    "header": [
+      "Hazelnut market data (Turkey)"
+    ],
+    "rows": 13,
+    "sha256": "7c95f4ca22a62bae0ae81dbb06d8546f6384f16bfb4eee0ab3b00f8e94a685cf"
+  },
+  "Prices": {
+    "header": [
+      "Month",
+      "Season",
+      "USD/kg",
+      "TL/kg",
+      "TL per USD"
+    ],
+    "rows": 41,
+    "sha256": "9078bcb305fe16974ed3fc0d18c5b1e64f573aa2d5299ce0d2cb43a88cc8c448"
+  },
+  "Ordu": {
+    "header": [
+      "Month",
+      "Season",
+      "TL/kg",
+      "USD/kg",
+      "Trading days"
+    ],
+    "rows": 41,
+    "sha256": "7c2f450338b75475c2956deab02c9769204836d90f0d83f2a458b04e17d80f34"
+  },
+  "Exports": {
+    "header": [
+      "Month",
+      "Product",
+      "Destination",
+      "Net weight (kg)",
+      "FOB value (USD)"
+    ],
+    "rows": 401,
+    "sha256": "e493264158e45ea509bb727c9dee067e80fdaf9bf69dea78b28b4a77ce1822e5"
+  },
+  "Top destinations": {
+    "header": [
+      "Destination",
+      "Net weight (kg)",
+      "FOB value (USD)",
+      "Share of exports"
+    ],
+    "rows": 8,
+    "sha256": "6c7d01eaa79ba2a87da3440224b3141ab456b174bd23815634d265b294d9e859"
+  },
+  "Crop": {
+    "header": [
+      "Year",
+      "Season",
+      "Giresun estimate (t)",
+      "Giresun registered (t)",
+      "National estimate (t)",
+      "Season average (USD/kg)"
+    ],
+    "rows": 4,
+    "sha256": "08ba22ada1c29e429795a7aba73f004832b54a2aa2b44c220bc9ce47ec7847ba"
+  },
+  "Forecast range": {
+    "header": [
+      "Horizon (months)",
+      "Target month",
+      "5th percentile (USD/kg)",
+      "10th percentile (USD/kg)",
+      "Median (USD/kg)",
+      "90th percentile (USD/kg)",
+      "95th percentile (USD/kg)",
+      "Forecast from month",
+      "Price at forecast origin (USD/kg)"
+    ],
+    "rows": 4,
+    "sha256": "b380059f345ee7ac7d6fe593905bc59741ef6faf7a7bc8d8c4358d7ddc7d5eaa"
+  },
+  "Scoreboard": {
+    "header": [
+      "Method",
+      "Horizon (months)",
+      "Forecasts scored",
+      "MAE (USD/kg)",
+      "Ratio to naive"
+    ],
+    "rows": 11,
+    "sha256": "e8fe7948b37b6e3e8766521c2e7b5bab320d71a0c0f7e9c2f2afc980924776d8"
+  },
+  "Sources": {
+    "header": [
+      "Provider",
+      "What we use",
+      "URL",
+      "Credit and terms"
+    ],
+    "rows": 9,
+    "sha256": "c88ce5768dedfd2613b098711e7d109e3e29a734a6b9312f8c5e86758e53d018"
+  }
+}

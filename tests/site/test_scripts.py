@@ -83,11 +83,27 @@ def test_no_summary_without_env(build_site_data, dirs, tmp_path, monkeypatch):
     assert build_site_data.main(_argv(dirs)) == 0
 
 
-def test_build_workbook_writes_xlsx(build_site_data, build_workbook, dirs, tmp_path):
+def test_build_workbook_writes_one_xlsx_per_language(build_site_data, build_workbook, dirs,
+                                                     tmp_path):
+    from openpyxl import load_workbook
+
     build_site_data.main(_argv(dirs))
-    out_file = tmp_path / "dl" / "hazelnut-market-data.xlsx"
     rc = build_workbook.main(["--data", str(dirs[2]), "--out", str(tmp_path / "dl")])
-    assert rc == 0 and out_file.exists()
+    assert rc == 0
+    en = load_workbook(tmp_path / "dl" / "hazelnut-market-data.xlsx")
+    tr = load_workbook(tmp_path / "dl" / "hazelnut-market-data-tr.xlsx")
+    assert en.sheetnames[:2] == ["README", "Prices"]
+    assert tr.sheetnames[:2] == ["Açıklama", "Fiyatlar"]
+    assert [ws.max_row for ws in en.worksheets] == [ws.max_row for ws in tr.worksheets]
+    assert tr["Fiyatlar"]["A1"].value == "Ay"
+
+
+def test_build_workbook_one_language(build_site_data, build_workbook, dirs, tmp_path):
+    build_site_data.main(_argv(dirs))
+    rc = build_workbook.main(["--data", str(dirs[2]), "--out", str(tmp_path / "dl"),
+                              "--lang", "en"])
+    assert rc == 0
+    assert sorted(p.name for p in (tmp_path / "dl").iterdir()) == ["hazelnut-market-data.xlsx"]
 
 
 def test_build_workbook_unknown_crop(build_workbook, tmp_path):

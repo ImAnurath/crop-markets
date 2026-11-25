@@ -19,7 +19,7 @@ Point Quarto's Python engine at the venv, then render from the repo root:
 ```bash
 export QUARTO_PYTHON="$PWD/.venv/Scripts/python.exe"      # PowerShell: $env:QUARTO_PYTHON = "..."
 ./.venv/Scripts/python.exe scripts/build_site_data.py       # refresh site/data/ (optional)
-./.venv/Scripts/python.exe scripts/build_workbook.py        # site/downloads/*.xlsx (gitignored)
+./.venv/Scripts/python.exe scripts/build_workbook.py        # site/downloads/<slug>-market-data.xlsx and -tr.xlsx (gitignored)
 export QUARTO="$HOME/tools/quarto-1.11.9/bin/quarto.exe"    # only when quarto is not on PATH
 ./.venv/Scripts/python.exe scripts/render_site.py           # English -> site/_site/, Turkish -> site/_site/tr/ (gitignored)
 quarto preview site                                         # live preview on localhost
