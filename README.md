@@ -43,12 +43,18 @@ branch is merged to `main`.
 - **Methods**: a plain-language glossary and how each number is made, including the leak-free testing.
 - **Downloads**: the full formatted workbook, with source credits.
 
+Every page also exists in Turkish under `/tr/` (same paths; a switch in the navbar, and a
+Turkish-first browser is sent there once), with a Turkish workbook
+(`hazelnut-market-data-tr.xlsx`). The Turkish text is a draft until the owner reviews it.
+
 ## Weekly refresh
 
 `.github/workflows/refresh-site.yml` runs every Monday 05:00 UTC (and on demand):
-`check_site_vars.py` (owner details filled in) → fetch → `build_tables.py` →
-`build_site_data.py` → `build_workbook.py` → `pytest tests/site` → `quarto render site` →
-link test → bot commit of `site/data/` to `main` → GitHub Pages deploy.
+`check_site_vars.py` (owner details filled in, `author_bio_tr` included; no `TODO` left in
+`site/i18n/tr.yml`, since the workflow sets `SITE_DEPLOY=en,tr`) → fetch → `build_tables.py` →
+`build_site_data.py` → `build_workbook.py` (both workbooks) → `pytest tests/site
+tests/test_fetch_raw.py` → `render_site.py` (English, then Turkish) → rendered-site tests
+and link check over both trees → bot commit of `site/data/` to `main` → GitHub Pages deploy.
 Forecast scores come from the committed `reports/backtest/` results; only the cheap
 naive-empirical price range is recomputed each week.
 
@@ -61,7 +67,8 @@ When something fails:
 - **The core price series fails** (including such a row-count drop), or validation finds a
   problem (latest month too old, gaps, negative prices): `build_site_data.py` exits 1, nothing is committed or deployed,
   and the live site stays as it was.
-- **Workbook, tests, render or link test fail**: the same, no commit and no deploy.
+- **Owner details, a Turkish `TODO`, workbook, tests, render or link test fail**: the same,
+  no commit and no deploy.
 - Failed sources, the per-output status / as-of table and any validation problems go to the
   run's Actions summary.
 
@@ -77,9 +84,14 @@ Needs Quarto CLI 1.11.9 and the venv with `requirements-site.txt` and `pip insta
 export QUARTO_PYTHON="$PWD/.venv/Scripts/python.exe"   # PowerShell: $env:QUARTO_PYTHON = "..."
 ./.venv/Scripts/python.exe scripts/build_site_data.py    # refresh site/data/ (needs data/interim)
 ./.venv/Scripts/python.exe scripts/build_workbook.py     # site/downloads/*.xlsx (English and -tr)
-quarto render site                                       # -> site/_site/
-quarto preview site                                      # or serve site/_site
+./.venv/Scripts/python.exe scripts/render_site.py        # English -> site/_site/, Turkish -> site/_site/tr/
+./.venv/Scripts/python.exe scripts/render_site.py --lang tr   # Turkish only (keeps the English tree)
 ```
+
+`render_site.py` runs `quarto` from PATH unless `QUARTO` names it. A plain `quarto render
+site` renders English only and empties `site/_site/tr`. To look at the result, serve
+`site/_site` under a `crop-markets/` folder (the site's path on Pages), for example with
+`python -m http.server`.
 
 ## Adding a crop
 

@@ -1,7 +1,8 @@
 """Deploy guard for the owner details in site/_variables.yml (byline, bio, profile links).
 
 The weekly workflow runs ``scripts/check_site_vars.py`` before rendering, so a placeholder
-("OWNER: fill in", "place holder", an empty value or a link that is not a URL) never goes live.
+("OWNER: fill in", "place holder", an empty value or a link that is not a URL) or a missing
+detail never goes live.
 """
 
 from __future__ import annotations
@@ -14,6 +15,8 @@ from hazelnut.site.config import SITE_DIR
 
 VARIABLES_FILE = SITE_DIR / "_variables.yml"
 PLACEHOLDER_MARKERS = ("fill in", "place holder", "placeholder")
+# Every owner detail the pages use; author_bio_tr is the Turkish byline's bio.
+REQUIRED_KEYS = ("author_name", "author_bio", "author_bio_tr", "github_url", "linkedin_url")
 
 
 def _value_problem(key: str, value) -> str | None:
@@ -61,6 +64,6 @@ def check_site_vars(path: Path = VARIABLES_FILE) -> list[str]:
         return [f"{path.name}: unreadable ({e})"]
     if not isinstance(data, dict):
         return [f"{path.name}: expected a mapping of variable names to values"]
-    problems: list[str] = []
+    problems = [f"{key}: missing" for key in REQUIRED_KEYS if key not in data]
     _walk("", data, problems)
     return problems

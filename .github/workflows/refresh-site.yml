@@ -1,8 +1,11 @@
-# Weekly data refresh and GitHub Pages deploy for the portfolio site (site/).
+# Weekly data refresh and GitHub Pages deploy for the portfolio site (site/), in English
+# (site/_site) and Turkish (site/_site/tr).
 #
 # Failure behaviour:
 # - check_site_vars.py: stops the job (before any fetch or render) while site/_variables.yml
-#   still holds placeholder owner details, so a placeholder byline never deploys.
+#   still holds placeholder or missing owner details (author_bio_tr included), or, since
+#   SITE_DEPLOY names tr, while site/i18n/tr.yml still has an entry marked TODO. So a
+#   placeholder byline or an untranslated Turkish string never deploys.
 # - fetch_raw.py: never stops the job. A source that fails has its partial raw snapshot
 #   deleted, so its tables are not rebuilt and the site keeps that source's last good
 #   files from the committed site/data/ (marked stale in the manifest).
@@ -10,7 +13,8 @@
 # - build_site_data.py: the gate. It fails when a core output (monthly prices, price range,
 #   headline stats) cannot be rebuilt (or its row count drops more than 10%) or validation
 #   finds a problem; the job stops and the site already online stays as it was.
-# - Everything after that (workbook, tests, render, link check, commit) also stops the job.
+# - Everything after that (workbooks, tests, render, rendered-site tests and link check,
+#   commit) also stops the job.
 # Only the default branch commits data and deploys; a run on another ref only builds.
 
 name: Refresh and deploy site
@@ -32,6 +36,9 @@ defaults:
 env:
   PYTHONUNBUFFERED: "1"
   PYTHONUTF8: "1"
+  # The languages this workflow deploys. Naming tr makes hazelnut.site.i18n.deploy_problems
+  # fail on a TODO left in tr.yml (check_site_vars.py and tests/site/test_i18n.py).
+  SITE_DEPLOY: "en,tr"
 
 jobs:
   build:
@@ -52,7 +59,7 @@ jobs:
       - name: Install site requirements (no torch / chronos)
         run: pip install -r requirements-site.txt && pip install -e .
 
-      - name: Check owner details (no placeholders go live)
+      - name: Check owner details and Turkish strings (no placeholder or TODO goes live)
         run: python scripts/check_site_vars.py
 
       - uses: quarto-dev/quarto-actions/setup@8a96df13519ee81fd526f2dfca5962811136661b # v2.2.0
@@ -84,20 +91,28 @@ jobs:
       - name: Build site data (gate; writes the run summary)
         run: python scripts/build_site_data.py
 
-      - name: Build workbook
+      - name: Build workbooks (English and Turkish)
         run: python scripts/build_workbook.py
 
+      # The rendered-site tests skip here (no site/_site yet); they run after the render.
       - name: Site tests
-        run: pytest tests/site -q
+        run: pytest tests/site tests/test_fetch_raw.py -q
 
-      - name: Render site
+      - name: Render site (English, then Turkish into site/_site/tr)
         run: |
           QUARTO_PYTHON="$(command -v python)"
           export QUARTO_PYTHON
-          quarto render site
+          python scripts/render_site.py
 
-      - name: Check rendered links
-        run: pytest tests/site/test_rendered_links.py -q
+      # Now the rendered-tree tests run instead of skipping: both trees pair up, hreflang,
+      # Turkish text, workbooks per language, and the link check (every internal link and
+      # language-switch target resolves; Turkish pages stay inside tr/). The English text
+      # snapshot is a development gate fixed to the committed data, so it is left out on
+      # refreshed data.
+      - name: Rendered-site tests and link check (both trees)
+        run: >-
+          pytest tests/site -q -rs
+          --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot
 
       - name: Commit refreshed site data
         if: github.ref == 'refs/heads/main'
