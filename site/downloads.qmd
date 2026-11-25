@@ -28,14 +28,14 @@ Each crop's workbook holds the site's main tables in one formatted Excel file; i
 
 ::: {.content-visible when-profile="tr"}
 ::: {.lede .explorer-lede}
-Her ürünün çalışma kitabı, sitenin ana tablolarını biçimlendirilmiş tek bir Excel dosyasında toplar; sayfaları aşağıda listeleniyor. Çalışma kitabı her haftalık güncellemede yeniden hazırlanır. Yalnızca bazı ayları almak isterseniz, o ürünün veri gezgininde ayları filtreleyip o görünümü indirin. Çalışma kitabının şimdilik yalnızca İngilizce sürümü var; sayfa ve sütun adları İngilizce.
+Her ürünün çalışma kitabı, sitenin ana tablolarını biçimlendirilmiş tek bir Excel dosyasında toplar; sayfaları aşağıda listeleniyor. Çalışma kitabı her haftalık güncellemede yeniden hazırlanır. Yalnızca bazı ayları almak isterseniz, o ürünün veri gezgininde ayları filtreleyip o görünümü indirin.
 :::
 :::
 
 ```{python}
 for crop in crops.values():
     mod = crop_module(crop.slug)
-    name = workbook.workbook_filename(crop.slug)
+    name = workbook.workbook_filename(crop.slug)  # this language's file
     path = SITE_DIR / "downloads" / name
     size = path.stat().st_size if path.is_file() else None  # CI builds it before rendering
     manifest = ph.read_json_or_none(SITE_DIR / "data" / crop.slug / "manifest.json")

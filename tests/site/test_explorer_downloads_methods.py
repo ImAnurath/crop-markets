@@ -82,6 +82,105 @@ def test_hazelnut_explorer_sheets_cover_every_exchange():
     assert set(hazelnut_data.EXPLORER_SHEETS.values()) <= set(hazelnut_data.WORKBOOK_SHEETS)
 
 
+# The explorer's interface text: every string the OJS cells show reaches them through
+# ojs_define (cfg["ui"]), in the page's language.
+EN_UI = {
+    "exchange": "Exchange", "currency": "Currency", "columns": "Columns", "season": "Season",
+    "latest": "Latest", "all": "All", "none": "None", "seasons_aria": "Seasons, newest first",
+    "records": "Monthly records", "heading": "{exchange}, {seasons}",
+    "rows": {"one": "{n} row", "other": "{n} rows"},
+    "download": "Download this view (.xlsx)",
+    "nothing": "Nothing to download: no months match these filters",
+    "preparing": "Preparing the file…",
+    "load_error": "The Excel library could not load. Check your connection and try again.",
+    "make_error": "The file could not be made. Please try again.",
+    "seasons_none": "no season selected", "seasons_one": "season {season}",
+    "seasons_all": "all seasons", "seasons_run": "seasons {first} to {last}",
+    "seasons_some": "{n} seasons",
+    "table_aria": "Monthly records table",
+    "table_caption": "Monthly records; select a column heading to sort",
+    "unavailable": "These records could not be loaded. Reload the page to try again.",
+    "empty": "No months match these filters.",
+    "about": {
+        "records_sheet": "Records", "sheet": "About", "title": "{crop} monthly records",
+        "exchange": "Exchange", "currency": "Currency", "seasons": "Seasons", "rows": "Rows",
+        "as_of": "Data as of", "source": "Source", "terms": "Credit and terms",
+        "all_sources": "All sources and terms", "unknown": "unknown",
+        "see_downloads": "See the Downloads page",
+    },
+}
+# Turkish values that may equal the English ones (no words to translate).
+SAME_IN_TR = {"heading"}
+
+
+def _leaves(node, path=()):
+    """(dotted path, text) for every string in a nested dict/list."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from _leaves(v, (*path, str(k)))
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from _leaves(v, (*path, str(i)))
+    elif isinstance(node, str):
+        yield ".".join(path), node
+
+
+def _english(text: str) -> list[str]:
+    """English words in ``text`` (the rendered pages' stop-word check), {fields} aside."""
+    import re
+
+    from tests.site.test_turkish_text import english_words
+
+    return english_words(re.sub(r"\{\w+\}", " ", text))
+
+
+def test_explorer_ui_in_english_is_the_explorer_s_old_text():
+    assert ph.explorer_ui() == EN_UI
+    cfg = _cfg()
+    assert cfg["ui"] == EN_UI and cfg["locale"] == "en-US"
+    assert cfg["months"] == ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+                             "Oct", "Nov", "Dec"]
+    assert cfg["downloads_url"] == "https://imanurath.github.io/crop-markets/downloads.html"
+
+
+def test_explorer_ui_in_turkish_translates_every_string(turkish):
+    tr = dict(_leaves(ph.explorer_ui()))
+    en = dict(_leaves(EN_UI))
+    assert set(tr) == set(en)
+    same = sorted(k for k in en if tr[k] == en[k] and k not in SAME_IN_TR)
+    assert same == [], f"not translated: {same}"
+    leftovers = {k: _english(v) for k, v in tr.items() if _english(v)}
+    assert leftovers == {}
+    for key in ("about.sheet", "about.records_sheet"):  # Excel's rules for a sheet name
+        assert len(tr[key]) <= 31 and not set(tr[key]) & set("[]:*?/\\"), key
+
+
+def test_explorer_config_in_turkish_has_no_english_leftovers(turkish):
+    """The whole Turkish ojs_define config (interface text, column labels, credits) for the
+    hazelnut explorer, through the same stop-word check as the rendered pages."""
+    import importlib
+
+    from hazelnut.site import i18n
+
+    mod = importlib.reload(hazelnut_data)  # the crop module reads its words on import
+    try:
+        cfg = ph.explorer_config(load_crops()["hazelnut"], mod.WORKBOOK_SHEETS,
+                                 mod.EXPLORER_SHEETS, mod.WORKBOOK_SOURCES, "../data/hazelnut")
+    finally:
+        i18n.LANG = "en"
+        importlib.reload(hazelnut_data)
+    assert cfg["locale"] == "tr-TR"
+    assert cfg["months"][9] == "Eki"
+    assert cfg["downloads_url"] == "https://imanurath.github.io/crop-markets/tr/downloads.html"
+    skip = {"file", "slug", "key", "column", "downloads_url", "extras"}  # paths and ids
+    texts = {k: v for k, v in _leaves(cfg) if not skip & set(k.split("."))}
+    assert "exchanges.0.columns.0.label" in texts  # the column labels are scanned too
+    leftovers = {k: _english(v) for k, v in texts.items() if _english(v)}
+    assert leftovers == {}
+    assert cfg["exchanges"][0]["columns"][0]["label"] == "Ay"
+    assert cfg["exchanges"][0]["source"] == "Giresun Ticaret Borsası"
+
+
 def _prices(months, values, col="zz_kg"):
     return pd.DataFrame({"month": months, col: values})
 
@@ -216,3 +315,20 @@ def test_methods_facts_skip_what_is_missing():
 
 def test_validation_lag_is_a_named_constant():
     assert validate.MAX_LAG_MONTHS == 3
+
+
+def test_explorer_ojs_has_no_interface_text_of_its_own():
+    """The explorer's OJS cells take every visible string from ``explorer.ui`` (and the
+    number locale from ``explorer.locale``), not from literals of their own."""
+    import re
+
+    from hazelnut.site.config import SITE_DIR
+
+    qmd = (SITE_DIR / "hazelnut" / "explorer.qmd").read_text(encoding="utf-8")
+    ojs = "\n".join(re.findall(r"```\{ojs\}(.*?)```", qmd, re.S))
+    code = "\n".join(line.split("//", 1)[0] for line in ojs.splitlines())  # comments aside
+    assert "en-US" not in code and "toLocaleString(explorer.locale" in code
+    # A string literal or an element's text ("Latest", `Latest`, >Latest<).
+    found = [text for _, text in _leaves(EN_UI) if "{" not in text
+             and re.search(rf"[\"'`>]{re.escape(text)}[\"'`<]", code)]
+    assert found == []

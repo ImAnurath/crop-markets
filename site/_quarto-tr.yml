@@ -27,7 +27,7 @@ website:
       - text: İndirmeler
         href: downloads.qmd
       - text: Excel
-        href: downloads/hazelnut-market-data.xlsx
+        href: downloads/hazelnut-market-data-tr.xlsx
         aria-label: Excel çalışma kitabının tamamını indirin
   page-footer:
     left: "Crop Markets · veriler her hafta kamuya açık kaynaklardan yenilenir · [Kaynaklar ve atıflar](/downloads.qmd#src-hazelnut)"

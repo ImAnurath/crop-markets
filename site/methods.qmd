@@ -284,7 +284,9 @@ for crop in crops.values():
     if "forecasting" in crop.analyses:
         a = (f'<a href="{ph.escape(crop.slug)}/analyses/forecasting.qmd">'
              f'{ph.escape(t("methods_page.facts_link", crop=name), quote=False)}</a>')
-        link = f'<p class="foot">{t("methods_page.facts_foot", link=a)}</p>'
+        # The sentence is escaped first; the link (escaped above) then fills its {link}.
+        foot = ph.escape(t("methods_page.facts_foot"), quote=False).replace("{link}", a)
+        link = f'<p class="foot">{foot}</p>'
     items = "".join(f"<li>{ph.escape(f, quote=False)}</li>" for f in facts)
     blocks.append(
         f'<section class="panel span-12" aria-labelledby="facts-{ph.escape(crop.slug)}">'

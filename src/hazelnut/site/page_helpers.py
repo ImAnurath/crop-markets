@@ -1121,6 +1121,24 @@ def number_decimals(fmt: str | None) -> int | None:
     return len(tail) - len(tail.lstrip("0")) if dot else 0
 
 
+EXPLORER_UI = "explorer.ui."
+
+
+def explorer_ui() -> dict:
+    """The data explorer's interface text in the active language: every ``explorer.ui.*``
+    string, nested by its dotted key (``rows.one``, ``about.sheet``). Its ``{fields}`` are
+    filled in by the explorer's OJS cells."""
+    out: dict = {}
+    for key in i18n.strings(i18n.DEFAULT):
+        if key.startswith(EXPLORER_UI):
+            *parents, leaf = key.removeprefix(EXPLORER_UI).split(".")
+            node = out
+            for part in parents:
+                node = node.setdefault(part, {})
+            node[leaf] = t(key)
+    return out
+
+
 def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[str, str],
                     sources: Sequence, data_href: str) -> dict:
     """JSON-ready settings for the data explorer, built from the crop's config and its
@@ -1131,7 +1149,9 @@ def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[
     left out. ``data_href`` is the crop's data folder relative to the page. Each exchange's
     ``extras`` are its columns other than the month and the currency prices (the visitor
     can show or hide them); ``source`` and ``terms`` come from the provider row that
-    starts with its name."""
+    starts with its name. ``ui``, ``locale`` (for ``toLocaleString``) and ``months`` (short
+    names) put the explorer in the active language; ``downloads_url`` is that language's
+    Downloads page."""
     usd_label, usd_col = base_currency()
     currencies = [{"label": usd_label, "column": usd_col},
                   {"label": crop.local_currency.label, "column": crop.local_currency.column}]
@@ -1154,7 +1174,9 @@ def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[
             "terms": row[3] if row else None,
         })
     return {"slug": crop.slug, "name": i18n.crop_name(crop), "currencies": currencies,
-            "exchanges": exchanges}
+            "exchanges": exchanges, "ui": explorer_ui(), "locale": t("format.locale"),
+            "months": [month_name(m, short=True) for m in range(1, 13)],
+            "downloads_url": f"{i18n.site_url()}downloads.html"}
 
 
 def explorer_outlier_note(ref: pd.DataFrame, other: pd.DataFrame, col: str, name: str,

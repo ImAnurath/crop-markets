@@ -268,3 +268,53 @@ def test_rendered_turkish_charts_are_turkish_and_english_ones_carry_no_locale():
             words = set().union(*map(_words, _visible_strings(spec)))
             assert not words & english, (rel, sorted(words & english))
     assert found >= 14  # dashboard 4, analyses 10
+
+
+# --- the workbook: each tree links its own language's file ------------------------------
+
+WORKBOOKS = {"en": "hazelnut-market-data.xlsx", TR: "hazelnut-market-data-tr.xlsx"}
+# The Turkish Downloads lede's note from before the Turkish workbook existed.
+INTERIM_NOTE = "Çalışma kitabının şimdilik yalnızca İngilizce sürümü var"
+XLSX_HREF = re.compile(r'href="([^"]*\.xlsx)"')
+SHEET_ROWS = re.compile(r"<tr><td>(.*?)</td><td>")
+SHEETS_TABLE = re.compile(r'<table class="metric sheets".*?</table>', re.S)
+
+
+def _listed_sheets(page_html: str) -> list[str]:
+    """The sheet names the Downloads page lists for the (first) crop's workbook."""
+    return [html.unescape(n) for n in SHEET_ROWS.findall(SHEETS_TABLE.search(page_html)[0])]
+
+
+def _tree(lang: str) -> Path:
+    return RENDERED if lang == "en" else RENDERED / lang
+
+
+@needs_both_trees
+def test_each_tree_carries_both_workbooks():
+    for lang in ("en", TR):
+        for name in WORKBOOKS.values():
+            assert (_tree(lang) / "downloads" / name).is_file(), f"{lang}: {name}"
+
+
+@needs_both_trees
+@pytest.mark.parametrize("lang", ["en", TR])
+@pytest.mark.parametrize("page", ["downloads.html", "index.html", "hazelnut/dashboard.html"])
+def test_pages_link_their_language_s_workbook(lang, page):
+    # The Downloads button and the navbar's Excel button, on every page.
+    text = (_tree(lang) / page).read_text(encoding="utf-8")
+    links = {h.rsplit("/", 1)[-1] for h in XLSX_HREF.findall(text)}
+    assert links == {WORKBOOKS[lang]}, links
+
+
+@needs_both_trees
+def test_turkish_downloads_page_lists_the_turkish_workbook_s_sheets():
+    from openpyxl import load_workbook
+
+    page = (RENDERED / TR / "downloads.html").read_text(encoding="utf-8")
+    assert INTERIM_NOTE not in page
+    listed = _listed_sheets(page)
+    book = load_workbook(RENDERED / TR / "downloads" / WORKBOOKS[TR], read_only=True)
+    assert listed == book.sheetnames
+    en_page = (RENDERED / "downloads.html").read_text(encoding="utf-8")
+    en_book = load_workbook(RENDERED / "downloads" / WORKBOOKS["en"], read_only=True)
+    assert _listed_sheets(en_page) == en_book.sheetnames

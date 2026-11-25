@@ -18,6 +18,8 @@ format:
   pct_minus: "-"
   month_year: "{month} {year}"
   day_month_year: "{day} {month} {year}"
+  # The browser locale for numbers the explorer formats (toLocaleString).
+  locale: "en-US"
 
 month:
   1: "January"
@@ -291,6 +293,53 @@ explorer:
   outlier_one: "{months}: {name}'s price was more than {limit} away from {ref}'s, most likely an entry error in the source. It is shown as published."
   outlier_many: "{months}: {name}'s price was more than {limit} away from {ref}'s, most likely entry errors in the source. They are shown as published."
   outlier_link: "See the exchanges analysis"
+  # The explorer's interface (filters, table, download), handed to its OJS cells by
+  # page_helpers.explorer_ui. {fields} are filled in the browser.
+  ui:
+    exchange: "Exchange"
+    currency: "Currency"
+    columns: "Columns"
+    season: "Season"
+    latest: "Latest"
+    all: "All"
+    none: "None"
+    seasons_aria: "Seasons, newest first"
+    records: "Monthly records"
+    # The table's heading: the exchange, then one of the seasons_* phrases.
+    heading: "{exchange}, {seasons}"
+    rows:
+      one: "{n} row"
+      other: "{n} rows"
+    download: "Download this view (.xlsx)"
+    nothing: "Nothing to download: no months match these filters"
+    preparing: "Preparing the file…"
+    load_error: "The Excel library could not load. Check your connection and try again."
+    make_error: "The file could not be made. Please try again."
+    seasons_none: "no season selected"
+    seasons_one: "season {season}"
+    seasons_all: "all seasons"
+    seasons_run: "seasons {first} to {last}"
+    seasons_some: "{n} seasons"
+    table_aria: "Monthly records table"
+    table_caption: "Monthly records; select a column heading to sort"
+    unavailable: "These records could not be loaded. Reload the page to try again."
+    empty: "No months match these filters."
+    # The downloaded file: its two sheet names (31 characters at most, none of []:*?/\)
+    # and the About sheet's lines.
+    about:
+      records_sheet: "Records"
+      sheet: "About"
+      title: "{crop} monthly records"
+      exchange: "Exchange"
+      currency: "Currency"
+      seasons: "Seasons"
+      rows: "Rows"
+      as_of: "Data as of"
+      source: "Source"
+      terms: "Credit and terms"
+      all_sources: "All sources and terms"
+      unknown: "unknown"
+      see_downloads: "See the Downloads page"
 
 downloads:
   eyebrow: "Downloads"

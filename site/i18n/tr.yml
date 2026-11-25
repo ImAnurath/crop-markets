@@ -20,6 +20,8 @@ format:
   pct_minus: "−"
   month_year: "{month} {year}"
   day_month_year: "{day} {month} {year}"
+  # The browser locale for numbers the explorer formats (toLocaleString).
+  locale: "tr-TR"
 month:
   1: "Ocak"
   2: "Şubat"
@@ -250,6 +252,53 @@ explorer:
   outlier_one: "{months}: {name} borsasının fiyatı ile {ref} borsasınınki arasındaki fark {limit} sınırını aşıyordu; büyük olasılıkla kaynaktaki bir veri giriş hatası. Yayımlandığı gibi gösteriliyor."
   outlier_many: "{months}: {name} borsasının fiyatı ile {ref} borsasınınki arasındaki fark {limit} sınırını aşıyordu; büyük olasılıkla kaynaktaki veri giriş hataları. Yayımlandıkları gibi gösteriliyorlar."
   outlier_link: "Borsalar analizine bakın"
+  # The explorer's interface (filters, table, download), handed to its OJS cells by
+  # page_helpers.explorer_ui. {fields} are filled in the browser.
+  ui:
+    exchange: "Borsa"
+    currency: "Para birimi"
+    columns: "Sütunlar"
+    season: "Sezon"
+    latest: "En yeni"
+    all: "Tümü"
+    none: "Hiçbiri"
+    seasons_aria: "Sezonlar, en yeniden eskiye"
+    records: "Aylık kayıtlar"
+    # The table's heading: the exchange, then one of the seasons_* phrases.
+    heading: "{exchange}, {seasons}"
+    rows:
+      one: "{n} satır"
+      other: "{n} satır"
+    download: "Bu görünümü indirin (.xlsx)"
+    nothing: "İndirilecek veri yok: bu filtrelere uyan ay yok"
+    preparing: "Dosya hazırlanıyor…"
+    load_error: "Excel kütüphanesi yüklenemedi. Bağlantınızı kontrol edip yeniden deneyin."
+    make_error: "Dosya oluşturulamadı. Lütfen yeniden deneyin."
+    seasons_none: "sezon seçilmedi"
+    seasons_one: "{season} sezonu"
+    seasons_all: "bütün sezonlar"
+    seasons_run: "{first} – {last} sezonları"
+    seasons_some: "{n} sezon"
+    table_aria: "Aylık kayıtlar tablosu"
+    table_caption: "Aylık kayıtlar; sıralamak için bir sütun başlığını seçin"
+    unavailable: "Bu kayıtlar yüklenemedi. Yeniden denemek için sayfayı yenileyin."
+    empty: "Bu filtrelere uyan ay yok."
+    # The downloaded file: its two sheet names (31 characters at most, none of []:*?/\)
+    # and the About sheet's lines.
+    about:
+      records_sheet: "Kayıtlar"
+      sheet: "Hakkında"
+      title: "{crop}: aylık kayıtlar"
+      exchange: "Borsa"
+      currency: "Para birimi"
+      seasons: "Sezonlar"
+      rows: "Satır sayısı"
+      as_of: "Veri tarihi"
+      source: "Kaynak"
+      terms: "Atıf ve koşullar"
+      all_sources: "Bütün kaynaklar ve koşullar"
+      unknown: "bilinmiyor"
+      see_downloads: "İndirmeler sayfasına bakın"
 downloads:
   eyebrow: "İndirmeler"
   h1: "Verileri yanınıza alın"
