@@ -1,12 +1,16 @@
 ---
 title: "Hazelnut data explorer"
+title-tr: "Fındık veri gezgini"
 description: "Every monthly hazelnut price record from the Giresun and Ordu commodity exchanges, filtered in the browser and downloadable as Excel."
+description-tr: "Giresun ve Ordu ticaret borsalarının bütün aylık fındık fiyatı kayıtları; tarayıcıda filtreleyip Excel olarak indirebilirsiniz."
 ---
 
 ```{python}
+from hazelnut.site import i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, SITE_URL, load_crops
 from hazelnut.site.crops import crop_module
+from hazelnut.site.i18n import t
 from hazelnut.site.labels import scroll_hint
 
 crop = load_crops()["hazelnut"]
@@ -53,20 +57,34 @@ if manifest is not None:
              f'{ph.escape(ph.as_of_stamp(manifest))}</span>')
 ph.raw_html(
     '<div class="dash-head"><div>'
-    f'<span class="eyebrow">Crops / {ph.escape(crop.name)} / Data explorer</span>'
-    "<h1>Every record, ready to filter and take</h1></div>"
+    f'<span class="eyebrow">{ph.escape(t("explorer.eyebrow", crop=i18n.crop_name(crop)))}</span>'
+    f'<h1>{ph.escape(t("explorer.h1"), quote=False)}</h1></div>'
     f"{stamp}</div>"
 )
 ```
 
+::: {.content-visible when-profile="en"}
 ::: {.lede .explorer-lede}
 Monthly exchange prices, as published. Whatever you filter is what you download. The full workbook, with exports, crop sizes and the forecast scores, is on the [Downloads](../downloads.qmd) page.
+:::
+:::
+
+::: {.content-visible when-profile="tr"}
+::: {.lede .explorer-lede}
+Aylık borsa fiyatları, yayımlandığı gibi. İndirdiğiniz dosya, filtrelediğiniz görünümün aynısıdır. İhracatı, rekolte büyüklüklerini ve tahmin puanlarını da içeren tam çalışma kitabı [İndirmeler](../downloads.qmd) sayfasında.
+:::
 :::
 
 ::: {.explorer}
 
 ::: {.panel .filters}
+::: {.content-visible when-profile="en"}
 [Filters]{.eyebrow}
+:::
+
+::: {.content-visible when-profile="tr"}
+[Filtreler]{.eyebrow}
+:::
 
 ```{ojs}
 viewof exchange = segInput("Exchange", explorer.exchanges.map(e => e.name))

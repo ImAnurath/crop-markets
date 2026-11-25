@@ -286,11 +286,25 @@ lira:
   default_caveat: "which is suggestive only"
 
 explorer:
+  eyebrow: "Crops / {crop} / Data explorer"
+  h1: "Every record, ready to filter and take"
   outlier_one: "{months}: {name}'s price was more than {limit} away from {ref}'s, most likely an entry error in the source. It is shown as published."
   outlier_many: "{months}: {name}'s price was more than {limit} away from {ref}'s, most likely entry errors in the source. They are shown as published."
   outlier_link: "See the exchanges analysis"
 
 downloads:
+  eyebrow: "Downloads"
+  h1: "Take the data with you"
+  filter_link: "Filter the monthly records"
+  workbook_title: "{crop} market data workbook"
+  workbook_sub: "The site's main tables, formatted, with a README and the source credits; the sheets are listed below."
+  coming_later: "Coming later"
+  powerbi_title: "Power BI template"
+  powerbi_sub: "A Power BI template built on the same tables. Not available yet."
+  sources_title: "Sources and credits"
+  # {crop} is the crop's name in lower case.
+  sources_sub: "The {crop} data comes from these public providers. If you reuse it, credit them as listed."
+  sources_foot: "Where the terms say to see the provider's terms, check them before republishing."
   workbook_missing: "The workbook is not available in this refresh."
   button: "Download the workbook (.xlsx, {size})"
   sheets_caption: "Sheets in the workbook"
@@ -298,6 +312,14 @@ downloads:
   holds: "What it holds"
 
 methods_page:
+  eyebrow: "Methods"
+  h1: "How every number is made"
+  facts_eyebrow: "In practice"
+  facts_h2: "What the tests found"
+  facts_title: "What the forecast tests found"
+  facts_link: "{crop} forecasting analysis"
+  # {link} is the forecasting analysis link (facts_link).
+  facts_foot: "{link}: every table behind these lines."
   fact_dev: "Development period, walk-forward in {currency}, {count} forecasts per horizon: {finding}"
   fact_holdout: "Holdout, {first} to {last}: {finding}"
   fact_range: "The 8-in-10 range from past price moves held {held} of the time in the backtest, at {horizons} months ahead."

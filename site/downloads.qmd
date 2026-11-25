@@ -1,23 +1,35 @@
 ---
 title: "Downloads"
+title-tr: "İndirmeler"
 description: "The full Excel workbook for each crop, rebuilt on every weekly refresh, with the as-of date, what each sheet holds and the source credits."
+description-tr: "Her ürünün tam Excel çalışma kitabı; her haftalık güncellemede yeniden hazırlanır ve verilerin tarihini, her sayfanın içeriğini ve kaynak atıflarını içerir."
 ---
 
 ```{python}
+from hazelnut.site import i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site import workbook
 from hazelnut.site.config import SITE_DIR, load_crops
 from hazelnut.site.crops import crop_module
+from hazelnut.site.i18n import t
 
 crops = load_crops()
 ph.raw_html(
-    '<div class="dash-head"><div><span class="eyebrow">Downloads</span>'
-    "<h1>Take the data with you</h1></div></div>"
+    f'<div class="dash-head"><div><span class="eyebrow">{ph.escape(t("downloads.eyebrow"))}</span>'
+    f'<h1>{ph.escape(t("downloads.h1"), quote=False)}</h1></div></div>'
 )
 ```
 
+::: {.content-visible when-profile="en"}
 ::: {.lede .explorer-lede}
 Each crop's workbook holds the site's main tables in one formatted Excel file; its sheets are listed below. It is rebuilt on every weekly refresh. To take only some months, filter them in the crop's data explorer and download that view.
+:::
+:::
+
+::: {.content-visible when-profile="tr"}
+::: {.lede .explorer-lede}
+Her ürünün çalışma kitabı, sitenin ana tablolarını biçimlendirilmiş tek bir Excel dosyasında toplar; sayfaları aşağıda listeleniyor. Çalışma kitabı her haftalık güncellemede yeniden hazırlanır. Yalnızca bazı ayları almak isterseniz, o ürünün veri gezgininde ayları filtreleyip o görünümü indirin. Çalışma kitabının şimdilik yalnızca İngilizce sürümü var; sayfa ve sütun adları İngilizce.
+:::
 :::
 
 ```{python}
@@ -34,29 +46,30 @@ for crop in crops.values():
     explorer = ""
     if "explorer" in crop.sections:
         explorer = (f'<a class="btn" href="{ph.escape(crop.slug)}/explorer.qmd">'
-                    f"Filter the monthly records {ph.ARROW}</a>")
+                    f"{ph.escape(t('downloads.filter_link'), quote=False)} {ph.ARROW}</a>")
+    label = i18n.crop_name(crop)
     ph.raw_html(
         '<div class="dash downloads">'
         f'<section class="panel span-8" aria-labelledby="wb-{ph.escape(crop.slug)}">'
-        f'<span class="eyebrow">{ph.escape(crop.name)} · {ph.escape(crop.country)}</span>'
-        f'<h2 class="ptitle" id="wb-{ph.escape(crop.slug)}">{ph.escape(crop.name)} market data workbook</h2>'
-        "<div class=\"sub\">The site's main tables, formatted, with a README and the source credits; "
-        "the sheets are listed below.</div>"
+        f'<span class="eyebrow">{ph.escape(label)} · {ph.escape(i18n.crop_country(crop))}</span>'
+        f'<h2 class="ptitle" id="wb-{ph.escape(crop.slug)}">'
+        f'{ph.escape(t("downloads.workbook_title", crop=label), quote=False)}</h2>'
+        f'<div class="sub">{ph.escape(t("downloads.workbook_sub"), quote=False)}</div>'
         f'<div class="dl-meta">{ph.workbook_download_html(f"downloads/{name}", size)}{explorer}{stamp}</div>'
         f"{ph.sheet_list_html(workbook.sheet_list(crop.slug))}"
         "</section>"
         f'<section class="panel span-4 soon" aria-labelledby="pbi-{ph.escape(crop.slug)}">'
-        '<span class="pill">Coming later</span>'
-        f'<h2 class="ptitle" id="pbi-{ph.escape(crop.slug)}">Power BI template</h2>'
-        '<div class="sub">A Power BI template built on the same tables. Not available yet.</div>'
+        f'<span class="pill">{ph.escape(t("downloads.coming_later"))}</span>'
+        f'<h2 class="ptitle" id="pbi-{ph.escape(crop.slug)}">'
+        f'{ph.escape(t("downloads.powerbi_title"), quote=False)}</h2>'
+        f'<div class="sub">{ph.escape(t("downloads.powerbi_sub"), quote=False)}</div>'
         "</section>"
         f'<section class="panel span-12" aria-labelledby="src-{ph.escape(crop.slug)}">'
-        f'<h2 class="ptitle" id="src-{ph.escape(crop.slug)}">Sources and credits</h2>'
-        f'<div class="sub">The {ph.escape(crop.name.lower())} data comes from these public '
-        "providers. If you reuse it, credit them as listed.</div>"
+        f'<h2 class="ptitle" id="src-{ph.escape(crop.slug)}">'
+        f'{ph.escape(t("downloads.sources_title"), quote=False)}</h2>'
+        f'<div class="sub">{ph.escape(t("downloads.sources_sub", crop=i18n.lower(label)), quote=False)}</div>'
         f"{ph.sources_table_html(mod.WORKBOOK_SOURCES)}"
-        '<p class="foot">Where the terms say to see the provider\'s terms, check them before '
-        "republishing.</p>"
+        f'<p class="foot">{ph.escape(t("downloads.sources_foot"), quote=False)}</p>'
         "</section>"
         "</div>"
     )

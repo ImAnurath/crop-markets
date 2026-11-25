@@ -33,6 +33,11 @@ TRANSLATED = (
     "hazelnut/analyses/crop-and-frost.html",
     "hazelnut/analyses/exchanges.html",
     "hazelnut/analyses/forecasting.html",
+    # Static text only: the explorer's filters, table and buttons are drawn by OJS in the
+    # browser (scripts are dropped), so their English (Task 7) is not scanned here.
+    "hazelnut/explorer.html",
+    "downloads.html",
+    "methods.html",
 )
 # Root-only bilingual pages (GitHub Pages serves only the root 404): their lang="tr"
 # block is scanned. Their navbar and footer are the English tree's by design.
