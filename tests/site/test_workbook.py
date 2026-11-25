@@ -212,3 +212,46 @@ def test_site_url_per_language(turkish):
     assert i18n.site_url() == "https://imanurath.github.io/crop-markets/tr/"
     i18n.LANG = "en"
     assert i18n.site_url() == "https://imanurath.github.io/crop-markets/"
+
+
+def test_turkish_workbook_translates_destinations_and_products(data_dir, tmp_path, turkish):
+    # T7a: the Turkish workbook's Exports and Top destinations values are Turkish too:
+    # destinations by i18n.country_name ("Other" by exports.other), products by the
+    # crop's hazelnut.product.* labels. Checked row by row against the English build.
+    from hazelnut.site import hazelnut_data
+
+    i18n.LANG = "en"
+    en = load_workbook(build_workbook(data_dir, tmp_path / "en.xlsx", CROP, URL))
+    i18n.LANG = "tr"
+    importlib.reload(hazelnut_data)
+    try:
+        tr = _tr_wb(data_dir, tmp_path)
+        tr_strings = i18n.strings("tr")
+
+        def partner(p):
+            return tr_strings["exports.other"] if p == "Other" else i18n.country_name(p)
+
+        products = {code: tr_strings[f"hazelnut.product.{code}"] for code in ("in_shell", "shelled")}
+        checked = 0
+        for en_name, tr_name, cols in (("Exports", "İhracat", {2: products.get, 3: partner}),
+                                       ("Top destinations", "Başlıca pazarlar", {1: partner})):
+            for e_row, t_row in zip(en[en_name].iter_rows(min_row=2, values_only=True),
+                                    tr[tr_name].iter_rows(min_row=2, values_only=True)):
+                for col, label in cols.items():
+                    assert t_row[col - 1] == label(e_row[col - 1]), (tr_name, e_row)
+                    checked += 1
+    finally:
+        i18n.LANG = "en"
+        importlib.reload(hazelnut_data)
+    assert checked > 100
+    assert set(products.values()) == {"Kabuklu", "İç fındık"}
+    exports = [v for r in tr["İhracat"].iter_rows(min_row=2, values_only=True) for v in r[1:3]]
+    top = [r[0] for r in tr["Başlıca pazarlar"].iter_rows(min_row=2, values_only=True)]
+    for english in ("in_shell", "shelled", "Germany", "Italy", "Spain", "Other"):
+        assert english not in exports and english not in top, english
+    assert "Almanya" in top
+    # The tiny data has fewer than ten destinations, so no "Other" row; its label:
+    from hazelnut.site.labels import partner_label
+
+    i18n.LANG = "tr"
+    assert partner_label("Other") == "Diğer"

@@ -4,7 +4,7 @@ The words themselves live in ``site/i18n/{en,tr}.yml`` (see ``hazelnut.site.i18n
 """
 from __future__ import annotations
 
-from hazelnut.site.i18n import has, t
+from hazelnut.site.i18n import country_name, has, t
 
 # The forecasting methods with a readable name (site/i18n "method.<code>").
 METHODS = ("naive", "seasonal_naive", "sarima", "sarimax", "season_reg", "lightgbm", "chronos",
@@ -27,6 +27,12 @@ OTHER_PARTNER = "Other"
 
 def other_partner_label() -> str:
     return t("exports.other")
+
+
+def partner_label(partner: str) -> str:
+    """An export destination as the pages show it: the "Other" bucket as
+    ``other_partner_label()``, a country by ``i18n.country_name``."""
+    return other_partner_label() if partner == OTHER_PARTNER else country_name(partner)
 
 
 def scroll_hint() -> str:

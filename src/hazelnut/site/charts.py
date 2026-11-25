@@ -32,7 +32,7 @@ import plotly.io as pio
 
 from hazelnut.site import i18n
 from hazelnut.site.i18n import t
-from hazelnut.site.labels import OTHER_PARTNER, method_name, other_partner_label
+from hazelnut.site.labels import OTHER_PARTNER, method_name, partner_label
 from hazelnut.site.plotly_locales import LOCALES
 
 # Dark-theme tokens (global constraints). site.js swaps in the light ones.
@@ -363,8 +363,7 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     # Plotly draws the first category at the bottom: "Other" first, then smallest to largest.
     is_other = top["partner"] == OTHER_PARTNER
     top = pd.concat([top[is_other], top[~is_other].sort_values("share", ascending=True)])
-    names = [other_partner_label() if p == OTHER_PARTNER else i18n.country_name(p)
-             for p in top["partner"].astype(str)]
+    names = [partner_label(p) for p in top["partner"].astype(str)]
     tonnes, musd = top["net_kg"] / 1000, top["fob_usd"] / 1e6
     if _d3_percents():
         label = dict(text=top["share"], texttemplate="%{x:.0%}")

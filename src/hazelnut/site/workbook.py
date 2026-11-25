@@ -50,8 +50,11 @@ def _placeholder(ws) -> None:
     ws.column_dimensions["A"].width = len(text) + 2
 
 
-def _write_table(ws, df: pd.DataFrame, spec: dict, start: int = 1) -> int:
-    """Write df with readable headers from row ``start``; return the next free row."""
+def _write_table(ws, df: pd.DataFrame, spec: dict, start: int = 1,
+                 values: dict | None = None) -> int:
+    """Write df with readable headers from row ``start``; return the next free row.
+    ``values`` maps a column to a function giving each text value's label."""
+    values = values or {}
     cols = [c for c in spec if c in df.columns]
     for j, c in enumerate(cols, 1):
         ws.cell(start, j, spec[c][0])
@@ -60,6 +63,8 @@ def _write_table(ws, df: pd.DataFrame, spec: dict, start: int = 1) -> int:
         for j, (c, v) in enumerate(zip(cols, rec), 1):
             if pd.isna(v):
                 continue
+            if c in values and isinstance(v, str):
+                v = values[c](v)
             cell = ws.cell(i, j, v.item() if hasattr(v, "item") else v)
             if spec[c][1]:
                 cell.number_format = spec[c][1]
@@ -190,7 +195,7 @@ def build_workbook(data_dir: Path, out_path: Path, crop: CropConfig,
         if df is None:
             _placeholder(ws)
             continue
-        _write_table(ws, df, spec)
+        _write_table(ws, df, spec, values=getattr(mod, "WORKBOOK_VALUES", {}))
         ws.freeze_panes = "A2"
         _autowidth(ws)
     ws = wb.create_sheet(_sheet_name("scoreboard"))

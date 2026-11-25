@@ -1139,6 +1139,13 @@ def explorer_ui() -> dict:
     return out
 
 
+def facts_foot_html(link_html: str) -> str:
+    """The Methods facts panel's foot line: ``methods_page.facts_foot`` escaped, with
+    ``link_html`` (already escaped by the caller) in its ``{link}``."""
+    sentence = escape(t("methods_page.facts_foot"), quote=False)
+    return f'<p class="foot">{sentence.replace("{link}", link_html)}</p>'
+
+
 def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[str, str],
                     sources: Sequence, data_href: str) -> dict:
     """JSON-ready settings for the data explorer, built from the crop's config and its

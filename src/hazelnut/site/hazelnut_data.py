@@ -22,7 +22,9 @@ from hazelnut.forecast.dataset import (
     target_series_try,
 )
 from hazelnut.site.config import REPO_ROOT
+from hazelnut.site.i18n import has as i18n_has
 from hazelnut.site.i18n import t
+from hazelnut.site.labels import partner_label
 
 # --- Crop hooks read by the shared site layer (site_data, validate, results, scripts) ---
 
@@ -218,6 +220,16 @@ _SHEETS = {
 
 # sheet -> (csv name, {column: (header, number format or None)})
 WORKBOOK_SHEETS = dict(_sheet(key, csv, cols) for key, (csv, cols) in _SHEETS.items())
+
+# Text values shown in the language's words, by column (every sheet): destinations by
+# their country name ("Other" as exports.other), UN Comtrade's product codes by the
+# "hazelnut.product.<code>" labels. A value without a label stays as it is.
+def _product_label(code: str) -> str:
+    key = f"hazelnut.product.{code}"
+    return t(key) if i18n_has(key) else code
+
+
+WORKBOOK_VALUES = {"partner": partner_label, "product": _product_label}
 
 WORKBOOK_SHEET_NOTES = {t(f"hazelnut.sheet.{key}.name"): t(f"hazelnut.sheet.{key}.note")
                         for key in _SHEETS}

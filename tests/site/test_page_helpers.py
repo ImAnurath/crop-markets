@@ -322,3 +322,14 @@ def test_holdout_glossary_in_turkish_lowers_the_crop_name(turkish):
     assert two == ("Ayrılmış test dönemi fındık için Ekim 2024 – Eylül 2026 (24 ay); incir için "
                    "Ocak 2025 – Aralık 2025 (12 ay). Her biri, hiçbir yöntem kurulmadan önce "
                    "ayrıldı.")
+
+
+# --- Methods: the facts panel's foot line (T6b3-m1) -------------------------------------
+
+def test_facts_foot_html_escapes_the_sentence_but_not_the_link(monkeypatch):
+    link = '<a href="hazelnut/analyses/forecasting.qmd">Hazelnut forecasting analysis</a>'
+    assert ph.facts_foot_html(link) == (
+        f'<p class="foot">{link}: every table behind these lines.</p>')
+    # A sentence with markup characters is escaped; the link is put in as it is.
+    monkeypatch.setattr(ph, "t", lambda key, **kw: "Tables & <notes> for {link}")
+    assert ph.facts_foot_html(link) == f'<p class="foot">Tables &amp; &lt;notes&gt; for {link}</p>'

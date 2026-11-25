@@ -421,6 +421,11 @@ workbook:
   no_data: "veri yok"
   sources_url: "Adres"
 hazelnut:
+  # The workbook's Product values (UN Comtrade's product codes). English keeps the codes
+  # its workbook has always shown.
+  product:
+    in_shell: "Kabuklu"
+    shelled: "İç fındık"
   sheet:
     prices:
       name: "Fiyatlar"

@@ -471,6 +471,11 @@ workbook:
 
 # --- Hazelnut -----------------------------------------------------------------------------
 hazelnut:
+  # The workbook's Product values (UN Comtrade's product codes). English keeps the codes
+  # its workbook has always shown.
+  product:
+    in_shell: "in_shell"
+    shelled: "shelled"
   sheet:
     prices:
       name: "Prices"
