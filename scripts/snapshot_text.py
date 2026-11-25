@@ -22,6 +22,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = REPO / "tests" / "site" / "fixtures" / "en_text"
 SKIP_TREES = ("tr",)
+# The owner's review pack (scripts/i18n_review.py) sits in site/_site but is not a page.
+SKIP_FILES = ("i18n-review.html",)
 
 DROPPED = {"script", "style", "svg", "noscript", "template", "head"}
 BLOCKS = {
@@ -114,7 +116,7 @@ def site_texts(site_dir: Path) -> dict[str, str]:
     out = {}
     for path in sorted(site_dir.rglob("*.html")):
         rel = path.relative_to(site_dir).as_posix()
-        if rel.split("/", 1)[0] in SKIP_TREES:
+        if rel.split("/", 1)[0] in SKIP_TREES or rel in SKIP_FILES:
             continue
         out[snapshot_name(rel)] = page_text(path.read_text(encoding="utf-8"))
     return out

@@ -15,6 +15,8 @@ from hazelnut.site.config import SITE_DIR
 RENDERED = SITE_DIR / "_site"
 TR = "tr"
 ROOT_ONLY = ("404.html",)  # GitHub Pages serves only the root 404 page, so it is bilingual
+# Written into site/_site by scripts/i18n_review.py for the owner; never rendered or deployed.
+LOCAL_ONLY = ("i18n-review.html",)
 HTML_LANG = re.compile(r"""<html\b[^>]*\blang\s*=\s*["']([^"']+)["']""", re.I)
 LINK_TAG = re.compile(r"<link\b[^>]*>", re.I)
 TAG_ATTR = re.compile(r"""([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
@@ -22,7 +24,8 @@ TAG_ATTR = re.compile(r"""([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
 
 def _files(root: Path, pattern: str, skip: Path | None = None) -> set[str]:
     return {p.relative_to(root).as_posix() for p in root.rglob(pattern)
-            if p.is_file() and (skip is None or skip not in p.parents)}
+            if p.is_file() and (skip is None or skip not in p.parents)
+            and p.relative_to(root).as_posix() not in LOCAL_ONLY}
 
 
 def unpaired_pages(site_dir: Path) -> list[str]:

@@ -1,0 +1,230 @@
+# Questions for the owner, shown first in the review pack (scripts/i18n_review.py).
+#
+# Gathered from the bilingual-site task reports ("Uncertain for the owner"), the Task 5
+# drift review ("For the owner") and the reviewers' minor notes, merged and de-duplicated.
+# Each item:
+#   title    the question, short
+#   source   where it came from (task report / review item)
+#   keys     site/i18n keys it is about; the pack shows their current English and Turkish
+#   where    for text outside site/i18n: the file (qmd prose, profile, workbook)
+#   en, tr   that text, quoted (current state; the prose rows of the pack show it in full)
+#   en_var   a site/_variables.yml entry to quote as the English text
+#   suggest  a concrete suggestion or choice (`backticks` show as code)
+
+- title: "Turkish author bio is missing (the deploy is blocked until it is added)"
+  source: "T6 batch 1 (fix round 1), T8"
+  where: "site/_variables.yml (your file), shown on the overview byline"
+  en_var: author_bio
+  tr: "(missing: the Turkish byline shows ?var:author_bio_tr, and check_site_vars.py stops the deploy)"
+  suggest: 'Add to `site/_variables.yml`: `author_bio_tr: "Türkiye tarım ürünleri piyasalarının veri analizi."` (or your own wording).'
+
+- title: "Cyprus and two other country names"
+  source: "T5 drift review, owner item 1; T5 report"
+  keys: [country.cyprus, country.state_of_palestine, country.other_asia_nes]
+  suggest: 'Cyprus: keep "Kıbrıs", or use "Güney Kıbrıs Rum Yönetimi" as in official Turkish trade statistics. Palestine: keep "Filistin" or "Filistin Devleti". Other Asia: keep "Diğer Asya (belirtilmemiş)" (mostly Taiwan in Comtrade).'
+
+- title: "Horizon = \"ufuk\", with a one-time gloss"
+  source: "T5 drift review, owner item 2; T5 report; T6 batch 2 item 3"
+  keys: [workbook.column.horizon, hazelnut.column.horizon, scoreboard.holdout_winners, hazelnut.analyses.forecasting.found_none_beat]
+  suggest: 'Keep "ufuk" everywhere and the gloss "(bu sürelere ufuk diyoruz)" on the forecasting page (the English has no gloss). Alternatives: "vade", or "kaç ay ileri" (e.g. column "Kaç ay ileri").'
+
+- title: "\"saptı\" for \"missed by\""
+  source: "T5 drift review, owner item 3; T5 report"
+  keys: [forecast.f3_more, forecast.f3_less]
+  suggest: 'Keep "ortalama {miss}/kg saptı", or "ortalama {miss}/kg hata yaptı" (and "… {pct} daha fazla hata yaptı").'
+
+- title: "\"{partner} pazarının payı\" instead of a suffix (İtalya'nın payı)"
+  source: "T5 drift review, owner item 4; T5 report; T6 batch 2 item 7"
+  keys: [exports.share_first, exports.share_next]
+  where: "Exports page, found paragraph (prose): \"İtalya pazarının payı 2000 yılında %13 iken %29 oldu\""
+  suggest: 'Keep "pazarının payı" (works for every country without a suffix helper). If you prefer "İtalya''nın payı", we add a suffix helper; say so and it goes in the correction batch.'
+
+- title: "Price shocks: \"{low} seviyesinden {peak} seviyesine çıkardı\""
+  source: "T5 drift review, owner item 5; T5 report"
+  keys: [price.shock_first, price.shock_next]
+  suggest: 'Keep (the "seviye" wording avoids suffixes after prices). Alternative: "fiyatı {span} içinde {low} düzeyinden {peak} düzeyine taşıdı".'
+
+- title: "Shock names on the dashboard"
+  source: "T6 batch 1 item 6"
+  keys: [hazelnut.dashboard.shock.y2014, hazelnut.dashboard.shock.y2025]
+  suggest: 'Keep "2014 donu" and "2025''teki düşük rekolte" (suffix written by hand). Alternative for the second: "2025 rekolte düşüşü".'
+
+- title: "Caveat \"ancak bu yalnızca bir ipucu\" for \"which is suggestive only\""
+  source: "T5 drift review, owner item 6; T5 report; T6 batch 2 item 2"
+  keys: [lira.default_caveat, hazelnut.analyses.forecasting.lira_caveat]
+  suggest: 'Keep, or "ancak bu yalnızca bir işaret" / "ancak bu yalnızca yol gösterici".'
+
+- title: "Weak correlations: \"zayıf bir bağ\" → \"ilişki\"?"
+  source: "T5 drift review, owner item 7; T5 report; T6 batch 2 reviewer minor"
+  keys: [crop_price.words.weak_negative, crop_price.subtitle.weak_negative, frost.words.weak_negative, frost.subtitle.weak_negative, hazelnut.analyses.crop_and_frost.found_frost_years, hazelnut.analyses.crop_and_frost.frost_years_note]
+  suggest: 'Use "ilişki" for a statistical link: "… arasında zayıf bir ilişki görüldü"; "Bu ilişkinin büyük kısmını iki don yılı taşıyor"; "… don yılları bu ilişkinin büyük kısmını taşıyor".'
+
+- title: "Coverage: \"kapsama oranı\" in some places, \"tuttu\" in others"
+  source: "T5 drift review, owner item 8; T5 report; T6 batch 2 item 5 (\"10'da 8 tuttu\")"
+  keys: [range.coverage_note, methods_page.fact_range, forecast.band_all_held, forecast.band_misses, hazelnut.analyses.forecasting.held80_head]
+  suggest: 'Pick one: (A) keep the mix ("tuttu" in sentences and the column, "kapsama oranı" in notes); (B) "tuttu" everywhere ("… 10''da 8 aralığı zamanın {pct} kadarında tuttu").'
+
+- title: "\"10'da 8 olasılıkla\" turns a frequency into a probability"
+  source: "T5 drift review, owner item 9"
+  keys: [range.subtitle]
+  suggest: 'Keep, or "… {month} fiyatı 10 seferin 8''inde {low} ile {high} arasında olur" (closer to "eight times in ten").'
+
+- title: "Home crop card price: \"{month} itibarıyla {price}/kg\""
+  source: "T5 drift review, owner item 10"
+  keys: [home.crop_price]
+  suggest: 'Keep, or "{price}/kg ({month})" (shorter, no suffix).'
+
+- title: "TL or lira"
+  source: "T5 drift review, owner item 11; T6 batch 2 item 1 and reviewer minor; T6 batch 1 item 7"
+  keys: [crop.hazelnut.local_name, strip.price_local, hazelnut.chart.lira_crises, lira.period.crisis, hazelnut.analyses.forecasting.lira_split_foot]
+  suggest: 'Current rule: prices and forecasts say "TL" ("Fiyat, TL", "TL naif"), the currency as an economy says "lira" ("Lira krizleri", "liranın değer kaybı"); lira_split_foot uses both in one note. Keep the rule, or use "TL" throughout ("TL krizleri", "TL''nin değer kaybı eğilimi").'
+
+- title: "Workbook labels"
+  source: "T5 drift review, owner item 12; T5 report"
+  keys: [workbook.sheet.readme, workbook.sources_url, hazelnut.column.usd_try, hazelnut.sheet.range.note]
+  suggest: 'Keep "Açıklama" (not "BENİOKU"), "Adres", "USD/TL kuru". For "Empirical": keep the descriptive "geçmiş fiyat hareketlerinden kurulan", or "ampirik".'
+
+- title: "Small labels"
+  source: "T5 drift review, owner item 13"
+  keys: [analyses.found, table.scroll_hint]
+  suggest: 'Keep "Bulgularımız" and "Devamı için kaydırın →". Alternative for the first: "Bulgular".'
+
+- title: "\"n/a\" = \"yok\""
+  source: "T5 drift review, owner item 14; T2 report"
+  keys: [na]
+  suggest: 'Use "veri yok" (clearer alone in a tile), or "—".'
+
+- title: "Overview price strip wording"
+  source: "T2 report (owner review)"
+  keys: [strip.since_peak, strip.change_on_month, strip.change_on_year]
+  suggest: 'Keep "zirve: {month} ({price})" and "{month} ayına göre {change}". Alternative: "{month} ayından bu yana {change}".'
+
+- title: "Home page headline"
+  source: "T6 batch 1 item 1; T1 report"
+  where: "site/index.qmd (prose, Home)"
+  en: "Export crop markets, *built in the open.*"
+  tr: "İhraç ürünlerinin piyasaları, *her adımı açık.*"
+  suggest: 'Keep, or "İhraç ürünlerinin piyasaları, *şeffaf biçimde kuruldu.*"'
+
+- title: "\"Crop Markets\" stays English (the brand)"
+  source: "T6 batch 1 item 3"
+  where: "Home title and eyebrow, navbar, footer, tab titles"
+  en: "Crop Markets"
+  tr: "Crop Markets"
+  suggest: 'Keep the English brand, or give a Turkish name (e.g. "Ürün Piyasaları") for the Turkish pages.'
+
+- title: "\"crop\" = \"ürün\""
+  source: "T6 batch 1 item 4"
+  keys: [overview.eyebrow, analyses.index_eyebrow]
+  where: "site/index.qmd (prose): \"Ürünler\" / \"Bir ürün seçin\""
+  en: "Crops / Pick a crop"
+  tr: "Ürünler / Bir ürün seçin"
+  suggest: 'Keep "ürün" (and add crop = ürün to the glossary). Alternative: "tarım ürünü" in headings.'
+
+- title: "Dashboard titles"
+  source: "T6 batch 1 item 5"
+  keys: [dashboard.h1, dashboard.range_title, dashboard.crop_title, dashboard.scoreboard_title]
+  suggest: 'Keep. Alternatives: h1 "Fiyat ve onun hakkında dürüstçe söyleyebileceklerimiz" → "Fiyat ve hakkında dürüstçe söyleyebileceklerimiz"; "Tahmin puan tablosu" → "Tahmin karnesi".'
+
+- title: "Forecasting and exports titles"
+  source: "T6 batch 2 item 6"
+  keys: [hazelnut.analyses.forecasting.title, hazelnut.analyses.forecasting.h1, hazelnut.analyses.exports.destinations_title, hazelnut.analyses.exports.unit_value_title]
+  where: "site/hazelnut/analyses/forecasting.qmd (section heads, prose)"
+  en: "Point forecasts, USD · How wide the honest range is"
+  tr: "Nokta tahminleri, USD · Dürüst aralık ne kadar geniş"
+  suggest: 'Keep. Alternative: "Dürüst bir aralık ne kadar geniş olmalı".'
+
+- title: "Terms not in the glossary: Beceri, pinball kaybı, Kantil, and others"
+  source: "T6 batch 2 item 5 and reviewer minor; T6 batch 3 item 3"
+  keys: [hazelnut.analyses.forecasting.skill_head, hazelnut.analyses.forecasting.pinball_link, method.lightgbm_q, hazelnut.analyses.forecasting.ratio_head, hazelnut.analyses.forecasting.holdout_spike, hazelnut.analyses.seasonality.foot]
+  where: "also site/methods.qmd (prose): \"Kantil\", \"90. yüzdelik\", \"Beceri\""
+  suggest: 'Confirm and add to the glossary: skill = beceri, pinball loss = pinball kaybı, quantile = kantil (90th percentile = 90. yüzdelik), sanity check = sağlama, whiskers = ince çizgiler, "Error ÷ naive''s" = "Hata ÷ naif", Giresun quality = Giresun kalitesi.'
+
+- title: "Hand-written suffixes (fixed text)"
+  source: "T6 batch 2 item 4; T6 batch 3 item 5"
+  where: "prose and strings on several pages"
+  tr: "Eylül'den Ağustos'a, Kasım'dan, USD'ye, TOBB'un, MAPE'dir, MAE'yi, 2025'teki, 0'ın, 1'in, Türkiye'nin, 2000'den, %80'ini, %10'dan, 1.000.000'a, 2005'te, Eylül 2025'ten, Ağustos 2026'ya, Ağustos'ta, Amazon'un"
+  suggest: 'Check they read right; they never change with the data. Note "USD''ye" is read "yu-es-di-ye"; "dolara" avoids the question.'
+
+- title: "\"veri sızıntısı\" explained inline"
+  source: "T6 batch 2 item 8"
+  keys: [crop_check.no_leak, crop_check.leak, hazelnut.analyses.forecasting.check_foot]
+  suggest: 'Keep the gloss "tahmin anında henüz bilinmeyen bir bilginin kullanılması" in the crop-check foot.'
+
+- title: "\"Ağustos kuralı\": capital A"
+  source: "T6 batch 2 reviewer minor"
+  keys: [hazelnut.analyses.forecasting.check_rule, hazelnut.timing_note]
+  suggest: 'TDK writes month names in lower case unless a full date is given ("ağustos kuralı", "ağustos ayından"). The site capitalises them throughout. Choose: keep "Ağustos" everywhere (common in the press), or lower case everywhere.'
+
+- title: "Old lira: mention YTL?"
+  source: "T6 batch 3 item 2"
+  where: "site/methods.qmd (prose, Methods)"
+  en: "1,000,000 old lira became 1 new lira. Lira prices before 2005 are shown in new lira"
+  tr: "1.000.000 eski lira, 1 yeni lira oldu. 2005 öncesindeki TL fiyatları yeni lira cinsinden gösterilir"
+  suggest: 'Add YTL once: "1.000.000 eski lira, 1 Yeni Türk Lirası (YTL) oldu". Keep "TL fiyatları" and the pill "Yalnızca TL verileri".'
+
+- title: "Methods page terms"
+  source: "T6 batch 3 item 3"
+  where: "site/methods.qmd (prose, Methods)"
+  en: "Timing rules (no look-ahead) · Build, with fallback · headline numbers · The as-of stamp · baseline · exchange rate (US dollars to lira) · the small size of Amazon's Chronos-Bolt · FOB (free on board)"
+  tr: "Zamanlama kuralları (geleceğe bakmadan) · Yedekli derleme · öne çıkan sayılar · Veri tarihi damgası · temel tahmin · dolar/TL kuru · Amazon'un Chronos-Bolt modelinin küçük boyu · FOB (free on board, gemide teslim)"
+  suggest: 'Keep. Alternatives: "Veri tarihi etiketi" for the stamp; "karşılaştırma tahmini" for baseline.'
+
+- title: "Methods glossary card names"
+  source: "T6 batch 3 item 4"
+  keys: [workbook.column.ratio]
+  where: "site/methods.qmd (prose): heading \"%80 aralık ve kapsama\", card \"Naif tahmine oran\""
+  en: "80% range and coverage · Ratio vs naive"
+  tr: "%80 aralık ve kapsama · Naif tahmine oran"
+  suggest: 'Keep (the text adds "sitede 10''da 8 aralığı diye geçer"). Alternative heading: "10''da 8 aralığı (%80 aralık) ve kapsama".'
+
+- title: "Explorer and Downloads headlines"
+  source: "T6 batch 3 item 6"
+  keys: [explorer.h1, downloads.h1]
+  suggest: 'Keep. Alternative for explorer: "Bütün kayıtlar: filtreleyin, indirin".'
+
+- title: "Holdout card repeats \"Ayrılmış test dönemi\""
+  source: "T6 batch 3 item 7"
+  keys: [methods_page.fact_holdout, scoreboard.holdout_winners, methods_page.holdout_one]
+  suggest: 'The card prints "Ayrılmış test dönemi, {first} – {last}: Ayrılmış test dönemi (bir kez puanlandı …)". Suggest the computed sentence drop its lead-in on this card, or `methods_page.fact_holdout` become "{first} – {last}: {finding}". Say which and it goes in the correction batch.'
+
+- title: "Workbook values: \"Kabuklu\" / \"İç fındık\" and country names such as \"ABD\""
+  source: "T7 report (fix round 1) and reviewer minor"
+  keys: [hazelnut.product.in_shell, hazelnut.product.shelled, country.usa]
+  suggest: 'Keep "Kabuklu" / "İç fındık" (capitalised as cell values) and "ABD". Alternative: "Amerika Birleşik Devletleri" in the workbook only.'
+
+- title: "Workbook month cells follow the reader's Excel language"
+  source: "T7 report item 2 and reviewer minor"
+  where: "both workbooks and the explorer download: month cells are real dates, format mmm yyyy"
+  en: "Oct 2026 (in English Excel)"
+  tr: "Eki 2026 in Turkish Excel, but Oct 2026 in English Excel"
+  suggest: 'Choose: (A) leave as is (dates sort and filter as dates); (B) force Turkish month names in the Turkish file with the format `[$-tr-TR]mmm yyyy`.'
+
+- title: "Explorer UI and About sheet terms"
+  source: "T7 report item 3"
+  keys: [explorer.ui.latest, explorer.ui.none, explorer.ui.currency, explorer.ui.seasons_run, explorer.ui.seasons_one, explorer.ui.rows.other, explorer.ui.download, explorer.ui.nothing, explorer.ui.about.title, explorer.ui.about.sheet, explorer.ui.about.records_sheet]
+  suggest: 'Keep. Alternative: "En yeni" → "Son iki sezon" (the button picks the newest two seasons).'
+
+- title: "Turkish workbook file name"
+  source: "T7 report item 4"
+  where: "site/downloads/hazelnut-market-data-tr.xlsx; explorer view downloads keep the English ASCII names"
+  en: "hazelnut-market-data.xlsx"
+  tr: "hazelnut-market-data-tr.xlsx"
+  suggest: 'Keep (stable links, ASCII). Alternative: "findik-piyasa-verileri.xlsx".'
+
+- title: "Chart buttons, method names, season in progress"
+  source: "T4 report (points for the owner)"
+  keys: [chart.window.y5, chart.window.y10, chart.window.all, season.to_date_label, method.naive, method.seasonal_naive, method.season_reg, method.naive_emp, method.naive_vol]
+  suggest: 'Keep "5Y / 10Y / Tümü" ("5 yıl" overlapped the TL button at 390 px) and "{season} (sürüyor)". SARIMA, SARIMAX, LightGBM and Chronos-Bolt stay as names.'
+
+- title: "Site chrome: theme toggle, language switch, skip link, 404 page"
+  source: "T3 report (drafts); T6 batch 1 item 8"
+  where: "site/_quarto-tr.yml (site-strings, language) and site/404.qmd"
+  en: "Switch light / dark · Language · Skip to main content · Error 404 / This page is not here. / Back to the start"
+  tr: "Açık / koyu tema · Dil · Ana içeriğe geç · Hata 404 / Bu sayfa burada yok. / Ana sayfaya dönün"
+  suggest: 'Keep. The navbar''s aria-label is "Site" (Quarto''s own Turkish says "Internet sitesi").'
+
+- title: "Reviewer-revised wording (check only)"
+  source: "T5 report; settled in the T5 drift review"
+  keys: [exports.subtitle, exports.ratio_subtitle, gap.band_below, gap.band_above, lira.split_below, hazelnut.sheet.range.note]
+  suggest: 'The reviewer already revised these; keep unless something reads wrong.'
