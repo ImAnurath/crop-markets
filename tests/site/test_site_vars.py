@@ -118,3 +118,12 @@ def test_script_passes_a_turkish_deploy_without_todo_entries(tmp_path, monkeypat
     monkeypatch.setattr(i18n, "strings", lambda code: {"a": "A", "b": "B"})
     monkeypatch.setenv(i18n.DEPLOY_FLAG, "en,tr")
     assert _script().main([str(_write(tmp_path, GOOD))]) == 0
+
+
+def test_script_fails_on_a_file_without_the_turkish_bio(tmp_path, capsys, monkeypatch):
+    # The owner's file before author_bio_tr is added: everything else filled in.
+    monkeypatch.delenv(i18n.DEPLOY_FLAG, raising=False)
+    text = "".join(line + "\n" for line in GOOD.splitlines() if not line.startswith("author_bio_tr:"))
+    assert _script().main([str(_write(tmp_path, text))]) == 1
+    out = capsys.readouterr().out
+    assert "PROBLEM: author_bio_tr: missing" in out.splitlines()

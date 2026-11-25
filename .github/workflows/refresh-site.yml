@@ -109,10 +109,18 @@ jobs:
       # language-switch target resolves; Turkish pages stay inside tr/). The English text
       # snapshot is a development gate fixed to the committed data, so it is left out on
       # refreshed data.
+      # The tree check comes first: without it, a missing tree would make its tests skip
+      # and the step pass.
       - name: Rendered-site tests and link check (both trees)
-        run: >-
-          pytest tests/site -q -rs
-          --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot
+        run: |
+          for page in site/_site/index.html site/_site/tr/index.html; do
+            if [ ! -f "$page" ]; then
+              echo "::error::$page is missing: render_site.py did not render both language trees"
+              exit 1
+            fi
+          done
+          pytest tests/site -q -rs \
+            --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot
 
       - name: Commit refreshed site data
         if: github.ref == 'refs/heads/main'
