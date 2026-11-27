@@ -137,7 +137,7 @@ ph.raw_html(f"""
   </section>
   <section class="panel" id="season">
     <h3>Sezon (Eylül'den Ağustos'a)</h3>
-    <p>Fiyatlar ve hasatlar takvim yılına göre değil, pazarlama sezonuna göre gruplanır: ihracatçıların esas aldığı, Eylül'den Ağustos'a uzanan yıl.</p>
+    <p>Fiyatlar ve hasat rakamları takvim yılına göre değil, pazarlama sezonuna göre gruplanır: ihracatçıların esas aldığı, Eylül'den Ağustos'a uzanan yıl.</p>
     <p>Bir sezon iki yılıyla adlandırılır: 2025/26, Eylül 2025'ten Ağustos 2026'ya kadar sürer.</p>
   </section>
   <section class="panel" id="old-lira">
@@ -240,7 +240,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="pinball-loss">
     <h3>Pinball kaybı</h3>
-    <p>Bir aralık tahmininin puanı. Yüzdelik, fiyatın belirli bir oranda altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her yüzdelik, fiyatın ondan ne kadar uzağa düştüğüne göre cezalandırılır. Ceza bilerek eşit tutulmaz: 90. yüzdelikte, tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş yüzdelik üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
+    <p>Bir aralık tahmininin puanı. Yüzdelik, fiyatın zamanın belirli bir bölümünde altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her yüzdelik, fiyatın bu eşikten ne kadar uzağa düştüğüne göre cezalandırılır. Ceza bilerek eşit tutulmaz: 90. yüzdelikte, tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş yüzdelik üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
   </section>
   <section class="panel" id="skill">
     <h3>Beceri</h3>
@@ -339,8 +339,8 @@ ph.raw_html(f"""
   <div class="sub">Kontrollerden geçmeyen hiçbir şey siteye ulaşmaz.</div>
   <ol class="steps">
     <li><strong>İndirme.</strong> Otomatik bir görev, bütün kaynakları yeniden indirir. Her kaynak ayrı ayrı alınır; böylece biri indirilemese de diğerleri durmaz.</li>
-    <li><strong>Yedekli derleme.</strong> Sitenin tabloları yeni verilerden yeniden oluşturulur. Kaynağına ulaşılamayan ya da bir öncekinden %10'dan fazla kısa çıkan (yarım kalmış bir indirmenin belirtisi) bir tablo, önceki güncellemedeki son sağlam sürümünü korur ve güncel olmayan tablo olarak işaretlenir. Temel tabloların (aylık fiyat serisi, fiyat aralığı ve öne çıkan sayılar) yedeği yoktur: bunlar yeniden oluşturulamazsa işlem durur.</li>
-    <li><strong>Doğrulama.</strong> Hiçbir şey yayımlanmadan önce bir kontrol adımı verileri denetler: aylık fiyat serisinde {ph.escape(first_month)} ile son ay arasındaki her ay bulunmalı, hiçbir ay iki kez geçmemeli, her fiyat ve döviz kuru sıfırın üzerinde olmalıdır; fiyat aralığı pozitif ve doğru sırada olmalıdır; öne çıkan sayıların hepsi geçerli sayılar olmalıdır; son ay en fazla {max_lag} ay önceye ait olmalıdır. Kontrollerden biri bile başarısız olursa işlem durur ve yayındaki site olduğu gibi kalır.</li>
+    <li><strong>Yedekli derleme.</strong> Sitenin tabloları yeni verilerden yeniden oluşturulur. Kaynağına ulaşılamayan ya da bir öncekinden %10'dan fazla kısa çıkan (yarım kalmış bir indirmenin belirtisi) bir tablo, önceki güncellemedeki son sağlam sürümünü korur ve "güncel değil" diye işaretlenir. Temel tabloların (aylık fiyat serisi, fiyat aralığı ve öne çıkan sayılar) yedeği yoktur: bunlar yeniden oluşturulamazsa işlem durur.</li>
+    <li><strong>Doğrulama.</strong> Hiçbir şey yayımlanmadan önce bir kontrol adımı verileri denetler: aylık fiyat serisinde {ph.escape(first_month)} ile son ay arasındaki her ay bulunmalı, hiçbir ay iki kez geçmemeli, her fiyat ve döviz kuru sıfırın üzerinde olmalıdır; fiyat aralığı pozitif ve doğru sırada olmalıdır; öne çıkan sayıların hepsi geçerli sayılar olmalıdır; son ay en fazla {max_lag} ay önceye ait olmalıdır. Kontrollerden biri bile geçilemezse işlem durur ve yayındaki site olduğu gibi kalır.</li>
     <li><strong>Yayımlama.</strong> Sayfalar, grafikler ve Excel çalışma kitabı, kontrol edilmiş verilerden yeniden oluşturulur. Tahmin modelleri her hafta yeniden çalıştırılmaz: puan tabloları kayıtlı geriye dönük test sonuçlarından gelir; yalnızca hesaplaması kolay olan fiyat aralığı en son fiyatlarla yeniden hesaplanır.</li>
   </ol>
 </section>

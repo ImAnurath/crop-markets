@@ -40,7 +40,7 @@
 
 - title: "Workbook months: Turkish names in the explorer download"
   source: "your Q33 (B)"
-  where: "explorer download (Turkish): month cells `[$-tr-TR]mmm yyyy`; the full workbooks"
+  where: "explorer download (Turkish): month cells `[$-41F]mmm yyyy` (the Turkish LCID); the full workbooks"
   en: "Oct 2026 (explorer download); 2026-10 (full workbook)"
   tr: "Eki 2026 in any Excel (explorer download); 2026-10 (full workbook)"
   suggest: 'Only the explorer download had real date cells; it now shows Turkish month names in any Excel. The full workbooks write months as text "2026-10" (no month names, same in both languages), so there was nothing to force. Keep, or ask for real dates in the Turkish full workbook.'

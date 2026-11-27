@@ -151,8 +151,15 @@ def test_turkish_page_carries_the_turkish_brand(page):
     assert "Crop Markets" not in html
     title = re.search(r"<title>(.*?)</title>", html, re.S).group(1).strip()
     assert title == BRAND_TR or title.endswith(f" – {BRAND_TR}"), title
+    assert title.count(BRAND_TR) == 1, title  # Quarto can double it (see render_site.py)
     assert re.search(rf'class="navbar-title">\s*{BRAND_TR}\s*<', html)
     assert f"{BRAND_TR} · veriler" in html  # the footer
+
+
+@pytest.mark.skipif(not TR_TREE.is_dir(), reason="site/_site/tr not rendered (run scripts/render_site.py)")
+def test_turkish_search_index_names_the_brand_once_per_title():
+    text = (TR_TREE / "search.json").read_text(encoding="utf-8")
+    assert f"{BRAND_TR} – {BRAND_TR}" not in text
 
 
 @pytest.mark.skipif(not RENDERED.is_dir(), reason="site/_site not rendered (run scripts/render_site.py)")

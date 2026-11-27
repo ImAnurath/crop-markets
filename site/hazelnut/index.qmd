@@ -39,7 +39,7 @@ Thirty years of exchange prices, where the exports go, how big the crop is, and 
 # Dünyadaki fındığın üçte ikisi Türkiye'de yetişiyor. *İşte o fındığın piyasası.*
 
 ::: {.lede}
-Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, hasadın ne kadar büyük olduğu ve havanın hasadı nasıl etkilediği. Hepsi her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
+Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, hasat miktarı ve havanın hasadı nasıl etkilediği. Hepsi her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
 :::
 
 ::: {.btns}

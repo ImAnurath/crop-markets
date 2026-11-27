@@ -254,6 +254,18 @@ def test_changes_list_every_differing_row_with_its_pack_id(review):
     assert review.changes(base, base) == []
 
 
+def test_changes_list_a_changed_tab_title_on_a_language_block(review):
+    # The 404 page's blocks carry their tab title as data-title on the opening fence.
+    page = ('::: {{lang="en" data-title="Page not found – Crop Markets"}}\nGone.\n:::\n\n'
+            '::: {{lang="tr" data-title="Sayfa bulunamadı – {brand}"}}\nYok.\n:::\n')
+    base = _sources({}, {}, page.format(brand="Crop Markets"))
+    now = _sources({}, {}, page.format(brand="Ürün Piyasaları"))
+    rows = review.changes(base, now)
+    assert [r["id"] for r in rows] == ["P1"]
+    assert rows[0]["en"][0] == rows[0]["en"][1]
+    assert "Ürün Piyasaları" in rows[0]["tr"][1] and "Crop Markets" in rows[0]["tr"][0]
+
+
 def test_pack_puts_the_changes_right_after_the_questions(review, tmp_path):
     src, site = _tiny(tmp_path)
     out = site / review.REVIEW_PAGE

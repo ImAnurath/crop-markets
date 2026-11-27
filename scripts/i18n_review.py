@@ -196,9 +196,10 @@ _LANG = re.compile(r"""(?:when-profile|(?<![\w-])lang)\s*=\s*["'](en|tr)["']""")
 
 def prose_blocks(text: str) -> list[dict]:
     """Every fenced div of one language (when-profile or lang attribute), in file order:
-    {"lang", "line" (1-based, the opening fence), "src" (the lines inside)}."""
+    {"lang", "line" (1-based, the opening fence), "src" (the lines inside), "attrs" (the
+    opening fence's attributes)}."""
     lines = text.splitlines()
-    stack: list[tuple[int, str | None]] = []
+    stack: list[tuple[int, str | None, str]] = []
     blocks, fence = [], None
     for i, raw in enumerate(lines):
         s = raw.strip()
@@ -212,13 +213,13 @@ def prose_blocks(text: str) -> list[dict]:
             fence = code.group(1)
         elif _DIV_CLOSE.match(s):
             if stack:
-                start, lang = stack.pop()
+                start, lang, attrs = stack.pop()
                 if lang:
-                    blocks.append({"lang": lang, "line": start + 1,
+                    blocks.append({"lang": lang, "line": start + 1, "attrs": attrs,
                                    "src": "\n".join(lines[start + 1:i])})
         elif (m := _DIV_OPEN.match(s)):
             lang = _LANG.search(m.group(2))
-            stack.append((i, lang.group(1) if lang else None))
+            stack.append((i, lang.group(1) if lang else None, m.group(2)))
     return sorted(blocks, key=lambda b: b["line"])
 
 
@@ -394,6 +395,19 @@ def current_sources(src_dir: Path = SITE) -> dict:
             "profiles": {name: read(name) for name in PROFILES}}
 
 
+_DATA_TITLE = re.compile(r'data-title\s*=\s*"([^"]*)"')
+
+
+def _block_text(block: dict | None) -> str:
+    """A prose block's text for the change list, led by its tab title (data-title on the
+    opening fence, as on the 404 page) so that a changed tab title shows as a change."""
+    if not block:
+        return ""
+    title = _DATA_TITLE.search(block.get("attrs", ""))
+    text = prose_text(block["src"])
+    return f"[tab title: {title.group(1)}] {text}" if title else text
+
+
 def page_rows(pages: dict[str, str]) -> dict[str, tuple[str, str, str, str]]:
     """Every title/description (M) and prose pair (P), numbered as the pack numbers them:
     {id: (page, field, English, Turkish)}."""
@@ -407,8 +421,7 @@ def page_rows(pages: dict[str, str]) -> dict[str, tuple[str, str, str, str]]:
                 out[f"M{m}"] = (page["title"], field, fm.get(field, ""), fm.get(f"{field}-tr", ""))
         for a, b in prose_pairs(text)[0]:
             p += 1
-            out[f"P{p}"] = (page["title"], "prose", prose_text(a["src"]) if a else "",
-                            prose_text(b["src"]) if b else "")
+            out[f"P{p}"] = (page["title"], "prose", _block_text(a), _block_text(b))
     return out
 
 
@@ -640,7 +653,8 @@ def build(site_dir: Path, out: Path, *, src_dir: Path = SITE, en: dict | None = 
         qs.append("".join(parts))
     toc.append(f'<a href="#questions">Questions for the owner ({len(questions)})</a>')
     body.append('<section id="questions"><h2>Questions for the owner</h2>'
-                '<p class="lede">Open points gathered from the task reports and reviews, merged. '
+                '<p class="lede">What is still open after your review and the naturalness pass, '
+                'each with a suggestion. '
                 'Answer "Q3: keep" or "Q5: option B", or give your own wording.</p>'
                 + "".join(qs) + "</section>")
 

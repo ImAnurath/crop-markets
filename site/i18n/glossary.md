@@ -10,7 +10,7 @@ Fixed term pairs that every translator must use. Confirmed by the owner (a nativ
 | in-shell | kabuklu |
 | kernel / shelled | iç fındık |
 | commodity exchange | ticaret borsası (Giresun Ticaret Borsası, Ordu Ticaret Borsası) |
-| crop, harvest (the year's yield) | hasat; "hasat miktarı" where the quantity is meant (crop size). Not "rekolte" |
+| crop, harvest (the year's yield) | hasat; "hasat miktarı" where the quantity is meant (crop size). Not "rekolte". A big or small crop is "bol" / "düşük hasat", and a crop "azaldı" or "arttı"; not "büyük/küçük hasat" or "hasat büyüdü/küçüldü" |
 | crop estimate | hasat tahmini |
 | season (Sep–Aug) | sezon |
 | export | ihracat |

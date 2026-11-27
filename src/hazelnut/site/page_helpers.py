@@ -112,7 +112,7 @@ def _stat(label: str, value_html: str, sub_html: str) -> str:
 def market_strip_html(stats: Mapping, *, local_name: str, local: LocalCurrency, crop_source: str) -> str:
     """The four-stat "market this month" strip.
 
-    ``local_name`` names the local currency in the label ("Price, lira"), ``local`` is the
+    ``local_name`` names the local currency in the label ("Price, TL"), ``local`` is the
     crop's local currency (its label is the unit, "TL" -> "TL/kg", and its column names the
     stats keys), ``crop_source`` says whose crop estimate it is (named in the tile label).
     """

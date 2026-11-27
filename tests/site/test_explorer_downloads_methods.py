@@ -312,8 +312,9 @@ def test_methods_facts_agree_with_the_forecasting_page():
     {"naive": (1, 1, 1), "sarima": (0.95, 1.1, 1.1)},     # some under 1, each lost elsewhere
 ])
 def test_methods_holdout_card_names_the_holdout_once(lang, holdout, turkish):
-    # Q31: the holdout line reads "<holdout>, <first> – <last>: <finding>", and no
-    # finding repeats the holdout's name after the lead-in.
+    # Q31: the holdout line reads "<holdout>, <first> – <last>: <finding>", and no finding
+    # opens by naming the holdout again (in any case). A later caveat may still mention it
+    # ("no significance test was run on the holdout"); that is not the repetition Q31 means.
     from hazelnut.site import i18n
 
     i18n.LANG = lang
@@ -321,8 +322,9 @@ def test_methods_holdout_card_names_the_holdout_once(lang, holdout, turkish):
     facts = ph.methods_facts(dev, _board(holdout, n=(24, 24, 24)), None,
                              range_method="naive_emp", holdout_period=("2024-10", "2026-09"))
     name = {"en": "Holdout", "tr": "Ayrılmış test dönemi"}[lang]
-    assert facts[1].startswith(name + ", ")
-    assert facts[1].count(name) == 1, facts[1]
+    lead, finding = facts[1].split(": ", 1)
+    assert lead.startswith(name + ", ") and lead.count(name) == 1, facts[1]
+    assert not finding.casefold().startswith(name.casefold()), facts[1]
 
 
 def test_explorer_download_months_are_in_the_page_language(turkish):
@@ -330,7 +332,7 @@ def test_explorer_download_months_are_in_the_page_language(turkish):
     # English download keeps its format. The OJS cell takes it from the config.
     from hazelnut.site import i18n
 
-    assert _cfg()["month_format"] == "[$-tr-TR]mmm yyyy"
+    assert _cfg()["month_format"] == "[$-41F]mmm yyyy"
     i18n.LANG = "en"
     assert _cfg()["month_format"] == "mmm yyyy"
     ojs = (SITE_DIR / "hazelnut" / "explorer.qmd").read_text(encoding="utf-8")

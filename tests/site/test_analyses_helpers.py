@@ -558,5 +558,5 @@ def test_crop_check_in_turkish_names_the_national_estimate(turkish):
     sub = ph.crop_check_subtitle(_dev_for_check(), _check(), main_source="giresun")
     assert sub == ("Her hasat tahminini bir ay sonraya kaydırmak puanları en fazla 0,03 "
                    "değiştirdi; yani zamanlama kuralı bir veri sızıntısı belirtisi göstermiyor. "
-                   "Bu bir ay gecikmeli zamanlamada ulusal hasat tahmini, 4 yöntem-ufuk "
+                   "Tahminler bir ay gecikmeli kullanıldığında ulusal hasat tahmini, 4 yöntem-ufuk "
                    "çiftinin 3 tanesinde daha kötü puan aldı.")

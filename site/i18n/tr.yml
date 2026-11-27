@@ -22,8 +22,9 @@ format:
   day_month_year: "{day} {month} {year}"
   # The browser locale for numbers the explorer formats (toLocaleString).
   locale: "tr-TR"
-  # Turkish month names in any Excel, whatever its own language.
-  xlsx_month: "[$-tr-TR]mmm yyyy"
+  # Turkish month names in any Excel, whatever its own language (41F is the Turkish LCID;
+  # the older form reads in more spreadsheet programs than "[$-tr-TR]").
+  xlsx_month: "[$-41F]mmm yyyy"
 month:
   1: "Ocak"
   2: "Şubat"
@@ -96,7 +97,7 @@ dashboard:
   exports_title: "İhracat nereye gidiyor"
   exports_fallback: "Hacme göre başlıca pazarlar, son 12 ay."
   exports_foot: "İhracat hacmindeki pay (net ağırlık). Kaynak: UN Comtrade."
-  crop_title: "Hasat büyüyünce fiyat düşer mi?"
+  crop_title: "Hasat bol olunca fiyat düşer mi?"
   crop_foot: "{source} borsasının hasat tahmini ve sezonun ortalama USD fiyatı."
   scoreboard_title: "Tahmin puan tablosu"
   scoreboard_fallback: "Her yöntemin hatası, naif tahminin hatasına göre."
@@ -152,15 +153,15 @@ season:
   to_date_label: "{season} (sürüyor)"
 crop_price:
   words:
-    strong_negative: "büyük hasatlara genellikle daha düşük fiyatlar eşlik etti"
-    weak_negative: "büyük hasatlarla düşük fiyatlar arasında zayıf bir ilişki görüldü"
+    strong_negative: "bol hasat yıllarında fiyatlar genellikle daha düşük oldu"
+    weak_negative: "bol hasat ile düşük fiyat arasında zayıf bir ilişki görüldü"
     none: "hasat miktarı tek başına fiyat hakkında pek bir şey söylemiyor"
-    positive: "büyük hasatlara daha düşük fiyatlar eşlik etmedi"
+    positive: "bol hasat yıllarında fiyatlar daha düşük olmadı"
   subtitle:
-    strong_negative: "{n} sezon boyunca büyük hasatlara genellikle daha düşük fiyatlar eşlik etti (korelasyon {r})."
-    weak_negative: "{n} sezon boyunca büyük hasatlarla düşük fiyatlar arasında zayıf bir ilişki görüldü (korelasyon {r})."
+    strong_negative: "{n} sezon boyunca bol hasat yıllarında fiyatlar genellikle daha düşük oldu (korelasyon {r})."
+    weak_negative: "{n} sezon boyunca bol hasat ile düşük fiyat arasında zayıf bir ilişki görüldü (korelasyon {r})."
     none: "{n} sezon boyunca hasat miktarı tek başına fiyat hakkında pek bir şey söylemiyor (korelasyon {r})."
-    positive: "{n} sezon boyunca büyük hasatlara daha düşük fiyatlar eşlik etmedi (korelasyon {r})."
+    positive: "{n} sezon boyunca bol hasat yıllarında fiyatlar daha düşük olmadı (korelasyon {r})."
   fallback: "Hasat tahmini ve sezonun ortalama fiyatı."
 scoreboard:
   subtitle_none: "Her yöntemin hatası, naif tahminin (fiyat olduğu yerde kalır) hatasına bölündü: 1'in üzeri daha kötü demektir. Hiçbir yöntem hiçbir ufukta naif tahmini geçemedi."
@@ -190,20 +191,20 @@ gap:
   detail_premium: "{name} borsası {n} ayın {dearer} tanesinde daha pahalıydı; en büyük primi {pct} oldu ({month})."
 frost:
   words:
-    strong_negative: "donlu gün arttıkça hasat genellikle küçüldü"
-    weak_negative: "donlu günlerle küçük hasatlar arasında zayıf bir ilişki görüldü"
+    strong_negative: "donlu gün arttıkça hasat genellikle azaldı"
+    weak_negative: "donlu günlerle düşük hasat arasında zayıf bir ilişki görüldü"
     none: "donlu gün sayısı tek başına hasat hakkında pek bir şey söylemiyor"
-    positive: "donlu günlerin artması hasadın küçülmesi anlamına gelmedi"
+    positive: "donlu günlerin artması hasadın azalması anlamına gelmedi"
   subtitle:
-    strong_negative: "{n} yıl boyunca donlu gün arttıkça hasat genellikle küçüldü (korelasyon {r})."
-    weak_negative: "{n} yıl boyunca donlu günlerle küçük hasatlar arasında zayıf bir ilişki görüldü (korelasyon {r})."
+    strong_negative: "{n} yıl boyunca donlu gün arttıkça hasat genellikle azaldı (korelasyon {r})."
+    weak_negative: "{n} yıl boyunca donlu günlerle düşük hasat arasında zayıf bir ilişki görüldü (korelasyon {r})."
     none: "{n} yıl boyunca donlu gün sayısı tek başına hasat hakkında pek bir şey söylemiyor (korelasyon {r})."
-    positive: "{n} yıl boyunca donlu günlerin artması hasadın küçülmesi anlamına gelmedi (korelasyon {r})."
+    positive: "{n} yıl boyunca donlu günlerin artması hasadın azalması anlamına gelmedi (korelasyon {r})."
   fallback: "İlkbahardaki donlu gün sayısı ve {source} hasat tahmini."
   fallback_no_source: "İlkbahardaki donlu gün sayısı ve hasat tahmini."
   without_note: "{years} dışarıda bırakıldığında korelasyon {r} oluyor ({n} sezon)."
-  smallest_one: "En küçük hasat ({years}), {days} donlu günün ardından geldi."
-  smallest_many: "En küçük {count} hasat ({years}), sırasıyla {days} donlu günün ardından geldi."
+  smallest_one: "En düşük hasat ({years}), {days} donlu günün ardından geldi."
+  smallest_many: "En düşük {count} hasat ({years}), sırasıyla {days} donlu günün ardından geldi."
   partial_year: "{year} verisi eksik: veriler, o yılın don dönemi bitmeden önce, {date} tarihinde hazırlandı."
 forecast:
   dev_some: "{total} yöntem-ufuk puanının {under} tanesi 1'in altında kaldı (1'in altı naif tahmini geçmek demektir); bu şans eseri olabilir."
@@ -222,13 +223,13 @@ forecast:
   band_all_held: "{horizon} ay ileride 10'da 8 aralığı {n} ayın {held} tanesinde tuttu ({pct})."
   band_misses: "{horizon} ay ileride 10'da 8 aralığı {n} ayın {held} tanesinde tuttu ({pct}); aralığın dışında kalan {misses} ayın {in_shock} tanesi bir şok dönemine denk geldi."
   ranges_none: "Doğru kurulmuş bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu ve başka hiçbir yöntem hiçbir ufukta daha iyi puan almadı."
-  ranges_some: "Doğru kurulmuş bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu; diğer {total} puanın {better} tanesi onu geçti."
+  ranges_some: "Doğru kurulmuş bir 10'da 8 aralığı zamanın yaklaşık %80'inde tutar. {method} için bu oran {held} oldu; diğer {total} puanın {better} tanesi bu yöntemi geçti."
 crop_check:
   row_on_time: "{method}, {source}, zamanında"
   row_late: "{method}, {source}, bir ay gecikmeli"
   default_rule: "zamanlama kuralı"
-  no_leak: "Her hasat tahminini bir ay sonraya kaydırmak puanları en fazla {shift} değiştirdi; yani {rule} bir veri sızıntısı belirtisi göstermiyor. Bu bir ay gecikmeli zamanlamada {sources} hasat tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
-  leak: "Her hasat tahminini bir ay sonraya kaydırmak puanları {shift} değerine kadar değiştirdi; yani {rule} ile elde edilen sonuçlar bir veri sızıntısından yararlanmış olabilir. Bu bir ay gecikmeli zamanlamada {sources} hasat tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
+  no_leak: "Her hasat tahminini bir ay sonraya kaydırmak puanları en fazla {shift} değiştirdi; yani {rule} bir veri sızıntısı belirtisi göstermiyor. Tahminler bir ay gecikmeli kullanıldığında {sources} hasat tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
+  leak: "Her hasat tahminini bir ay sonraya kaydırmak puanları {shift} değerine kadar değiştirdi; yani {rule} ile elde edilen sonuçlar bir veri sızıntısından yararlanmış olabilir. Tahminler bir ay gecikmeli kullanıldığında {sources} hasat tahmini, {total} yöntem-ufuk çiftinin {worse} tanesinde daha kötü puan aldı."
 crop_source:
   national: "ulusal"
 lira:
@@ -549,8 +550,8 @@ hazelnut:
       unit_value_foot: "İç fındık ihracatı: {fob} değerinin net ağırlığa bölümü, tüm pazarlar (UN Comtrade). Giresun kabuklu: borsanın aylık ortalaması. Kabuğun ayrılması ağırlığı aşağı yukarı yarıya indirir; aradaki farkın çoğu buradan gelir. Kabuklu fındık ihracatı, karşılaştırma yapılamayacak kadar küçük."
     crop_and_frost:
       title: "Hasat ve don"
-      summary: "Büyük hasat düşük fiyat mı demek? İlkbahardaki donlu gün sayısı hasadı ne kadar açıklıyor?"
-      h1: "Büyük hasat, düşük fiyat mı? Peki don ne yapıyor?"
+      summary: "Bol hasat düşük fiyat mı demek? İlkbahardaki donlu gün sayısı hasadı ne kadar açıklıyor?"
+      h1: "Bol hasat, düşük fiyat mı? Peki don ne yapıyor?"
       found_frost_years: "Bu ilişkinin büyük kısmı iki don yılından geliyor: {note}"
       found_frost_count: "İlkbahardaki donlu günlerin basit bir sayımı daha az şey söylüyor: {note}"
       found_fallback: "Hasat miktarı ve fiyat; ilkbahar donu ve hasat miktarı."
@@ -621,7 +622,7 @@ hazelnut:
       ranges_foot: "Tuttu: gerçekleşen fiyatın aralığın içinde kaldığı ayların payı. Genişlik: 10'da 8 aralığının ortalama genişliği, kilogram başına USD. {skill}: 1 eksi, yöntemin {pinball} (beş yüzdeliğin ortalaması) ilk satırdakine oranı; 0'ın üzerindeki bir değer ilk satırı geçmek demektir. Geliştirme dönemi."
       lira_split_title: "Son USD fiyatı × liranın değer kaybı eğilimi"
       lira_split_fallback: "Kriz ve sakin aylarda hatanın TL naif tahmininin hatasına oranı."
-      lira_split_foot: "{mape} (ortalama mutlak yüzde hata) değerinin, TL naif tahmininin (TL fiyatı olduğu yerde kalır) aynı değerine oranı; geliştirme dönemi (36 aylık eğilim). Lira krizleri: {periods}. Bu, liranın 2018-24 kriz yıllarındaki kendi değer kaybı eğilimidir ve yalnızca bir ipucudur (6 varyant denendi); fındık piyasasına dair bir sinyal değildir."
+      lira_split_foot: "{mape} (ortalama mutlak yüzde hata) değerinin, TL naif tahmininin (TL fiyatı olduğu yerde kalır) aynı değerine oranı; geliştirme dönemi (36 aylık eğilim). Lira krizleri: {periods}. Buradaki kazanç, liranın 2018-24 kriz yıllarındaki kendi değer kaybı eğiliminden geliyor; yalnızca bir ipucu (6 varyant denendi), fındık piyasasına dair bir sinyal değil."
       lira_title: "TL tahminleri ve TL naif tahmini"
       lira_fallback: "Tüm aylarda hatanın TL naif tahmininin hatasına oranı."
       lira_trend_words: "liranın değer kaybı eğilimine dayanan tahminler"

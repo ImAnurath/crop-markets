@@ -2,7 +2,7 @@
 title: "Hazelnut crop and frost"
 title-tr: "Fındıkta hasat ve don"
 description: "Does a bigger hazelnut crop mean a lower price, and how much does a count of spring frost days say about the crop?"
-description-tr: "Büyük bir fındık hasadı daha düşük fiyat mı demek? İlkbahardaki donlu gün sayısı hasat hakkında ne kadar bilgi veriyor?"
+description-tr: "Bol fındık hasadı daha düşük fiyat mı demek? İlkbahardaki donlu gün sayısı hasat hakkında ne kadar bilgi veriyor?"
 ---
 
 ```{python}
