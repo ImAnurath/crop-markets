@@ -108,7 +108,7 @@ ph.raw_html(f"""
   </section>
   <section class="panel" id="mae">
     <h3>Ortalama mutlak hata (MAE)</h3>
-    <p>Tahminlerin, yönüne bakılmadan, ortalamada ne kadar saptığı; fiyatın kendi biriminde, örneğin kilo başına ABD doları cinsinden. 0,20 $ fazla bir tahmin de 0,20 $ eksik bir tahmin de 0,20 $ hata sayılır.</p>
+    <p>Tahminlerin, yönüne bakılmadan, ortalama olarak ne kadar saptığı; fiyatın kendi biriminde, örneğin kilo başına ABD doları cinsinden. 0,20 $ fazla bir tahmin de 0,20 $ eksik bir tahmin de 0,20 $ hata sayılır.</p>
   </section>
   <section class="panel" id="ratio">
     <h3>Naif tahmine oran</h3>
@@ -117,7 +117,7 @@ ph.raw_html(f"""
   </section>
   <section class="panel" id="walk-forward">
     <h3>İleriye yürüyen geriye dönük test</h3>
-    <p>Geçmişin yeniden oynatılması. Testin her ayında her yöntem yalnızca o aya kadarki verileri görür, tahminlerini yapar ve gerçekte olanla karşılaştırılarak puanlanır. Sonra saat bir ay ileri alınır ve her şey yeniden başlar.</p>
+    <p>Geçmişi yeniden oynatmak gibidir. Testin her ayında her yöntem yalnızca o aya kadarki verileri görür, tahminlerini yapar ve gerçekte olanla karşılaştırılarak puanlanır. Sonra saat bir ay ileri alınır ve her şey yeniden başlar.</p>
     <p>Tahmin ayından sonraki hiçbir bilgi kullanılmadığı için puanlar, bir yöntemin gerçekte ne kadar başarılı olacağını gösterir.</p>
   </section>
   <section class="panel" id="timing">
@@ -133,7 +133,7 @@ ph.raw_html(f"""
   <section class="panel" id="range">
     <h3>%80 aralık ve kapsama</h3>
     <p>Tek bir sayı yerine, fiyatın on seferde sekizinde içine düşmesi beklenen bir aralık (sitede 10'da 8 aralığı diye geçer). Kapsama, geriye dönük testte fiyatın gerçekte ne sıklıkla bu aralığa düştüğüdür.</p>
-    <p>Dürüst bir %80 aralık, ayların yaklaşık %80'ini kapsar. Bundan çok daha azı aralığın fazla dar ve fazla iddialı olduğunu, çok daha fazlası ise gerekenden geniş olduğunu gösterir. Bu sitedeki aralık, bugünkü fiyatın, fiyatların geçmişte aynı sayıda ay içinde yaptığı hareketler kadar genişletilmesiyle elde edilir.</p>
+    <p>Dürüst bir %80 aralık, ayların yaklaşık %80'ini kapsar. Bundan çok daha azı aralığın fazla dar ve fazla iddialı olduğunu, çok daha fazlası ise gerekenden geniş olduğunu gösterir. Bu sitedeki aralık şöyle kurulur: bugünkü fiyat, fiyatların geçmişte aynı sayıda ayda yaptığı hareketler kadar genişletilir.</p>
   </section>
   <section class="panel" id="season">
     <h3>Sezon (Eylül'den Ağustos'a)</h3>
@@ -144,7 +144,7 @@ ph.raw_html(f"""
     <span class="pill tag">Yalnızca TL verileri</span>
     <h3>Eski lira</h3>
     <p>Türkiye 1 Ocak 2005'te para biriminden altı sıfır attı: 1.000.000 eski lira, 1 Yeni Türk Lirası (YTL) oldu. 2005 öncesindeki TL fiyatları yeni lira cinsinden gösterilir (eski değerler 1.000.000'a bölünür); böylece serinin tamamı tek bir ölçekte olur.</p>
-    <p>TL fiyatları ayrıca onlarca yıllık yüksek enflasyonu da taşır. Tahminlerin ABD doları cinsinden yapılıp puanlanmasının nedeni budur.</p>
+    <p>TL fiyatları onlarca yıllık yüksek enflasyonu da taşır; tahminlerin ABD doları cinsinden yapılıp puanlanmasının nedeni budur.</p>
   </section>
 </div>
 """)
@@ -212,7 +212,7 @@ ph.raw_html("""
 <div class="glossary">
   <section class="panel" id="seasonal-naive">
     <h3>Mevsimsel naif</h3>
-    <p>Son fiyatı alır ve fiyatların geçmiş yıllarda bu takvim ayından aynı sayıda ay sonrasına kadar gösterdiği ortalama yüzde değişimi ona uygular. Yalnızca fiyat geçmişini kullanır.</p>
+    <p>Son fiyatı alır ve ona, geçmiş yıllarda aynı takvim ayından başlayıp aynı sayıda ay içinde görülen ortalama yüzde değişimi uygular. Yalnızca fiyat geçmişini kullanır.</p>
   </section>
   <section class="panel" id="sarima">
     <h3>SARIMA</h3>
@@ -220,39 +220,39 @@ ph.raw_html("""
   </section>
   <section class="panel" id="sarimax">
     <h3>SARIMAX</h3>
-    <p>İki ek girdisi olan SARIMA: hasat tahminindeki değişim ve dolar/TL kurundaki aylık değişim. Bilinen son aydan sonrası için hasat değişimini olduğu yerde tutar ve kurun hareket etmeyeceğini varsayar.</p>
+    <p>İki ek girdisi olan SARIMA: hasat tahminindeki değişim ve dolar/TL kurundaki aylık değişim. Bilinen son aydan sonrası için hasat değişimini son değerinde tutar ve kurun hareket etmeyeceğini varsayar.</p>
   </section>
   <section class="panel" id="chronos-bolt">
     <h3>Chronos-Bolt</h3>
-    <p>Başka birçok zaman serisiyle eğitilmiş, hazır bir tahmin modeli (Amazon'un Chronos-Bolt modelinin küçük boyu). Onu olduğu gibi, bizim verilerimizle hiç eğitmeden kullanıyoruz. Yalnızca fiyat geçmişini okur; verdiği tahmin, olası değerlerin medyanıdır.</p>
+    <p>Başka birçok zaman serisiyle eğitilmiş, hazır bir tahmin modeli (Amazon'un Chronos-Bolt modelinin küçük sürümü). Modeli olduğu gibi, kendi verilerimizle hiç eğitmeden kullanıyoruz. Yalnızca fiyat geçmişini okur; verdiği tahmin, olası değerlerin medyanıdır.</p>
   </section>
   <section class="panel" id="lightgbm">
     <h3>LightGBM</h3>
-    <p>Çok sayıda küçük karar ağacından kurulan bir makine öğrenmesi yöntemi. İleriye dönük her ay sayısı için fiyat değişimini bir dizi girdiden öğrenir: fiyat düzeyi ve son değişimleri, takvim ayı, hasat tahmininin açıklanmasından bu yana geçen ay sayısı, hasat tahminindeki değişim, ilkbahardaki donlu gün sayısı, ihracattaki büyüme, borsadaki işlem hacmi ve kur hareketleri. Ayarları önceden sabitlendi ve her ay yeniden eğitilir.</p>
+    <p>Çok sayıda küçük karar ağacından kurulan bir makine öğrenmesi yöntemi. Kaç ay ileriye bakılacaksa o süre için fiyat değişimini bir dizi girdiden öğrenir: fiyat düzeyi ve son değişimleri, takvim ayı, hasat tahmininin açıklanmasından bu yana geçen ay sayısı, hasat tahminindeki değişim, ilkbahardaki donlu gün sayısı, ihracattaki büyüme, borsadaki işlem hacmi ve kur hareketleri. Ayarları önceden sabitlendi ve her ay yeniden eğitilir.</p>
   </section>
   <section class="panel" id="season-regression">
     <h3>Sezon regresyonu</h3>
-    <p>Tek tek ayları değil, gelecek sezonun ortalama fiyatını tahmin eder. Geçmiş sezonlara düz bir çizgi uydurur: sezonun ortalama fiyatı ne kadar değişti, hasat tahmini ne kadar değişti. Hasat tahminine ihtiyaç duyduğu için, tahmin Ağustos'ta açıklanmadan önce onun yerine naif tahmin kullanılır.</p>
+    <p>Tek tek ayları değil, gelecek sezonun ortalama fiyatını tahmin eder. Geçmiş sezonlara düz bir çizgi uydurur: sezonun ortalama fiyatı ne kadar değişti, hasat tahmini ne kadar değişti. Hasat tahminine ihtiyaç duyduğu için, bu tahmin Ağustos'ta açıklanana kadar yöntemin yerine naif tahmin kullanılır.</p>
   </section>
   <section class="panel" id="mape">
     <h3>Ortalama mutlak yüzde hata (MAPE)</h3>
-    <p>Tahminlerin, gerçekleşen fiyatın yüzdesi olarak ortalamada ne kadar saptığı. Fiyatların çok farklı düzeylerde olduğu durumlarda kullanılır, çünkü yüzde karşılaştırılabilir kalır; onlarca yıllık enflasyon boyunca TL fiyatları buna bir örnektir.</p>
+    <p>Tahminlerin, gerçekleşen fiyatın yüzdesi olarak ortalama ne kadar saptığı. Fiyatların çok farklı düzeylerde olduğu durumlarda kullanılır, çünkü yüzde karşılaştırılabilir kalır; onlarca yıllık enflasyon boyunca TL fiyatları buna bir örnektir.</p>
   </section>
   <section class="panel" id="pinball-loss">
     <h3>Pinball kaybı</h3>
-    <p>Bir aralık tahmininin puanı. Yüzdelik, fiyatın belirli bir oranda altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her yüzdelik, fiyatın ondan ne kadar uzağa düştüğüne göre cezalandırılır; ceza bilerek eşit değildir: 90. yüzdelik için tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş yüzdelik üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
+    <p>Bir aralık tahmininin puanı. Yüzdelik, fiyatın belirli bir oranda altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her yüzdelik, fiyatın ondan ne kadar uzağa düştüğüne göre cezalandırılır. Ceza bilerek eşit tutulmaz: 90. yüzdelikte, tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş yüzdelik üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
   </section>
   <section class="panel" id="skill">
     <h3>Beceri</h3>
-    <p>Bir tahminin bir temel tahmine göre ne kadar iyi sonuç verdiği: 1 eksi, kendi hatasının temel tahminin hatasına bölümü. 0'ın üzeri temel tahmini geçer, 0 onunla aynıdır, 0'ın altı daha kötüdür. Nokta tahminlerinde hata MAE, temel tahmin ise naif tahmindir; aralıklarda hata pinball kaybı, temel tahmin ise naif aralıktır.</p>
+    <p>Bir tahminin bir temel tahmine göre ne kadar iyi sonuç verdiği: 1 eksi, kendi hatasının temel tahminin hatasına bölümü. 0'ın üzeri temel tahmini geçer, 0 eşit sonuç demektir, 0'ın altı daha kötüdür. Nokta tahminlerinde hata MAE, temel tahmin ise naif tahmindir; aralıklarda hata pinball kaybı, temel tahmin ise naif aralıktır.</p>
   </section>
   <section class="panel" id="p-value">
     <h3>İstatistiksel testler (p değeri)</h3>
-    <p>Diebold-Mariano testi, iki yöntemin hatalarının gerçekten farklı olup olmadığını, yoksa aradaki farkın şans eseri olup olamayacağını sorar. p değeri, iki yöntem eşit derecede iyi olsaydı en az bu büyüklükte bir fark görme olasılığıdır; 0,01 gibi küçük bir değer gerçek bir farka işaret eder. Site bunu yalnızca TL tahminlerinde kullanır.</p>
+    <p>Diebold-Mariano testi, iki yöntemin hataları arasındaki farkın gerçek mi, yoksa şans eseri mi olduğunu sorar. p değeri, iki yöntem eşit derecede iyi olsaydı en az bu büyüklükte bir fark görme olasılığıdır; 0,01 gibi küçük bir değer gerçek bir farka işaret eder. Site bunu yalnızca TL tahminlerinde kullanır.</p>
   </section>
   <section class="panel" id="fob">
     <h3>FOB (free on board, gemide teslim)</h3>
-    <p>Bir ihracatın, alıcıya kadarki navlun ve sigorta eklenmeden önce, çıkış limanında hesaplanan değeri. Bu sitedeki ihracat değerleri FOB esasına göredir.</p>
+    <p>İhraç edilen malın çıkış limanındaki değeri; alıcıya kadarki navlun ve sigorta bu değere eklenmez. Bu sitedeki ihracat değerleri FOB esasına göredir.</p>
   </section>
 </div>
 """)
@@ -338,8 +338,8 @@ ph.raw_html(f"""
   <h3 class="ptitle" id="refresh-steps">Her hafta, dört adımda</h3>
   <div class="sub">Kontrollerden geçmeyen hiçbir şey siteye ulaşmaz.</div>
   <ol class="steps">
-    <li><strong>İndirme.</strong> Otomatik bir iş, bütün kaynakları yeniden indirir. Her kaynak ayrı ayrı alınır; böylece biri başarısız olsa da diğerleri durmaz.</li>
-    <li><strong>Yedekli derleme.</strong> Sitenin tabloları yeni verilerden yeniden oluşturulur. Kaynağı başarısız olan ya da bir öncekinden %10'dan fazla kısa çıkan (yarım kalmış bir indirmenin belirtisi) bir tablo, önceki güncellemedeki son sağlam sürümünü korur ve güncel değil olarak işaretlenir. Temel tabloların (aylık fiyat serisi, fiyat aralığı ve öne çıkan sayılar) yedeği yoktur: bunlar yeniden oluşturulamazsa işlem durur.</li>
+    <li><strong>İndirme.</strong> Otomatik bir görev, bütün kaynakları yeniden indirir. Her kaynak ayrı ayrı alınır; böylece biri indirilemese de diğerleri durmaz.</li>
+    <li><strong>Yedekli derleme.</strong> Sitenin tabloları yeni verilerden yeniden oluşturulur. Kaynağına ulaşılamayan ya da bir öncekinden %10'dan fazla kısa çıkan (yarım kalmış bir indirmenin belirtisi) bir tablo, önceki güncellemedeki son sağlam sürümünü korur ve güncel olmayan tablo olarak işaretlenir. Temel tabloların (aylık fiyat serisi, fiyat aralığı ve öne çıkan sayılar) yedeği yoktur: bunlar yeniden oluşturulamazsa işlem durur.</li>
     <li><strong>Doğrulama.</strong> Hiçbir şey yayımlanmadan önce bir kontrol adımı verileri denetler: aylık fiyat serisinde {ph.escape(first_month)} ile son ay arasındaki her ay bulunmalı, hiçbir ay iki kez geçmemeli, her fiyat ve döviz kuru sıfırın üzerinde olmalıdır; fiyat aralığı pozitif ve doğru sırada olmalıdır; öne çıkan sayıların hepsi geçerli sayılar olmalıdır; son ay en fazla {max_lag} ay önceye ait olmalıdır. Kontrollerden biri bile başarısız olursa işlem durur ve yayındaki site olduğu gibi kalır.</li>
     <li><strong>Yayımlama.</strong> Sayfalar, grafikler ve Excel çalışma kitabı, kontrol edilmiş verilerden yeniden oluşturulur. Tahmin modelleri her hafta yeniden çalıştırılmaz: puan tabloları kayıtlı geriye dönük test sonuçlarından gelir; yalnızca hesaplaması kolay olan fiyat aralığı en son fiyatlarla yeniden hesaplanır.</li>
   </ol>
@@ -349,7 +349,7 @@ ph.raw_html(f"""
   <div class="sub">Her sayfada, sayıların ne kadar güncel olduğu.</div>
   <p class="muted"><span class="live"><i aria-hidden="true"></i>Veriler &lt;ay&gt; itibarıyla · haftalık güncellenir</span></p>
   <p class="muted">Buradaki ay, ürünün borsa fiyat serisindeki son aydır.</p>
-  <p class="muted">Bir tablo, kaynağı başarısız olduğu için daha eski bir kopyayla çalışıyorsa damgaya, bu durumdaki en eski ayı belirten "(bazı kaynaklar &lt;ay&gt; tarihli)" ifadesi eklenir; tablonun henüz önceki bir kopyası yoksa "(bazı kaynaklara ulaşılamadı)" eklenir. Çalışma kitabının açıklama sayfası, güncel olmayan her tabloyu ve tarihini listeler.</p>
+  <p class="muted">Bir tablo, kaynağına ulaşılamadığı için daha eski bir kopyayla çalışıyorsa damgaya, bu durumdaki en eski ayı belirten "(bazı kaynaklar &lt;ay&gt; tarihli)" ifadesi eklenir; tablonun henüz önceki bir kopyası yoksa "(bazı kaynaklara ulaşılamadı)" eklenir. Çalışma kitabının açıklama sayfası, güncel olmayan her tabloyu ve tarihini listeler.</p>
 </section>
 </div>
 """)
