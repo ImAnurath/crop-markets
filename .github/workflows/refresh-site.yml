@@ -109,7 +109,7 @@ jobs:
       # so it is left out here and check_countries.py warns instead (Ruling F1).
       - name: Site tests
         run: |
-          pytest tests/site tests/test_fetch_raw.py -q             --deselect tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry
+          pytest tests/site tests/test_fetch_raw.py -q \n            --deselect tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry
 
       - name: Render site (English, then Turkish into site/_site/tr)
         run: |
@@ -134,7 +134,7 @@ jobs:
             fi
           done
           pytest tests/site -q -rs \
-            --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot             --deselect tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry
+            --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot \n            --deselect tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry
 
       - name: Commit refreshed site data
         if: github.ref == 'refs/heads/main'
