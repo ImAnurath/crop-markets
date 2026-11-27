@@ -142,7 +142,7 @@ def test_every_site_page_has_as_many_turkish_blocks_as_english(review):
 
 def test_questions_cite_only_existing_keys(review):
     questions = review.load_questions()
-    assert len(questions) >= 20
+    assert 1 <= len(questions) <= 14  # the leftovers only: the owner asked for fewer
     en = i18n.strings("en")
     for q in questions:
         assert q.get("title") and q.get("suggest"), q
@@ -225,6 +225,57 @@ def test_pack_from_the_rendered_site(review, tmp_path, capsys):
     assert "Hazelnut market data (Turkey)" in page  # the workbooks' README text
     printed = capsys.readouterr().out
     assert f"keys: {len(en)}" in printed and "mismatches: none" in printed
+
+
+# --- changed since the review ------------------------------------------------------------
+
+def _sources(en, tr, index="", tr_profile=""):
+    return {"en": en, "tr": tr, "pages": {"index.qmd": index},
+            "profiles": {"_quarto-en.yml": "", "_quarto-tr.yml": tr_profile}}
+
+
+def test_changes_list_every_differing_row_with_its_pack_id(review):
+    prose = ('---\ntitle: "Home"\ntitle-tr: "{t}"\n---\n\n'
+             '::: {{.content-visible when-profile="en"}}\nHello\n:::\n\n'
+             '::: {{.content-visible when-profile="tr"}}\n{p}\n:::\n')
+    base = _sources({"a": "A", "b": "B {n}"}, {"a": "Ä", "b": "eski {n}"},
+                    prose.format(t="Eski", p="Merhaba"), "website:\n  title: Crop Markets\n")
+    now = _sources({"a": "A", "b": "B {n}", "c": "C"}, {"a": "Ä", "b": "yeni {n}", "c": "Ç"},
+                   prose.format(t="Yeni", p="Merhaba"), "website:\n  title: Ürün Piyasaları\n")
+    rows = review.changes(base, now)
+    assert [(r["id"], r["label"]) for r in rows] == [
+        ("#2", "b"), ("#3", "c"), ("M1", "Home: title"), ("N1", "website.title")]
+    assert rows[0]["en"] == ("B {n}", "B {n}") and rows[0]["tr"] == ("eski {n}", "yeni {n}")
+    assert rows[1]["tr"] == (None, "Ç")  # a new key
+    html_ = review.changes_html(rows)
+    assert '<a href="#k2">#2</a>' in html_ and '<a href="#m1">M1</a>' in html_
+    assert "<del>eski <span class=\"ph\">{n}</span></del>" in html_
+    assert "(unchanged)" in html_ and "(new)" in html_
+    assert review.changes(base, base) == []
+
+
+def test_pack_puts_the_changes_right_after_the_questions(review, tmp_path):
+    src, site = _tiny(tmp_path)
+    out = site / review.REVIEW_PAGE
+    rows = [{"id": "#1", "anchor": "k1", "label": "x", "en": ("y", "y"), "tr": ("a", "b")}]
+    stats = review.build(site, out, src_dir=src, en={"x": "y"}, tr={"x": "b"}, questions=[],
+                         changed=rows)
+    page = out.read_text(encoding="utf-8")
+    assert stats["changed"] == 1
+    assert page.index('id="questions"') < page.index('id="changed"') < page.index('id="page-home"')
+    assert "Changed since your review (1)" in page and "<ins>b</ins>" in page
+    review.build(site, out, src_dir=src, en={"x": "y"}, tr={"x": "b"}, questions=[])
+    assert "cannot be listed" in out.read_text(encoding="utf-8")  # no baseline for a tmp site
+
+
+def test_changes_since_the_reviewed_commit(review):
+    base = review.load_base()
+    if base is None:
+        pytest.skip("no git history here")
+    rows = {r["label"]: r for r in review.changes(base, review.current_sources())}
+    assert rows["dashboard.h1"]["tr"][0] == "Fiyat ve onun hakkında dürüstçe söyleyebileceklerimiz"
+    assert rows["na"]["en"] == ("n/a", "N/A") and rows["na"]["tr"] == ("yok", "N/A")
+    assert "website.title" in rows  # the Turkish brand
 
 
 # --- kept out of the deploy --------------------------------------------------------------

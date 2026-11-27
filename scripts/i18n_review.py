@@ -1,7 +1,8 @@
 """Write the owner's English | Turkish review pack: one self-contained HTML page.
 
 The pack shows, side by side and grouped by page:
-  1. the open questions for the owner (scripts/i18n_review_questions.yml);
+  1. the open questions for the owner (scripts/i18n_review_questions.yml), then every
+     row changed since the owner's review (a diff against BASE_REV, old → new);
   2. every page's title and description (front matter) and every prose block
      (``when-profile="en"`` / ``"tr"`` pairs, and the 404 page's ``lang`` blocks);
   3. every ``t()`` string of site/i18n/en.yml and tr.yml, numbered in en.yml order,
@@ -26,6 +27,7 @@ import argparse
 import html
 import importlib.util
 import re
+import subprocess
 import sys
 from itertools import zip_longest
 from pathlib import Path
@@ -352,6 +354,125 @@ def load_questions(path: Path = QUESTIONS) -> list[dict]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8")) or []
 
 
+# --- changed since the owner's review ----------------------------------------------------
+
+# The commit of the pack the owner reviewed (2026-11-25): the "Changed since your review"
+# section lists every string, title, prose block and profile value that differs from it.
+BASE_REV = "dcce130"
+PROFILES = ("_quarto-en.yml", "_quarto-tr.yml")
+
+
+def _git_show(rev: str, rel: str) -> str | None:
+    """A file's text at ``rev`` (``rel`` from the repository root), or None."""
+    try:
+        out = subprocess.run(["git", "show", f"{rev}:{rel}"], cwd=HERE.parent,
+                             capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return out.stdout.decode("utf-8")
+
+
+def load_base(rev: str = BASE_REV) -> dict | None:
+    """The reviewed sources at ``rev``: {"en", "tr" (flat strings), "pages" ({qmd: text}),
+    "profiles" ({name: text})}; None if git or the commit is not there."""
+    en, tr = _git_show(rev, "site/i18n/en.yml"), _git_show(rev, "site/i18n/tr.yml")
+    if en is None or tr is None:
+        return None
+    pages = {p["qmd"]: _git_show(rev, f"site/{p['qmd']}") or "" for p in PAGES}
+    profiles = {name: _git_show(rev, f"site/{name}") or "" for name in PROFILES}
+    return {"en": _flat(yaml.safe_load(en) or {}), "tr": _flat(yaml.safe_load(tr) or {}),
+            "pages": pages, "profiles": profiles}
+
+
+def current_sources(src_dir: Path = SITE) -> dict:
+    """The same as ``load_base``, read from the working tree."""
+    def read(rel):
+        p = Path(src_dir) / rel
+        return p.read_text(encoding="utf-8") if p.is_file() else ""
+    return {"en": i18n.strings("en"), "tr": i18n.strings("tr"),
+            "pages": {p["qmd"]: read(p["qmd"]) for p in PAGES},
+            "profiles": {name: read(name) for name in PROFILES}}
+
+
+def page_rows(pages: dict[str, str]) -> dict[str, tuple[str, str, str, str]]:
+    """Every title/description (M) and prose pair (P), numbered as the pack numbers them:
+    {id: (page, field, English, Turkish)}."""
+    out, m, p = {}, 0, 0
+    for page in PAGES:
+        text = pages.get(page["qmd"], "")
+        fm = front_matter(text)
+        for field in ("title", "description"):
+            if field in fm or f"{field}-tr" in fm:
+                m += 1
+                out[f"M{m}"] = (page["title"], field, fm.get(field, ""), fm.get(f"{field}-tr", ""))
+        for a, b in prose_pairs(text)[0]:
+            p += 1
+            out[f"P{p}"] = (page["title"], "prose", prose_text(a["src"]) if a else "",
+                            prose_text(b["src"]) if b else "")
+    return out
+
+
+def _profile_values(profiles: dict[str, str]) -> list[tuple[str, str, str]]:
+    def flat(name):
+        return _flat(yaml.safe_load(profiles.get(name, "")) or {})
+    en, tr = flat(PROFILES[0]), flat(PROFILES[1])
+    paths = list(en) + [p for p in tr if p not in en]
+    return [(p, en.get(p, ""), tr.get(p, "")) for p in paths]
+
+
+def changes(base: dict, now: dict) -> list[dict]:
+    """Each row that differs between ``base`` and ``now``, as the pack ids it:
+    {"id", "anchor", "label", "en": (old, new), "tr": (old, new)}; strings (#) in en.yml
+    order, then titles and prose (M, P), then navbar and footer values (N)."""
+    out = []
+    for r in collect_keys(now["en"], now["tr"]):
+        k = r["key"]
+        old = (base["en"].get(k), base["tr"].get(k))
+        if old != (r["en"], r["tr"]):
+            out.append({"id": f"#{r['id']}", "anchor": f"k{r['id']}", "label": k,
+                        "en": (old[0], r["en"]), "tr": (old[1], r["tr"])})
+    before, after = page_rows(base["pages"]), page_rows(now["pages"])
+    for rid, (page, field, en, tr) in after.items():
+        _, _, en0, tr0 = before.get(rid, (page, field, None, None))
+        if (en0, tr0) != (en, tr):
+            out.append({"id": rid, "anchor": rid.lower(), "label": f"{page}: {field}",
+                        "en": (en0, en), "tr": (tr0, tr)})
+    old_nav = {p: (e, t_) for p, e, t_ in _profile_values(base["profiles"])}
+    for i, (path, en, tr) in enumerate(_profile_values(now["profiles"]), 1):
+        en0, tr0 = old_nav.get(path, (None, None))
+        if (en0, tr0) != (en, tr):
+            out.append({"id": f"N{i}", "anchor": f"n{i}", "label": path,
+                        "en": (en0, en), "tr": (tr0, tr)})
+    return out
+
+
+def _change_cell(lang: str, pair: tuple[str | None, str]) -> str:
+    old, new = pair
+    if old == new:
+        body = '<span class="none">(unchanged)</span>'
+    elif old is None:
+        body = f'<span class="none">(new)</span> {mark(new)}'
+    else:
+        body = (f'<del>{mark(old) if old else "(empty)"}</del>'
+                f'<span class="to">→</span><ins>{mark(new) if new else "(empty)"}</ins>')
+    return f'<td class="{lang}" lang="{lang}" data-l="{lang.upper()}">{body}</td>'
+
+
+def changes_html(rows: list[dict] | None) -> str:
+    if rows is None:
+        return (f'<p class="none">The reviewed version ({BASE_REV}) is not available here '
+                '(no git checkout), so the changes cannot be listed.</p>')
+    if not rows:
+        return '<p class="none">Nothing has changed since your review.</p>'
+    body = "".join(
+        f'<tr class="row chg"><td class="id"><a href="#{r["anchor"]}">{html.escape(r["id"])}</a></td>'
+        f'<td class="key"><code>{html.escape(r["label"])}</code></td>'
+        f'{_change_cell("en", r["en"])}{_change_cell("tr", r["tr"])}</tr>'
+        for r in rows)
+    return ('<table class="pairs"><thead><tr><th>Id</th><th>Key / where</th><th>English</th>'
+            f'<th>Turkish</th></tr></thead><tbody>{body}</tbody></table>')
+
+
 # --- HTML --------------------------------------------------------------------------------
 
 _MARK = re.compile(r"\{\{&lt;.*?&gt;\}\}|`\{python\}[^`]*`|%\{[^{}]*\}|\{[^{}\n]{1,80}\}")
@@ -451,6 +572,7 @@ td.en,td.tr{white-space:pre-wrap}
 .eg{margin-top:4px;font-size:.85rem;color:var(--muted);white-space:normal}.eg span{font-style:italic}
 .same{display:inline-block;font-size:.72rem;border:1px solid var(--line);border-radius:3px;padding:0 3px}
 .none{color:var(--muted);font-style:italic}
+del{color:var(--muted)}ins{text-decoration:none;font-weight:500}.to{display:block;color:var(--accent);font-weight:700}
 .q{background:var(--q);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
 .q h3{margin:0 0 2px}.q .src{font-size:.8rem;color:var(--muted);margin:0 0 6px}
 .q .sug{margin:8px 0 0}.q .sug b{color:var(--accent)}
@@ -465,12 +587,18 @@ nav.toc{columns:1}.note{font-size:.78rem;padding:6px 16px}[id]{scroll-margin-top
 
 
 def build(site_dir: Path, out: Path, *, src_dir: Path = SITE, en: dict | None = None,
-          tr: dict | None = None, questions: list | None = None) -> dict:
-    """Write the pack to ``out`` and return its counts."""
+          tr: dict | None = None, questions: list | None = None,
+          changed: list | None | bool = True) -> dict:
+    """Write the pack to ``out`` and return its counts. ``changed`` is the "Changed since
+    your review" rows; by default they are worked out against BASE_REV for the real site
+    (``src_dir`` = site/), and left out (None: "not available") for another source."""
     site_dir, src_dir = Path(site_dir), Path(src_dir)
     en = i18n.strings("en") if en is None else en
     tr = i18n.strings("tr") if tr is None else tr
     questions = load_questions() if questions is None else questions
+    if changed is True:
+        base = load_base() if src_dir.resolve() == SITE.resolve() else None
+        changed = changes(base, current_sources(src_dir)) if base else None
     rows = collect_keys(en, tr)
     by_key = {r["key"]: r for r in rows}
     egs = examples(rows, rendered_texts(site_dir))
@@ -515,6 +643,17 @@ def build(site_dir: Path, out: Path, *, src_dir: Path = SITE, en: dict | None = 
                 '<p class="lede">Open points gathered from the task reports and reviews, merged. '
                 'Answer "Q3: keep" or "Q5: option B", or give your own wording.</p>'
                 + "".join(qs) + "</section>")
+
+    # 1b. Changed since the review
+    stats["changed"] = len(changed) if changed is not None else None
+    n_changed = "" if changed is None else f" ({len(changed)})"
+    toc.append(f'<a href="#changed">Changed since your review{n_changed}</a>')
+    body.append('<section id="changed"><h2>Changed since your review</h2>'
+                f'<p class="lede">Every row that differs from the pack you reviewed (commit '
+                f'<code>{BASE_REV}</code>): your decisions, then the naturalness pass. '
+                'Struck-through text is the old wording, the text after → is the new one. '
+                'The id links to the row below; workbook cells come from these strings.</p>'
+                + changes_html(changed) + "</section>")
 
     # 2. Pages: title/description, prose, strings
     meta_n = prose_n = 0
@@ -650,6 +789,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {out}")
     print(f"keys: {stats['keys']}")
     print(f"questions: {stats['questions']}")
+    print(f"changed since the review ({BASE_REV}): {stats['changed']}")
     print(f"titles/descriptions: {stats['meta']}  navbar/footer rows: {stats['nav']}  "
           f"workbook rows: {stats['workbook']}")
     print(f"prose pairs: {stats['prose_pairs']}")
