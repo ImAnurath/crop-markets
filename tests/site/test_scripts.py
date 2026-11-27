@@ -293,3 +293,14 @@ def test_workflow_warns_about_countries_instead_of_failing():
     warn = next(i for i, r in enumerate(runs) if "scripts/check_countries.py" in r)
     gate = next(i for i, r in enumerate(runs) if "scripts/build_site_data.py" in r)
     assert warn > gate and steps[warn].get("continue-on-error") is True
+
+
+def test_workflow_run_scripts_have_no_literal_escapes():
+    # A literal "\n" inside a run: block reaches bash as the argument "n"
+    # (it broke pytest's arguments once); line continuations must be real.
+    import yaml
+
+    workflow = SCRIPTS.parent / ".github" / "workflows" / "refresh-site.yml"
+    for job in yaml.safe_load(workflow.read_text(encoding="utf-8"))["jobs"].values():
+        for step in job.get("steps", []):
+            assert "\\n" not in step.get("run", ""), step.get("name")
