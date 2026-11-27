@@ -144,8 +144,8 @@ def test_turkish_formats(turkish):
 @pytest.mark.parametrize("fn", [i18n.fmt_usd, i18n.fmt_number, i18n.fmt_tonnes, i18n.fmt_pct,
                                 i18n.fmt_signed])
 def test_missing_values_show_n_a(fn):
-    assert fn(None) == "n/a"
-    assert fn(float("nan")) == "n/a"
+    assert fn(None) == "N/A"
+    assert fn(float("nan")) == "N/A"
 
 
 def test_as_of_stamp_in_turkish(turkish):
@@ -192,11 +192,20 @@ def test_country_key_folds_comtrade_names():
     assert i18n.country_key("usa") == "usa"
 
 
+# English names that deliberately differ from UN Comtrade's (the owner's choice).
+EN_RENAMED = {"country.state_of_palestine": ("State of Palestine", "Palestine")}
+
+
 def test_every_english_country_entry_is_its_own_comtrade_name():
-    # So country_name leaves every English page exactly as it was.
+    # So country_name leaves every English page exactly as it was, apart from EN_RENAMED.
     countries = {k: v for k, v in i18n.strings("en").items() if k.startswith("country.")}
     assert len(countries) >= 160
     for key, name in countries.items():
+        if key in EN_RENAMED:
+            comtrade, shown = EN_RENAMED[key]
+            assert name == shown and key == f"country.{i18n.country_key(comtrade)}"
+            assert i18n.country_name(comtrade) == shown
+            continue
         assert key == f"country.{i18n.country_key(name)}"
         assert i18n.country_name(name) == name
 

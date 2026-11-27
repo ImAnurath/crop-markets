@@ -5,7 +5,7 @@
 # Plotly placeholders such as %{y:.2f} or %{x} pass through untouched.
 # Crop-specific strings sit under the crop's slug (crop.hazelnut, hazelnut.*).
 
-na: "n/a"
+na: "N/A"
 
 format:
   decimal: "."
@@ -20,6 +20,8 @@ format:
   day_month_year: "{day} {month} {year}"
   # The browser locale for numbers the explorer formats (toLocaleString).
   locale: "en-US"
+  # The month cells of the explorer's download (an Excel number format).
+  xlsx_month: "mmm yyyy"
 
 month:
   1: "January"
@@ -89,8 +91,8 @@ crop:
   hazelnut:
     name: "Hazelnut"
     country: "Turkey"
-    # The local currency's name in the overview's price tile ("Price, lira").
-    local_name: "lira"
+    # The local currency's label in the overview's price tile ("Price, TL").
+    local_name: "TL"
 
 overview:
   eyebrow: "Crops / {crop} / {exchanges}"
@@ -124,7 +126,7 @@ strip:
   change_on_month: "{change} on {month}"
   change_on_year: "{change} on {year}"
   since_peak: "since {month} ({price})"
-  peak_na: "peak n/a"
+  peak_na: "peak N/A"
   no_estimate: "no estimate yet"
   no_earlier_year: "no earlier year to compare"
 
@@ -675,40 +677,41 @@ hazelnut:
       pinball_link: "pinball loss"
       ranges_foot: "Held: share of months the actual price fell inside the range. Width: the average 8-in-10 range, USD per kg. {skill}: 1 minus the method's {pinball} (averaged over five quantiles) divided by the first row's; above 0 would beat it. Development period."
       lira_split_title: "Last USD price × the lira's depreciation trend"
-      lira_split_fallback: "Error divided by lira naive's, crisis and calm months."
-      lira_split_foot: "{mape} divided by lira naive's, development period (36-month trend). Lira crises: {periods}. This is the lira's own depreciation trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no hazelnut-market signal."
-      lira_title: "Lira forecasts against lira naive"
-      lira_fallback: "Error divided by lira naive's, all months."
+      lira_split_fallback: "Error divided by TL naive's, crisis and calm months."
+      lira_split_foot: "{mape} divided by TL naive's, development period (36-month trend). Lira crises: {periods}. This is the lira's own depreciation trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no hazelnut-market signal."
+      lira_title: "TL forecasts against TL naive"
+      lira_fallback: "Error divided by TL naive's, all months."
       # lira.tail_* {trend} and {caveat}.
       lira_trend_words: "the depreciation-trend forecasts"
       lira_caveat: "suggestive ({n} variants tried)"
       mape_head: "MAPE ÷ naive's"
       mae_head: "MAE ÷ naive's"
-      lira_caption: "Lira forecasts: error divided by lira naive's, all months"
+      lira_caption: "TL forecasts: error divided by TL naive's, all months"
       dm_link: "Diebold-Mariano test"
-      lira_foot: "Development period, all months. MAPE is the fair measure here; MAE is dominated by the high-inflation years. {dm} on |log error| against lira naive, all months: {p_note} Six FX variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for the calm or crisis months alone would be approximate (their months are not consecutive) and are not shown. The sixth variant, spot plus 12-month drift, is in {csv}."
+      lira_foot: "Development period, all months. MAPE is the fair measure here; MAE is dominated by the high-inflation years. {dm} on |log error| against TL naive, all months: {p_note} Six FX variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for the calm or crisis months alone would be approximate (their months are not consecutive) and are not shown. The sixth variant, spot plus 12-month drift, is in {csv}."
       # The lira methods whose p-values the foot gives (lira.p_part {name}).
       lira_trend:
         composed_fx_drift_36: "FX drift, 36 m"
         composed_fx_infl: "inflation rule"
       # The rows of the lira table.
       lira_method:
-        naive: "Lira naive"
-        try_drift_36: "Lira drift, 36 m"
-        try_drift_12: "Lira drift, 12 m"
+        naive: "TL naive"
+        try_drift_36: "TL drift, 36 m"
+        try_drift_12: "TL drift, 12 m"
         composed_fx_drift_36: "USD naive × FX drift, 36 m"
         composed_fx_drift_12: "USD naive × FX drift, 12 m"
         composed_fx_infl: "USD naive × inflation gap"
         composed_fx_spot: "USD naive × FX spot"
         composed_fx_spot_drift_36: "USD naive × spot + drift, 36 m"
-        try_sarima: "SARIMA on lira"
-        try_lightgbm: "LightGBM on lira"
+        try_sarima: "SARIMA on TL"
+        try_lightgbm: "LightGBM on TL"
 
 # --- Countries ---------------------------------------------------------------------------
 # Export destinations as UN Comtrade names them, keyed by i18n.country_key (the name
 # folded to ASCII, lower case, runs of other characters as "_"). i18n.country_name
 # shows the active language's name; a name without an entry is shown as it is.
-# Each English value is the Comtrade name itself, so English pages are unchanged.
+# Each English value is the Comtrade name itself, except "State of Palestine", shown as
+# "Palestine" (the owner's choice).
 country:
   afghanistan: "Afghanistan"
   albania: "Albania"
@@ -849,7 +852,7 @@ country:
   south_africa: "South Africa"
   spain: "Spain"
   sri_lanka: "Sri Lanka"
-  state_of_palestine: "State of Palestine"
+  state_of_palestine: "Palestine"
   sudan: "Sudan"
   sudan_2011: "Sudan (...2011)"
   sweden: "Sweden"

@@ -41,10 +41,10 @@ An honest 80% range covers about 80% of months. Much less means the range is too
 Season (September to August)
 Prices and crops are grouped by marketing season, the September-to-August year that exporters work on, not by calendar year.
 A season is labelled by its two years: 2025/26 runs from September 2025 to August 2026.
-Turkish lira data only
+TL data only
 Old lira
-On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. Lira prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.
-Lira prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.
+On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. TL prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.
+TL prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.
 Glossary
 The forecasting methods, in plain language
 Seasonal naive
@@ -52,7 +52,7 @@ Takes the latest price and applies the average percentage change that prices mad
 SARIMA
 A classic statistical model of the price history. It looks for a steady drift, for patterns that follow from recent months, and for a yearly cycle. It is fitted to the log of the price and uses nothing but the price itself.
 SARIMAX
-SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (US dollars to lira). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.
+SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (USD/TL). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.
 Chronos-Bolt
 A ready-made forecasting model (the small size of Amazon's Chronos-Bolt) that was trained on many other time series. We use it as it comes, with no training on our data. It reads only the price history and its forecast is its median guess.
 LightGBM
@@ -60,13 +60,13 @@ A machine-learning method built from many small decision trees. For each number 
 Season regression
 Forecasts the average price of the coming season, not single months. It fits a straight line to past seasons: how much the season's average price changed against how much the crop estimate changed. It needs the crop estimate, so before the estimate comes out in August the naive forecast stands in.
 MAPE (mean absolute percentage error)
-How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with lira prices across decades of inflation, because a percentage stays comparable.
+How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with TL prices across decades of inflation, because a percentage stays comparable.
 Pinball loss
 The score for a range forecast. A quantile is a cut-off the price should stay below a set share of the time (the 90th percentile: nine times in ten). Each quantile is penalised for how far the price lands from it, unevenly on purpose: for the 90th, a price above the forecast costs nine times a price below it. The site averages it over five quantiles; lower is better.
 Skill
 How much better a forecast did than a baseline: 1 minus its error divided by the baseline's. Above 0 beats the baseline, 0 ties it, and below 0 is worse. For point forecasts the error is MAE and the baseline is naive; for ranges it is pinball loss and the baseline is the naive range.
 Statistical tests (p-value)
-The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.
+The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the TL forecasts.
 FOB (free on board)
 An export's value counted at the port of departure, before freight and insurance to the buyer are added. The export values on this site are FOB.
 In practice

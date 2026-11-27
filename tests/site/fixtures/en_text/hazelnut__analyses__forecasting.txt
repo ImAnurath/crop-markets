@@ -12,7 +12,7 @@ Excel
 [title] Toggle dark mode
 [aria-label] Toggle dark mode
 Hazelnut price forecasting
-Every forecasting method we tried against naive (the price stays where it is): the development scoreboard, calm and shock months, the holdout, ranges, crop estimates and the lira.
+Every forecasting method we tried against naive (the price stays where it is): the development scoreboard, calm and shock months, the holdout, ranges, crop estimates and TL forecasts.
 Crops / Hazelnut / Analyses / Forecasting
 Can anything beat "the price stays where it is"?
 Data as of October 2026 · refreshed weekly (some sources from December 2025)
@@ -285,15 +285,15 @@ $1.13
 −0.22
 −0.24
 Held: share of months the actual price fell inside the range. Width: the average 8-in-10 range, USD per kg. Skill: 1 minus the method's pinball loss (averaged over five quantiles) divided by the first row's; above 0 would beat it. Development period.
-Lira prices
-Forecasting in lira
+TL prices
+Forecasting in TL
 Last USD price × the lira's depreciation trend
 In the crisis months its error was 7% to 39% below naive's; in calm months it was within 2% of naive's.
-MAPE divided by lira naive's, development period (36-month trend). Lira crises: May to December 2018 and September 2021 to December 2023. This is the lira's own depreciation trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no hazelnut-market signal.
-Lira forecasts against lira naive
+MAPE divided by TL naive's, development period (36-month trend). Lira crises: May to December 2018 and September 2021 to December 2023. This is the lira's own depreciation trend, in the 2018-24 crisis years, suggestive (6 variants tried); it is no hazelnut-market signal.
+TL forecasts against TL naive
 In percent terms nothing beat naive at 1 month; at 3 and 6 months the depreciation-trend forecasts had 3% to 7% lower error, suggestive (6 variants tried).
 [data-scroll-hint] Scroll for more →
-Lira forecasts: error divided by lira naive's, all months
+TL forecasts: error divided by TL naive's, all months
 MAPE ÷ naive's
 MAE ÷ naive's
 Method
@@ -303,21 +303,21 @@ Method
 1 mo
 3 mo
 6 mo
-Lira naive
+TL naive
 1.00
 1.00
 1.00
 1.00
 1.00
 1.00
-Lira drift, 36 m
+TL drift, 36 m
 1.07
 1.12
 1.17
 1.08
 0.99
 0.86
-Lira drift, 12 m
+TL drift, 12 m
 1.14
 1.22
 1.30
@@ -359,21 +359,21 @@ USD naive × spot + drift, 36 m
 1.06
 0.89
 0.75
-SARIMA on lira
+SARIMA on TL
 1.06
 1.08
 1.08
 1.04
 0.94
 0.84
-LightGBM on lira
+LightGBM on TL
 1.05
 1.12
 1.17
 1.04
 0.98
 0.88
-Development period, all months. MAPE is the fair measure here; MAE is dominated by the high-inflation years. Diebold-Mariano test on |log error| against lira naive, all months: FX drift, 36 m: p = 0.70 / 0.06 / 0.01 at 1 / 3 / 6 months; inflation rule: p = 0.94 / 0.05 / 0.01 at 1 / 3 / 6 months. Six FX variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for the calm or crisis months alone would be approximate (their months are not consecutive) and are not shown. The sixth variant, spot plus 12-month drift, is in lira.csv.
+Development period, all months. MAPE is the fair measure here; MAE is dominated by the high-inflation years. Diebold-Mariano test on |log error| against TL naive, all months: FX drift, 36 m: p = 0.70 / 0.06 / 0.01 at 1 / 3 / 6 months; inflation rule: p = 0.94 / 0.05 / 0.01 at 1 / 3 / 6 months. Six FX variants were tried, so treat p = 0.01 as suggestive, not conclusive; p-values for the calm or crisis months alone would be approximate (their months are not consecutive) and are not shown. The sixth variant, spot plus 12-month drift, is in lira.csv.
 All analyses
 Crop Markets · data refreshed weekly from public sources · Sources and credits
 Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

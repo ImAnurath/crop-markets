@@ -230,3 +230,15 @@ def test_render_site_moves_the_turkish_sitemap_to_the_root_robots_and_drops_root
     assert (tmp_path / "robots.txt").read_text("utf-8").splitlines() == [
         "Sitemap: https://x.org/cm/sitemap.xml", "Sitemap: https://x.org/cm/tr/sitemap.xml"]
     assert sorted(p.name for p in (tmp_path / "tr").iterdir()) == ["index.html", "sitemap.xml"]
+
+
+def test_render_site_names_the_site_once_in_a_turkish_tab_title(tmp_path):
+    render_site = _load("render_site")
+    (tmp_path / "tr" / "m").mkdir(parents=True)
+    home, page = tmp_path / "tr" / "index.html", tmp_path / "tr" / "m" / "methods.html"
+    home.write_text("<title>Ürün Piyasaları – Ürün Piyasaları</title>", "utf-8")
+    page.write_text("<title>Yöntemler – Ürün Piyasaları</title>", "utf-8")
+    render_site.finish_tree(tmp_path, "tr")
+    render_site.finish_tree(tmp_path, "tr")
+    assert home.read_text("utf-8") == "<title>Ürün Piyasaları</title>"
+    assert page.read_text("utf-8") == "<title>Yöntemler – Ürün Piyasaları</title>"

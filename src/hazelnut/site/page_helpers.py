@@ -32,7 +32,7 @@ def _missing(x) -> bool:
 
 
 def na() -> str:
-    """The text for a missing value: ``n/a``."""
+    """The text for a missing value: ``N/A``."""
     return t("na")
 
 
@@ -1157,7 +1157,8 @@ def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[
     ``extras`` are its columns other than the month and the currency prices (the visitor
     can show or hide them); ``source`` and ``terms`` come from the provider row that
     starts with its name. ``ui``, ``locale`` (for ``toLocaleString``) and ``months`` (short
-    names) put the explorer in the active language; ``downloads_url`` is that language's
+    names) put the explorer in the active language, and ``month_format`` (an Excel number
+    format) gives its download's month cells that language's month names; ``downloads_url`` is that language's
     Downloads page."""
     usd_label, usd_col = base_currency()
     currencies = [{"label": usd_label, "column": usd_col},
@@ -1183,6 +1184,7 @@ def explorer_config(crop: CropConfig, sheets: Mapping, exchange_sheets: Mapping[
     return {"slug": crop.slug, "name": i18n.crop_name(crop), "currencies": currencies,
             "exchanges": exchanges, "ui": explorer_ui(), "locale": t("format.locale"),
             "months": [month_name(m, short=True) for m in range(1, 13)],
+            "month_format": t("format.xlsx_month"),
             "downloads_url": f"{i18n.site_url()}downloads.html"}
 
 

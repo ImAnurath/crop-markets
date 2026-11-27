@@ -2,7 +2,7 @@
 title: "Hazelnut analyses"
 title-tr: "Fındık analizleri"
 description: "Seasons, export markets, crop size and frost, the Giresun and Ordu exchanges, and how the price forecasts scored."
-description-tr: "Sezonlar, ihracat pazarları, rekolte ve don, Giresun ve Ordu borsaları ve fiyat tahminlerinin aldığı puanlar."
+description-tr: "Sezonlar, ihracat pazarları, hasat ve don, Giresun ve Ordu borsaları ve fiyat tahminlerinin aldığı puanlar."
 ---
 
 ```{python}

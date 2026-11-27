@@ -276,11 +276,11 @@ def test_metric_table_html_two_groups_have_a_spanning_header_and_na():
     df.loc[(df["method"] == "sarima") & (df["horizon"] == 3), "mae"] = np.nan
     html = ph.metric_table_html(
         df, [("Ratio", "ratio", ph.fmt_ratio(2)), ("MAE", "mae", ph.fmt_usd)],
-        caption="c", names={"naive": "Lira naive"}.get,
+        caption="c", names={"naive": "TL naive"}.get,
     )
     assert html.count('colspan="2"') == 2
-    assert "Lira naive" in html
-    assert "n/a" in html
+    assert "TL naive" in html
+    assert "N/A" in html
 
 
 def test_formatters():
@@ -291,7 +291,7 @@ def test_formatters():
     assert ph.fmt_signed(0.176) == "+0.18"
     assert ph.fmt_p(0.0114) == "0.01" and ph.fmt_p(0.0002) == "<0.001"
     assert ph.fmt_p(0.0095) == "0.01" and ph.fmt_p(0.004) == "0.004"
-    assert ph.fmt_p(float("nan")) == "n/a"
+    assert ph.fmt_p(float("nan")) == "N/A"
 
 
 # --- forecasting takeaways --------------------------------------------------------------
@@ -556,7 +556,7 @@ def test_crop_check_in_turkish_names_the_national_estimate(turkish):
         "SARIMAX, Giresun, zamanında", "SARIMAX, Giresun, bir ay gecikmeli",
         "SARIMAX, Ulusal, bir ay gecikmeli"]
     sub = ph.crop_check_subtitle(_dev_for_check(), _check(), main_source="giresun")
-    assert sub == ("Her rekolte tahminini bir ay sonraya kaydırmak puanları en fazla 0,03 "
+    assert sub == ("Her hasat tahminini bir ay sonraya kaydırmak puanları en fazla 0,03 "
                    "değiştirdi; yani zamanlama kuralı bir veri sızıntısı belirtisi göstermiyor. "
-                   "Bir ay gecikmeli bu zamanlamada ulusal rekolte tahmini, 4 yöntem-ufuk "
+                   "Bir ay gecikmeli bu zamanlamada ulusal hasat tahmini, 4 yöntem-ufuk "
                    "çiftinin 3 tanesinde daha kötü puan aldı.")

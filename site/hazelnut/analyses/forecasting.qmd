@@ -1,8 +1,8 @@
 ---
 title: "Hazelnut price forecasting"
 title-tr: "Fındık fiyatı tahmini"
-description: "Every forecasting method we tried against naive (the price stays where it is): the development scoreboard, calm and shock months, the holdout, ranges, crop estimates and the lira."
-description-tr: "Denediğimiz her tahmin yönteminin naif tahmine (fiyat olduğu yerde kalır) karşı sonuçları: geliştirme dönemi puan tablosu, sakin ve şok ayları, ayrılmış test dönemi, aralıklar, rekolte tahminleri ve TL cinsinden tahminler."
+description: "Every forecasting method we tried against naive (the price stays where it is): the development scoreboard, calm and shock months, the holdout, ranges, crop estimates and TL forecasts."
+description-tr: "Denediğimiz her tahmin yönteminin naif tahmine (fiyat olduğu yerde kalır) karşı sonuçları: geliştirme dönemi puan tablosu, sakin ve şok ayları, ayrılmış test dönemi, aralıklar, hasat tahminleri ve TL cinsinden tahminler."
 ---
 
 ```{python}
@@ -242,7 +242,7 @@ else:
 
 ::: {.content-visible when-profile="en"}
 ```{=html}
-<div class="sect analysis-sect"><div><span class="eyebrow">Lira prices</span><h2>Forecasting in lira</h2></div></div>
+<div class="sect analysis-sect"><div><span class="eyebrow">TL prices</span><h2>Forecasting in TL</h2></div></div>
 ```
 :::
 

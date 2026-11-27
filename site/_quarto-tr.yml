@@ -11,6 +11,8 @@ project:
   output-dir: _site/tr
 
 website:
+  # The brand on the Turkish pages (navbar, tab titles); English keeps "Crop Markets".
+  title: "Ürün Piyasaları"
   site-url: https://imanurath.github.io/crop-markets/tr/
   navbar:
     right:
@@ -30,7 +32,7 @@ website:
         href: downloads/hazelnut-market-data-tr.xlsx
         aria-label: Excel çalışma kitabının tamamını indirin
   page-footer:
-    left: "Crop Markets · veriler her hafta kamuya açık kaynaklardan yenilenir · [Kaynaklar ve atıflar](/downloads.qmd#src-hazelnut)"
+    left: "Ürün Piyasaları · veriler her hafta kamuya açık kaynaklardan yenilenir · [Kaynaklar ve atıflar](/downloads.qmd#src-hazelnut)"
     right: >-
       Kapak fotoğrafı: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
       [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), Wikimedia Commons üzerinden (kırpılmış)

@@ -86,10 +86,10 @@ ph.raw_html(f"""
     <p>A season is labelled by its two years: 2025/26 runs from September 2025 to August 2026.</p>
   </section>
   <section class="panel" id="old-lira">
-    <span class="pill tag">Turkish lira data only</span>
+    <span class="pill tag">TL data only</span>
     <h3>Old lira</h3>
-    <p>On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. Lira prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.</p>
-    <p>Lira prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.</p>
+    <p>On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. TL prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.</p>
+    <p>TL prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.</p>
   </section>
 </div>
 """)
@@ -122,7 +122,7 @@ ph.raw_html(f"""
   </section>
   <section class="panel" id="timing">
     <h3>Zamanlama kuralları (geleceğe bakmadan)</h3>
-    <p>Her girdi, anlattığı aydan değil, gerçekte bilinir hâle geldiği aydan itibaren kullanılır. Yaklaşık üç ay gecikmeyle yayımlanan ihracat rakamları üç ay gecikmeyle kullanılır; bir rekolte tahmini de normalde açıklandığı aydan itibaren kullanılır.</p>
+    <p>Her girdi, anlattığı aydan değil, gerçekte bilinir hâle geldiği aydan itibaren kullanılır. Yaklaşık üç ay gecikmeyle yayımlanan ihracat rakamları üç ay gecikmeyle kullanılır; bir hasat tahmini de normalde açıklandığı aydan itibaren kullanılır.</p>
     <p>Bu kurallar olmasaydı geriye dönük test, fark edilmeden yarının haberlerini kullanır ve gerçek hayatta hiçbir zaman ulaşılamayacak kadar iyi görünürdü.</p>
   </section>
   <section class="panel" id="holdout">
@@ -137,13 +137,13 @@ ph.raw_html(f"""
   </section>
   <section class="panel" id="season">
     <h3>Sezon (Eylül'den Ağustos'a)</h3>
-    <p>Fiyatlar ve rekolteler takvim yılına göre değil, pazarlama sezonuna göre gruplanır: ihracatçıların esas aldığı, Eylül'den Ağustos'a uzanan yıl.</p>
+    <p>Fiyatlar ve hasatlar takvim yılına göre değil, pazarlama sezonuna göre gruplanır: ihracatçıların esas aldığı, Eylül'den Ağustos'a uzanan yıl.</p>
     <p>Bir sezon iki yılıyla adlandırılır: 2025/26, Eylül 2025'ten Ağustos 2026'ya kadar sürer.</p>
   </section>
   <section class="panel" id="old-lira">
     <span class="pill tag">Yalnızca TL verileri</span>
     <h3>Eski lira</h3>
-    <p>Türkiye 1 Ocak 2005'te para biriminden altı sıfır attı: 1.000.000 eski lira, 1 yeni lira oldu. 2005 öncesindeki TL fiyatları yeni lira cinsinden gösterilir (eski değerler 1.000.000'a bölünür); böylece serinin tamamı tek bir ölçekte olur.</p>
+    <p>Türkiye 1 Ocak 2005'te para biriminden altı sıfır attı: 1.000.000 eski lira, 1 Yeni Türk Lirası (YTL) oldu. 2005 öncesindeki TL fiyatları yeni lira cinsinden gösterilir (eski değerler 1.000.000'a bölünür); böylece serinin tamamı tek bir ölçekte olur.</p>
     <p>TL fiyatları ayrıca onlarca yıllık yüksek enflasyonu da taşır. Tahminlerin ABD doları cinsinden yapılıp puanlanmasının nedeni budur.</p>
   </section>
 </div>
@@ -166,7 +166,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="sarimax">
     <h3>SARIMAX</h3>
-    <p>SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (US dollars to lira). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.</p>
+    <p>SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (USD/TL). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.</p>
   </section>
   <section class="panel" id="chronos-bolt">
     <h3>Chronos-Bolt</h3>
@@ -182,7 +182,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="mape">
     <h3>MAPE (mean absolute percentage error)</h3>
-    <p>How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with lira prices across decades of inflation, because a percentage stays comparable.</p>
+    <p>How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with TL prices across decades of inflation, because a percentage stays comparable.</p>
   </section>
   <section class="panel" id="pinball-loss">
     <h3>Pinball loss</h3>
@@ -194,7 +194,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="p-value">
     <h3>Statistical tests (p-value)</h3>
-    <p>The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.</p>
+    <p>The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the TL forecasts.</p>
   </section>
   <section class="panel" id="fob">
     <h3>FOB (free on board)</h3>
@@ -220,7 +220,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="sarimax">
     <h3>SARIMAX</h3>
-    <p>İki ek girdisi olan SARIMA: rekolte tahminindeki değişim ve dolar/TL kurundaki aylık değişim. Bilinen son aydan sonrası için rekolte değişimini olduğu yerde tutar ve kurun hareket etmeyeceğini varsayar.</p>
+    <p>İki ek girdisi olan SARIMA: hasat tahminindeki değişim ve dolar/TL kurundaki aylık değişim. Bilinen son aydan sonrası için hasat değişimini olduğu yerde tutar ve kurun hareket etmeyeceğini varsayar.</p>
   </section>
   <section class="panel" id="chronos-bolt">
     <h3>Chronos-Bolt</h3>
@@ -228,11 +228,11 @@ ph.raw_html("""
   </section>
   <section class="panel" id="lightgbm">
     <h3>LightGBM</h3>
-    <p>Çok sayıda küçük karar ağacından kurulan bir makine öğrenmesi yöntemi. İleriye dönük her ay sayısı için fiyat değişimini bir dizi girdiden öğrenir: fiyat düzeyi ve son değişimleri, takvim ayı, rekolte tahmininin açıklanmasından bu yana geçen ay sayısı, rekolte tahminindeki değişim, ilkbahardaki donlu gün sayısı, ihracattaki büyüme, borsadaki işlem hacmi ve kur hareketleri. Ayarları önceden sabitlendi ve her ay yeniden eğitilir.</p>
+    <p>Çok sayıda küçük karar ağacından kurulan bir makine öğrenmesi yöntemi. İleriye dönük her ay sayısı için fiyat değişimini bir dizi girdiden öğrenir: fiyat düzeyi ve son değişimleri, takvim ayı, hasat tahmininin açıklanmasından bu yana geçen ay sayısı, hasat tahminindeki değişim, ilkbahardaki donlu gün sayısı, ihracattaki büyüme, borsadaki işlem hacmi ve kur hareketleri. Ayarları önceden sabitlendi ve her ay yeniden eğitilir.</p>
   </section>
   <section class="panel" id="season-regression">
     <h3>Sezon regresyonu</h3>
-    <p>Tek tek ayları değil, gelecek sezonun ortalama fiyatını tahmin eder. Geçmiş sezonlara düz bir çizgi uydurur: sezonun ortalama fiyatı ne kadar değişti, rekolte tahmini ne kadar değişti. Rekolte tahminine ihtiyaç duyduğu için, tahmin Ağustos'ta açıklanmadan önce onun yerine naif tahmin kullanılır.</p>
+    <p>Tek tek ayları değil, gelecek sezonun ortalama fiyatını tahmin eder. Geçmiş sezonlara düz bir çizgi uydurur: sezonun ortalama fiyatı ne kadar değişti, hasat tahmini ne kadar değişti. Hasat tahminine ihtiyaç duyduğu için, tahmin Ağustos'ta açıklanmadan önce onun yerine naif tahmin kullanılır.</p>
   </section>
   <section class="panel" id="mape">
     <h3>Ortalama mutlak yüzde hata (MAPE)</h3>
@@ -240,7 +240,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="pinball-loss">
     <h3>Pinball kaybı</h3>
-    <p>Bir aralık tahmininin puanı. Kantil, fiyatın belirli bir oranda altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her kantil, fiyatın ondan ne kadar uzağa düştüğüne göre cezalandırılır; ceza bilerek eşit değildir: 90. yüzdelik için tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş kantil üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
+    <p>Bir aralık tahmininin puanı. Yüzdelik, fiyatın belirli bir oranda altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her yüzdelik, fiyatın ondan ne kadar uzağa düştüğüne göre cezalandırılır; ceza bilerek eşit değildir: 90. yüzdelik için tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş yüzdelik üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
   </section>
   <section class="panel" id="skill">
     <h3>Beceri</h3>

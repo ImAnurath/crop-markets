@@ -65,8 +65,8 @@ def test_tonnes_have_thousands_separators():
 
 @pytest.mark.parametrize("fn", [ph.fmt_usd, ph.fmt_number, ph.fmt_change, ph.fmt_tonnes])
 def test_missing_values_show_n_a(fn):
-    assert fn(None) == "n/a"
-    assert fn(float("nan")) == "n/a"
+    assert fn(None) == "N/A"
+    assert fn(float("nan")) == "N/A"
 
 
 # --- months -----------------------------------------------------------------------------
@@ -138,7 +138,7 @@ def test_output_month_label():
 # --- stat strip -------------------------------------------------------------------------
 
 def strip(stats=STATS):
-    return ph.market_strip_html(stats, local_name="lira", local=LocalCurrency("TL", "try_kg"), crop_source="Giresun")
+    return ph.market_strip_html(stats, local_name="TL", local=LocalCurrency("TL", "try_kg"), crop_source="Giresun")
 
 
 def test_strip_shows_the_four_stats_from_stats_json():
@@ -146,7 +146,7 @@ def test_strip_shows_the_four_stats_from_stats_json():
     assert html.count('class="stat"') == 4
     for text in [
         "Price, USD", "$4.28<small> /kg</small>",
-        "Price, lira", "208.15<small> TL/kg</small>",
+        "Price, TL", "208.15<small> TL/kg</small>",
         "From the peak", "−43.5%", "since May 2015 ($7.59)",
         "Giresun crop estimate, 2026", "86,440<small> t</small>",
     ]:
@@ -159,7 +159,7 @@ def test_strip_shows_the_four_stats_from_stats_json():
 
 
 def test_strip_label_names_the_crop_source_and_year():
-    html = ph.market_strip_html(STATS, local_name="lira", local=LocalCurrency("TL", "try_kg"),
+    html = ph.market_strip_html(STATS, local_name="TL", local=LocalCurrency("TL", "try_kg"),
                                 crop_source="Ordu")
     assert "Ordu crop estimate, 2026" in html and "Giresun" not in html
 
@@ -168,7 +168,7 @@ def test_strip_without_a_crop_estimate():
     stats = dict(STATS, crop_estimate_t=None, crop_yoy=None, crop_year=None)
     html = strip(stats)
     assert "Giresun crop estimate<" in html
-    assert ">n/a<" in html
+    assert ">N/A<" in html
     assert "no estimate yet" in html
     assert "None" not in html and "nan" not in html
 
@@ -183,7 +183,7 @@ def test_strip_with_missing_changes_and_peak():
     stats = dict(STATS, usd_mom=None, try_mom=None, from_peak=None, peak_usd=None, peak_month=None)
     html = strip(stats)
     assert "None" not in html
-    assert html.count("<span>n/a</span> on August") == 2
+    assert html.count("<span>N/A</span> on August") == 2
     assert "class=\"down\"" not in html.split("From the peak")[0]
 
 
@@ -290,7 +290,7 @@ def test_strip_and_meta_row_in_turkish(turkish):
         "Bu ayki piyasa", "Veriler Eylül 2026 itibarıyla",
         "Fiyat, USD", "4,28 $<small> /kg</small>", "208,15<small> TL/kg</small>",
         "Zirveden bu yana", "−%43,5", "zirve: Mayıs 2015 (7,59 $)",
-        "Giresun rekolte tahmini, 2026", "86.440<small> t</small>",
+        "Giresun hasat tahmini, 2026", "86.440<small> t</small>",
         'Ağustos ayına göre <span class="down">−%5,3</span>',
         "2025 yılına göre <span>+%31,5</span>",
     ]:

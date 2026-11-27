@@ -2,7 +2,7 @@
 title: "Hazelnut overview"
 title-tr: "Fındık: genel bakış"
 description: "Turkish hazelnut prices, exports, crop size and forecasts, from the Giresun and Ordu commodity exchanges and other public sources."
-description-tr: "Türk fındığının fiyatları, ihracatı, rekoltesi ve tahminleri; Giresun ve Ordu ticaret borsalarından ve diğer kamuya açık kaynaklardan."
+description-tr: "Türk fındığının fiyatları, ihracatı, hasadı ve tahminleri; Giresun ve Ordu ticaret borsalarından ve diğer kamuya açık kaynaklardan."
 ---
 
 ```{python}
@@ -39,7 +39,7 @@ Thirty years of exchange prices, where the exports go, how big the crop is, and 
 # Dünyadaki fındığın üçte ikisi Türkiye'de yetişiyor. *İşte o fındığın piyasası.*
 
 ::: {.lede}
-Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, rekoltenin ne kadar büyük olduğu ve havanın rekolteyi nasıl etkilediği. Hepsi her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
+Otuz yıllık borsa fiyatları, ihracatın nereye gittiği, hasadın ne kadar büyük olduğu ve havanın hasadı nasıl etkilediği. Hepsi her hafta otomatik olarak toplanır, temizlenir ve sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
 :::
 
 ::: {.btns}
@@ -114,7 +114,7 @@ ph.raw_html(
 ```{=html}
 <div class="sect"><div><span class="eyebrow">Keşfedin</span><h2>Verilere dört giriş yolu</h2></div></div>
 <nav class="explore" aria-label="Verileri keşfedin">
-  <a href="dashboard.qmd"><h3>Gösterge paneli <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Fiyat, ihracat, rekolte ve tahmin aralığı, hepsi tek sayfada.</p></a>
+  <a href="dashboard.qmd"><h3>Gösterge paneli <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Fiyat, ihracat, hasat ve tahmin aralığı, hepsi tek sayfada.</p></a>
   <a href="analyses/index.qmd"><h3>Analizler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Sezonlar, ihracat pazarları, don yılları, Giresun ile Ordu karşılaştırması.</p></a>
   <a href="explorer.qmd"><h3>Veri gezgini <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Tüm aylık kayıtlar. Filtreleyin, sonra Excel'de yanınıza alın.</p></a>
   <a href="../methods.qmd"><h3>Yöntemler <svg class="ico" aria-hidden="true"><use href="#arrow-right"/></svg></h3><p>Her sayının nasıl üretildiği; sade bir dille, açıklanmamış terim bırakmadan.</p></a>

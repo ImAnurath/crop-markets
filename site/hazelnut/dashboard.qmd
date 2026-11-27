@@ -2,7 +2,7 @@
 title: "Hazelnut dashboard"
 title-tr: "Fındık gösterge paneli"
 description: "Giresun hazelnut prices, the six-month price range, export destinations, crop size against price, and how the forecasts scored against naive."
-description-tr: "Giresun fındık fiyatları, altı aylık fiyat aralığı, ihracat pazarları, rekoltenin fiyatla ilişkisi ve tahminlerin naif tahmine karşı aldığı puanlar."
+description-tr: "Giresun fındık fiyatları, altı aylık fiyat aralığı, ihracat pazarları, hasadın fiyatla ilişkisi ve tahminlerin naif tahmine karşı aldığı puanlar."
 ---
 
 ```{python}

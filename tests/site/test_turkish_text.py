@@ -3,7 +3,8 @@ TRANSLATED (navbar and footer included), read with scripts/snapshot_text.py's ex
 holds none of a compact list of common English words.
 
 Pages join TRANSLATED as their Turkish prose lands (Task 6 batches). Names that stay as
-they are in Turkish (sources, method names, the site's brand) are removed before the scan.
+they are in Turkish (sources, method names) are removed before the scan. The Turkish pages
+carry the Turkish brand, "Ürün Piyasaları" (the owner's choice); English keeps "Crop Markets".
 
 The stop-word list catches untranslated sentences. It does not catch short English
 fragments made of words outside the list (a lone label such as "Calm"), and it never sees
@@ -58,7 +59,6 @@ ENGLISH_WORDS = frozenset("""
 
 # Names kept as they are in Turkish (site/i18n/glossary.md): removed before the scan.
 ALLOWED = (
-    "Crop Markets",
     "UN Comtrade", "FAOSTAT", "TOBB", "Open-Meteo", "ECB", "OECD",
     "SARIMAX", "SARIMA", "Chronos-Bolt", "LightGBM", "FOB",
     "GitHub", "LinkedIn", "Wikimedia Commons", "CC BY-SA 4.0", "CC BY 4.0", "Excel",
@@ -105,7 +105,8 @@ def tr_block(html: str) -> str:
 
 
 def test_english_words_skips_turkish_and_allowed_names():
-    assert english_words("Fiyat, USD · İhracat için UN Comtrade; Crop Markets") == []
+    assert english_words("Fiyat, USD · İhracat için UN Comtrade; Ürün Piyasaları") == []
+    assert english_words("Ürün Piyasaları · Crop Markets") == ["Crop", "Markets"]
     assert english_words("Türkiye'de the price, için") == ["the", "price"]
     assert english_words("SARIMA ile naif tahmin; Prices in TL") == ["Prices", "in"]
     assert english_words("1'in üzeri, Türkiye’de") == []
@@ -138,3 +139,23 @@ def test_turkish_block_of_root_page_has_no_english(page):
     block = tr_block((RENDERED / page).read_text(encoding="utf-8"))
     assert block, f"{page} has no lang=\"tr\" block"
     assert english_lines(snapshot.page_text(block)) == []
+
+
+BRAND_TR = "Ürün Piyasaları"
+
+
+@pytest.mark.skipif(not TR_TREE.is_dir(), reason="Turkish tree not rendered (run scripts/render_site.py)")
+@pytest.mark.parametrize("page", TRANSLATED)
+def test_turkish_page_carries_the_turkish_brand(page):
+    html = (TR_TREE / page).read_text(encoding="utf-8")
+    assert "Crop Markets" not in html
+    title = re.search(r"<title>(.*?)</title>", html, re.S).group(1).strip()
+    assert title == BRAND_TR or title.endswith(f" – {BRAND_TR}"), title
+    assert re.search(rf'class="navbar-title">\s*{BRAND_TR}\s*<', html)
+    assert f"{BRAND_TR} · veriler" in html  # the footer
+
+
+@pytest.mark.skipif(not RENDERED.is_dir(), reason="site/_site not rendered (run scripts/render_site.py)")
+def test_turkish_block_of_404_names_the_turkish_brand():
+    html = (RENDERED / "404.html").read_text(encoding="utf-8")
+    assert f'data-title="Sayfa bulunamadı – {BRAND_TR}"' in html

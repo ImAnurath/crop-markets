@@ -69,7 +69,7 @@ Monthly exchange prices, as published. Whatever you filter is what you download.
 
 ::: {.content-visible when-profile="tr"}
 ::: {.lede .explorer-lede}
-Aylık borsa fiyatları, yayımlandığı gibi. İndirdiğiniz dosya, filtrelediğiniz görünümün aynısıdır. İhracatı, rekolte büyüklüklerini ve tahmin puanlarını da içeren tam çalışma kitabı [İndirmeler](../downloads.qmd) sayfasında.
+Aylık borsa fiyatları, yayımlandığı gibi. İndirdiğiniz dosya, filtrelediğiniz görünümün aynısıdır. İhracatı, hasat miktarlarını ve tahmin puanlarını da içeren tam çalışma kitabı [İndirmeler](../downloads.qmd) sayfasında.
 :::
 :::
 
@@ -252,13 +252,14 @@ fmtCell = (v, c) => {
   return v.toLocaleString(explorer.locale, {minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals});
 }
 
-// One spreadsheet cell: months become real dates shown as "Sep 2026", numbers keep their
+// One spreadsheet cell: months become real dates shown as "Sep 2026" (in the page's
+// language: explorer.month_format), numbers keep their
 // full value with the table's number format, and missing values stay empty.
 xlsxCell = (v, c) => {
   if (v === null || v === undefined || v === "" || Number.isNaN(v)) return null;
   if (c.key === "month") {
     const serial = (Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, 1) - Date.UTC(1899, 11, 30)) / 864e5;
-    return {t: "n", v: serial, z: "mmm yyyy"};
+    return {t: "n", v: serial, z: explorer.month_format};
   }
   if (c.decimals === null) return {t: "s", v: String(v)};
   return {t: "n", v, z: c.decimals ? `0.${"0".repeat(c.decimals)}` : "0"};

@@ -114,7 +114,7 @@ from hazelnut.site import i18n  # noqa: E402
 from hazelnut.site.workbook import workbook_filename  # noqa: E402
 
 EN_SNAPSHOT = Path(__file__).parent / "fixtures" / "workbook_en.json"
-TR_SHEETS = ["Açıklama", "Fiyatlar", "Ordu", "İhracat", "Başlıca pazarlar", "Rekolte",
+TR_SHEETS = ["Açıklama", "Fiyatlar", "Ordu", "İhracat", "Başlıca pazarlar", "Hasat",
              "Tahmin aralığı", "Puan tablosu", "Kaynaklar"]
 
 

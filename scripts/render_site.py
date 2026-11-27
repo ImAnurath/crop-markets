@@ -6,7 +6,9 @@ plain `quarto render site`, which renders English only.
 
 After the Turkish render, its robots.txt and 404.html are removed: GitHub Pages serves
 only the root ones, and the root 404 page is bilingual. The root robots.txt gains the
-Turkish sitemap.
+Turkish sitemap. A tab title that names the site twice ("Ürün Piyasaları – Ürün
+Piyasaları" on the Turkish home page, whose front-matter title is the English brand) is
+cut to one.
 
 Quarto is `quarto` on PATH unless the QUARTO variable names it. QUARTO_PYTHON defaults
 to this interpreter, so run the script with the project venv.
@@ -18,6 +20,7 @@ Usage:
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -26,6 +29,9 @@ from hazelnut.site.i18n import DEFAULT, LANGS
 
 SITE = Path(__file__).resolve().parents[1] / "site"
 ROOT_ONLY = ("robots.txt", "404.html")  # served from the site root only
+# Quarto adds " – <site title>" to a page's tab title when the front-matter title is not the
+# site title; it compares the title before filters/lang-meta.lua swaps in title-tr.
+_TWICE = re.compile(r"<title>([^<]+?) – \1</title>")
 
 
 def render_commands(quarto: str, langs: list[str]) -> list[list[str]]:
@@ -35,7 +41,8 @@ def render_commands(quarto: str, langs: list[str]) -> list[list[str]]:
 
 def finish_tree(site_dir: Path, lang: str) -> None:
     """Tidy a rendered non-default tree (site_dir/<lang>): move its sitemap line into the
-    root robots.txt and drop the files only the root serves. Safe to run twice."""
+    root robots.txt, drop the files only the root serves, and cut a tab title that names
+    the site twice to one. Safe to run twice."""
     tree = Path(site_dir) / lang
     robots, root_robots = tree / "robots.txt", Path(site_dir) / "robots.txt"
     if robots.is_file() and root_robots.is_file():
@@ -46,6 +53,11 @@ def finish_tree(site_dir: Path, lang: str) -> None:
             root_robots.write_text("\n".join(have + new) + "\n", encoding="utf-8")
     for name in ROOT_ONLY:
         (tree / name).unlink(missing_ok=True)
+    for page in tree.rglob("*.html"):
+        text = page.read_text(encoding="utf-8")
+        fixed = _TWICE.sub(r"<title>\1</title>", text, count=1)
+        if fixed != text:
+            page.write_text(fixed, encoding="utf-8")
 
 
 def main(argv: list[str] | None = None) -> int:
