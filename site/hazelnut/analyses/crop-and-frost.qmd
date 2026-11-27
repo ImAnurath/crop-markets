@@ -1,18 +1,22 @@
 ---
 title: "Hazelnut crop and frost"
+title-tr: "Fındıkta hasat ve don"
 description: "Does a bigger hazelnut crop mean a lower price, and how much does a count of spring frost days say about the crop?"
+description-tr: "Bol fındık hasadı daha düşük fiyat mı demek? İlkbahardaki donlu gün sayısı hasat hakkında ne kadar bilgi veriyor?"
 ---
 
 ```{python}
-from hazelnut.site import charts
+from hazelnut.site import charts, i18n
 from hazelnut.site import page_helpers as ph
-from hazelnut.site.labels import CROP_ESTIMATE_LABEL_NO_YEAR, CROP_FIGURES_NOTE
+from hazelnut.site.labels import crop_estimate_label, crop_figures_note
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.i18n import t
 
 crop = load_crops()["hazelnut"]
 data_dir = SITE_DIR / "data" / crop.slug
 manifest = ph.read_json_or_none(data_dir / "manifest.json")
 stamp = ph.as_of_stamp(manifest) if manifest is not None else None
+K = f"{crop.slug}.analyses.crop_and_frost"  # this page's strings in site/i18n
 
 SOURCE = crop.exchanges[0]  # whose crop estimate is plotted (the Giresun exchange's)
 CROP_COL = "giresun_estimate_t"  # the crop size plotted: Giresun exchange's estimate
@@ -45,36 +49,37 @@ if frost is not None and crop_by_year is not None:
 
 ```{python}
 def lower_first(text):
-    return text[0].lower() + text[1:]
+    """``text`` with its first letter lowered, by the active language's rules."""
+    return i18n.lower(text[:1]) + text[1:]
 
 parts = []
 if crop_by_year is not None:
     parts.append(crop_sub)
     if without:
-        parts.append(f"Two frost years carry much of that: {lower_first(without)}")
+        parts.append(t(f"{K}.found_frost_years", note=lower_first(without)))
 if frost_crop is not None:
-    parts.append("A plain count of spring frost days says less: "
-                 + lower_first(ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL, SOURCE)))
-found = " ".join(parts) or "Crop size against price, and spring frost against crop size."
-ph.raw_html(ph.analysis_head_html(crop.name, "Crop and frost",
-                                  "Bigger crop, lower price? And what frost does", found, stamp))
+    parts.append(t(f"{K}.found_frost_count", note=lower_first(
+        ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL, SOURCE))))
+found = " ".join(parts) or t(f"{K}.found_fallback")
+ph.raw_html(ph.analysis_head_html(i18n.crop_name(crop), t(f"{K}.title"), t(f"{K}.h1"),
+                                  found, stamp))
 ```
 
 ::: {.dash}
 
 ::: {#panel-crop-price .panel .span-6}
 ```{python}
-TITLE = "Crop size against the season's price"
+TITLE = t(f"{K}.crop_title")
 if crop_by_year is None:
-    ph.raw_html(ph.panel_head_html(TITLE, "Crop estimate against the season's average price."))
+    ph.raw_html(ph.panel_head_html(TITLE, t("crop_price.fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html(TITLE, crop_sub))
-    charts.show(charts.crop_vs_price(crop_df, CROP_COL, CROP_ESTIMATE_LABEL_NO_YEAR.format(source=SOURCE)))
-    notes = ["Giresun exchange crop estimate against the season's average USD price."]
+    charts.show(charts.crop_vs_price(crop_df, CROP_COL, crop_estimate_label(SOURCE)))
+    notes = [t("dashboard.crop_foot", source=SOURCE)]
     if without:
-        notes.append(f"The {FROST_YEARS[0]} and {FROST_YEARS[1]} frost years carry much of "
-                     f"this link: {lower_first(without)}")
+        notes.append(t(f"{K}.frost_years_note", first=FROST_YEARS[0], second=FROST_YEARS[1],
+                       note=lower_first(without)))
     if crop_note:
         notes.append(crop_note)
     ph.raw_html(f'<p class="foot">{ph.escape(" ".join(notes))}</p>')
@@ -83,30 +88,37 @@ else:
 
 ::: {#panel-frost-crop .panel .span-6}
 ```{python}
-TITLE = "Spring frost days against the crop"
+TITLE = t(f"{K}.frost_title")
 if frost_crop is None:
-    ph.raw_html(ph.panel_head_html(TITLE, "March-April frost days against the crop estimate."))
+    ph.raw_html(ph.panel_head_html(TITLE, t(f"{K}.frost_fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.frost_crop_subtitle(frost_crop, "frost_days", CROP_COL, SOURCE)))
     smallest = frost_crop.nsmallest(2, CROP_COL)["year"].tolist()
     charts.show(charts.labeled_scatter(frost_crop, "frost_days", CROP_COL, "year",
-                                       highlight=smallest, x_title="Frost days",
-                                       y_title=CROP_ESTIMATE_LABEL_NO_YEAR.format(source=SOURCE), y_suffix=" t"))
-    notes = [CROP_FIGURES_NOTE.format(source=SOURCE),
+                                       highlight=smallest, x_title=t("hazelnut.chart.frost_days"),
+                                       y_title=crop_estimate_label(SOURCE),
+                                       y_suffix=" " + t("unit.tonnes")))
+    notes = [crop_figures_note(SOURCE),
              ph.smallest_crops_note(frost_crop, "frost_days", CROP_COL),
-             "A count of cold days does not say how hard or when the frost hit; one bad "
-             "night at flowering can do the damage.",
-             "Frost days: March-April days below 0 °C, averaged over the growing-area weather "
-             "points (Open-Meteo)."]
+             t(f"{K}.frost_caveat"),
+             t(f"{K}.frost_days_note")]
     if frost_note:
-        notes.append(frost_note + " It is left out here.")
+        notes.append(t(f"{K}.left_out", note=frost_note))
     ph.raw_html(f'<p class="foot">{ph.escape(" ".join(notes))}</p>')
 ```
 :::
 
 :::
 
+::: {.content-visible when-profile="en"}
 ```{=html}
 <p class="back"><a href="index.qmd">All analyses</a></p>
 ```
+:::
+
+::: {.content-visible when-profile="tr"}
+```{=html}
+<p class="back"><a href="index.qmd">Tüm analizler</a></p>
+```
+:::

@@ -1,0 +1,50 @@
+# Turkish: rendered into site/_site/tr/ (same page paths as English, under /tr/).
+lang: tr
+
+# Quarto's own interface strings that its Turkish translation leaves in English
+# (skip link) or misspells ("Internet sitesi", the navbar's aria-label).
+language:
+  skip-to-content: "Ana içeriğe geç"
+  navigation-site-label: "Site"
+
+project:
+  output-dir: _site/tr
+
+website:
+  # The brand on the Turkish pages (navbar, tab titles); English keeps "Crop Markets".
+  title: "Ürün Piyasaları"
+  site-url: https://imanurath.github.io/crop-markets/tr/
+  navbar:
+    right:
+      - text: Genel bakış
+        href: hazelnut/index.qmd
+      - text: Gösterge paneli
+        href: hazelnut/dashboard.qmd
+      - text: Analizler
+        href: hazelnut/analyses/index.qmd
+      - text: Veri gezgini
+        href: hazelnut/explorer.qmd
+      - text: Yöntemler
+        href: methods.qmd
+      - text: İndirmeler
+        href: downloads.qmd
+      - text: Excel
+        href: downloads/hazelnut-market-data-tr.xlsx
+        aria-label: Excel çalışma kitabının tamamını indirin
+  page-footer:
+    left: "Ürün Piyasaları · veriler her hafta kamuya açık kaynaklardan yenilenir · [Kaynaklar ve atıflar](/downloads.qmd#src-hazelnut)"
+    right: >-
+      Kapak fotoğrafı: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
+      [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), Wikimedia Commons üzerinden (kırpılmış)
+
+# Strings site.js shows, written into every page as a JSON block (#site-strings) by
+# filters/lang-links.lua. The switch lists each language by its code; a link's title is
+# written in the language it leads to, so it reads the same on both sides.
+site-strings:
+  chart-failed: "Bu grafik yüklenemedi (grafik kütüphanesi indirilemedi). Yeniden denemek için sayfayı yenileyin; rakamlar Excel çalışma kitabında da var."
+  theme-toggle: "Açık / koyu tema"
+  lang-switch:
+    label: "Dil"
+    langs:
+      - { lang: tr, code: TR, title: "Bu sayfayı Türkçe okuyun" }
+      - { lang: en, code: EN, title: "Read this page in English" }

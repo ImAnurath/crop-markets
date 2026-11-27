@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from hazelnut.site import page_helpers as ph
-from hazelnut.site.labels import METHOD_NAMES, method_name
+from hazelnut.site.labels import METHODS, method_name
 
 
 # --- loading ----------------------------------------------------------------------------
@@ -54,7 +54,8 @@ def test_panel_head_escapes_and_uses_h2():
 def test_method_names_are_shared_with_the_workbook():
     from hazelnut.site import workbook
 
-    assert workbook.METHOD_NAMES is METHOD_NAMES
+    assert workbook.method_name is method_name
+    assert all(method_name(m) != m for m in METHODS)  # each has a readable name
     assert method_name("chronos") == "Chronos-Bolt"
     assert method_name("mystery") == "mystery"
 
@@ -289,3 +290,17 @@ def test_scoreboard_html_links_method_names_to_their_methods_cards():
     html = ph.scoreboard_html(DEV, None, "x.qmd", methods_href="../methods.qmd")
     assert '<a href="../methods.qmd#naive">Naive</a>' in html
     assert "methods.qmd" not in ph.scoreboard_html(DEV, None, "x.qmd")
+
+
+# --- Turkish ----------------------------------------------------------------------------
+
+def test_price_subtitle_in_turkish_raises_a_dotted_i(turkish):
+    p = _prices({"2014-01": 3.0, "2015-05": 7.59})
+    assert ph.price_subtitle(p, [("ilk don", ("2014-01", "2015-12"))]) == (
+        "İlk don, fiyatı 16 ay içinde 3,00 $ seviyesinden 7,59 $ seviyesine çıkardı.")
+
+
+def test_exports_subtitle_in_turkish_names_destinations_in_turkish(turkish):
+    assert ph.exports_subtitle(TOP, "Aralık 2025") == (
+        "İtalya ve Almanya, Aralık 2025 ile biten 12 ayda ihracat hacminden %51 pay aldı."
+    )

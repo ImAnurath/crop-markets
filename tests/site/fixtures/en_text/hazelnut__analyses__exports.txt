@@ -1,0 +1,29 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut exports
+Where Turkey’s shelled hazelnut exports go, how the destinations have shifted since 2000, and what a kilo of kernels earns against the exchange price.
+Crops / Hazelnut / Analyses / Exports
+Where the hazelnuts go
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+What we found
+Italy and Germany took 51% of shelled export volume in 2025. Italy's share has gone from 13% in 2000 to 29%, while Germany's went from 40% to 22%. A kilo of shelled nuts has sold abroad for about 2.1 times the exchange's in-shell price, roughly the two kilos of nuts in shell it takes to make one.
+Destinations over time
+Italy's share of shelled export volume went from 13% in 2000 to 29% in 2025; Germany's from 40% to 22%.
+Share of shelled export volume (net weight) by calendar year, for the 3 largest destinations of 2025; complete years only, the rest went elsewhere. Source: UN Comtrade.
+What a kilo of kernels earns
+A kilo of shelled exports sold for a median 2.05 times the exchange's in-shell price (8 in 10 months between 1.85 and 2.36 times).
+Shelled exports: FOB value divided by net weight, all destinations (UN Comtrade). Giresun in-shell: the exchange's monthly average. Shelling roughly halves the weight, which accounts for most of the gap; in-shell exports are too small to compare.
+All analyses
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

@@ -1,0 +1,22 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut data explorer
+Every monthly hazelnut price record from the Giresun and Ordu commodity exchanges, filtered in the browser and downloadable as Excel.
+Crops / Hazelnut / Data explorer
+Every record, ready to filter and take
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+Monthly exchange prices, as published. Whatever you filter is what you download. The full workbook, with exports, crop sizes and the forecast scores, is on the Downloads page.
+Filters
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

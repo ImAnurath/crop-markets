@@ -12,12 +12,13 @@ marks, ``"accent"`` emphasis marks, ``"accent-fill"`` amber bands) and by the
 those roles when adding charts.
 
 Helpers set no titles: every chart panel's title and takeaway subtitle are page HTML.
+Legend names, hover text, axis titles and buttons come from ``site/i18n/{en,tr}.yml``
+("chart.*") in the active language.
 Must not import torch or any forecasting method (CI installs requirements-site.txt).
 """
 from __future__ import annotations
 
 import base64
-import calendar
 import copy
 import hashlib
 import html
@@ -29,7 +30,10 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
-from hazelnut.site.labels import OTHER_PARTNER, method_name
+from hazelnut.site import i18n
+from hazelnut.site.i18n import t
+from hazelnut.site.labels import OTHER_PARTNER, method_name, partner_label
+from hazelnut.site.plotly_locales import LOCALES
 
 # Dark-theme tokens (global constraints). site.js swaps in the light ones.
 FG = "#eeeae4"
@@ -122,7 +126,61 @@ def _dates(months) -> pd.Series:
     return pd.to_datetime(pd.Series(months).astype(str) + "-01").reset_index(drop=True)
 
 
-PRICE_WINDOWS = (("5y", 5), ("10y", 10), ("All", None))
+# The price chart's period buttons: (key of the label in "chart.window", years or None).
+PRICE_WINDOWS = (("y5", 5), ("y10", 10), ("all", None))
+
+
+def _usd_axis() -> dict:
+    """Tick prefix and/or suffix of a US-dollar axis: ``$4.00`` / ``4,00 $``."""
+    marks = {"tickprefix": t("chart.usd_tickprefix"), "ticksuffix": t("chart.usd_ticksuffix")}
+    return {k: v for k, v in marks.items() if v}
+
+
+# --- percents ---------------------------------------------------------------------------
+# Plotly's d3 formats (".0%") always put the % sign after the number. Where the active
+# language does too (English: "31%", "+3.5%"), charts keep those formats; where it puts
+# the sign first (Turkish: "%31", "−%3,5"), every percent a chart shows is formatted in
+# Python (i18n.fmt_pct) and handed over as text: tick labels, bar labels and hover values.
+
+def _d3_percents() -> bool:
+    """True when Plotly's own percent formats write percents the active language's way."""
+    return t("format.pct") == "{value}%" and t("format.pct_signed") == "{sign}{value}%"
+
+
+def _pct_texts(values, dp: int, signed: bool = False) -> list[str | None]:
+    """``values`` (fractions) as the active language's percents; a gap stays None."""
+    return [None if v is None or pd.isna(v) else i18n.fmt_pct(float(v), dp, signed=signed)
+            for v in values]
+
+
+# Plotly's own tick spacing: about one tick per 40px of a y axis, here ~300px long.
+_PCT_TICKS = 7.5
+
+
+def _pct_axis(lo: float, hi: float, signed: bool = False) -> dict:
+    """Percent ticks for a y axis showing fractions from ``lo`` to ``hi``: Plotly's
+    tickformat where it fits the language, else ticks at round steps (1, 2 or 5 x 10^n)
+    labelled in Python."""
+    if _d3_percents():
+        return {"tickformat": ("+" if signed else "") + ".0%"}
+    if not (math.isfinite(lo) and math.isfinite(hi)):
+        return {}
+    span = hi - lo or abs(hi) or 0.01
+    mag = 10 ** math.floor(math.log10(span / _PCT_TICKS))
+    step = next(m * mag for m in (1, 2, 5, 10) if m * mag >= span / _PCT_TICKS * (1 - 1e-9))
+    dp = max(0, -math.floor(math.log10(step * 100) + 1e-9))  # 0.5% steps get one decimal
+    first, last = math.floor(lo / step + 1e-9), math.ceil(hi / step - 1e-9)
+    vals = [round(k * step, 10) + 0.0 for k in range(first, last + 1)]  # + 0.0: no -0.0
+    return {"tickmode": "array", "tickvals": vals,
+            "ticktext": _pct_texts(vals, dp, signed=signed)}
+
+
+def _span(*series) -> tuple[float, float]:
+    """The lowest and highest value over ``series``, ignoring gaps."""
+    values = pd.concat([pd.Series(list(s), dtype=float) for s in series]).dropna()
+    return (float(values.min()), float(values.max())) if len(values) else (math.nan, math.nan)
+
+
 _Y_PAD = 0.05  # share of the visible span added above and below the line
 
 
@@ -143,7 +201,7 @@ def _y_range(values: pd.Series, log: bool) -> list[float] | None:
 
 
 def price_windows(x: pd.Series, usd: pd.Series, local: pd.Series):
-    """For each of 5y, 10y and All: (label, x range, USD y range, local log10 y range).
+    """For each of 5y, 10y and All: (button label, x range, USD y range, local log10 y range).
 
     Plotly's y autorange ignores the x range, so the y ranges are computed here from the
     points inside each window (ending at the last month)."""
@@ -151,11 +209,11 @@ def price_windows(x: pd.Series, usd: pd.Series, local: pd.Series):
     usd, local = pd.Series(usd).reset_index(drop=True), pd.Series(local).reset_index(drop=True)
     last, first = x.max(), x.min()
     out = []
-    for label, years in PRICE_WINDOWS:
+    for key, years in PRICE_WINDOWS:
         start = first if years is None else max(first, last - pd.DateOffset(years=years))
         inside = (x >= start) & (x <= last)
         xr = [start.strftime("%Y-%m-%d"), last.strftime("%Y-%m-%d")]
-        out.append((label, xr, _y_range(usd[inside], log=False),
+        out.append((t(f"chart.window.{key}"), xr, _y_range(usd[inside], log=False),
                     _y_range(local[inside], log=True)))
     return out
 
@@ -173,6 +231,7 @@ def price_history(
     list of (first month, last month) pairs. ``local_col``/``local_label`` come from the
     crop's ``local_currency`` in ``site/crops.yml``.
     """
+    usd_name = t("chart.usd")
     x = pd.to_datetime(prices["month"].astype(str) + "-01").reset_index(drop=True)
     usd = prices["usd_kg"].astype(float).reset_index(drop=True)
     loc = prices[local_col].astype(float).reset_index(drop=True)
@@ -182,12 +241,12 @@ def price_history(
     # only set ranges, so the two menus never need to know each other's state.
     fig = go.Figure(
         [
-            go.Scatter(x=x, y=usd, name="USD", meta="fg", mode="lines",
+            go.Scatter(x=x, y=usd, name=usd_name, meta="fg", mode="lines",
                        line=line, visible=True, yaxis="y",
-                       hovertemplate="$%{y:.2f} /kg<extra></extra>"),
+                       hovertemplate=t("chart.price.usd_hover")),
             go.Scatter(x=x, y=loc, name=local_label, meta="fg", mode="lines",
                        line=line, visible=False, yaxis="y2",
-                       hovertemplate="%{y:,.2f} " + local_label + "/kg<extra></extra>"),
+                       hovertemplate=t("chart.price.local_hover", unit=local_label)),
         ]
     )
     windows = price_windows(x, usd, loc)
@@ -201,7 +260,7 @@ def price_history(
             margin=dict(t=48),
             # One hover box with the month as its title (the date shows once).
             hovermode="x unified",
-            yaxis=dict(type="linear", tickprefix="$", tickformat=".2f",
+            yaxis=dict(type="linear", **_usd_axis(), tickformat=".2f",
                        autorange=False, range=all_usd),
             # Log axis: a nominal local price can be flat for decades and then explode
             # with the currency's fall; on a log scale both stay readable.
@@ -217,7 +276,7 @@ def price_history(
                     type="buttons", direction="right", showactive=True, active=0,
                     x=0, xanchor="left", y=1.02, yanchor="bottom", pad=dict(t=0, r=0, b=0, l=0),
                     buttons=[
-                        dict(label="USD", method="update",
+                        dict(label=usd_name, method="update",
                              args=[{"visible": [True, False]},
                                    {"yaxis.visible": True, "yaxis2.visible": False}]),
                         dict(label=local_label, method="update",
@@ -258,37 +317,38 @@ def price_range_fig(rng: pd.DataFrame) -> go.Figure:
     def col(name: str) -> list[float]:
         return [today, *rng[name].astype(float)]
 
-    hover = "%{x}<br>$%{y:.2f}<extra>%{meta}</extra>"
+    hover = t("chart.range.band_hover")
     band = dict(mode="lines", line=dict(width=0), hoverinfo="skip", showlegend=False)
     fig = go.Figure(
         [
             go.Scatter(x=x, y=col("q05"), **band, meta="accent-fill"),
             go.Scatter(x=x, y=col("q95"), **band, fill="tonexty", fillcolor=ACCENT_SOFTER,
-                       meta="accent-fill", name="9 in 10"),
+                       meta="accent-fill", name=t("chart.range.nine_in_ten")),
             go.Scatter(x=x, y=col("q10"), **band, meta="accent-fill"),
             go.Scatter(x=x, y=col("q90"), **band, fill="tonexty", fillcolor=ACCENT_SOFT,
-                       meta="accent-fill", name="8 in 10"),
-            go.Scatter(x=x, y=col("q50"), mode="lines", name="Middle",
+                       meta="accent-fill", name=t("chart.range.eight_in_ten")),
+            go.Scatter(x=x, y=col("q50"), mode="lines", name=t("chart.range.middle"),
                        line=dict(color=FG, width=2), meta="fg",
-                       hovertemplate="%{x}<br>middle $%{y:.2f}<extra></extra>"),
-            go.Scatter(x=x, y=[today] * len(x), mode="lines", name="Today's price",
+                       hovertemplate=t("chart.range.middle_hover")),
+            go.Scatter(x=x, y=[today] * len(x), mode="lines", name=t("chart.range.todays_price"),
                        line=dict(color=ACCENT, width=1, dash="dash"), meta="accent",
                        hoverinfo="skip"),
-            go.Scatter(x=[start], y=[today], mode="markers", name="Today",
+            go.Scatter(x=[start], y=[today], mode="markers", name=t("chart.range.today"),
                        marker=dict(color=ACCENT, size=10, line=dict(width=2, color=PANEL)),
                        meta="accent",
-                       hovertemplate="%{x}<br>today $%{y:.2f}<extra></extra>"),
+                       hovertemplate=t("chart.range.today_hover")),
         ]
     )
-    for t in fig.data[:4]:
-        t.hovertemplate = hover
+    for trace in fig.data[:4]:
+        trace.hovertemplate = hover
     fig.update_layout(
         layout(
             height=300,
             hovermode="x",
             xaxis=dict(type="category", tickvals=x,
-                       ticktext=["Today", *[f"+{h} mo" for h in rng["horizon"]]]),
-            yaxis=dict(tickprefix="$", tickformat=".2f"),
+                       ticktext=[t("chart.range.today"),
+                                 *[t("chart.range.tick", n=h) for h in rng["horizon"]]]),
+            yaxis=dict(**_usd_axis(), tickformat=".2f"),
         )
     )
     return fig
@@ -303,15 +363,23 @@ def bar_top(top: pd.DataFrame) -> go.Figure:
     # Plotly draws the first category at the bottom: "Other" first, then smallest to largest.
     is_other = top["partner"] == OTHER_PARTNER
     top = pd.concat([top[is_other], top[~is_other].sort_values("share", ascending=True)])
+    names = [partner_label(p) for p in top["partner"].astype(str)]
+    tonnes, musd = top["net_kg"] / 1000, top["fob_usd"] / 1e6
+    if _d3_percents():
+        label = dict(text=top["share"], texttemplate="%{x:.0%}")
+        custom, share = list(zip(tonnes, musd)), "%{x:.1%}"
+    else:
+        label = dict(text=_pct_texts(top["share"], 0), texttemplate="%{text}")
+        custom = list(zip(tonnes, musd, _pct_texts(top["share"], 1)))
+        share = "%{customdata[2]}"
     fig = go.Figure(
         go.Bar(
-            x=top["share"], y=top["partner"], orientation="h", meta="fg",
+            x=top["share"], y=names, orientation="h", meta="fg",
             marker=dict(color=FG, opacity=0.8, line=dict(width=0)),
-            text=top["share"], texttemplate="%{x:.0%}", textposition="outside",
+            **label, textposition="outside",
             textfont=dict(family=MONO, size=11, color=MUTED), cliponaxis=False,
-            customdata=list(zip(top["net_kg"] / 1000, top["fob_usd"] / 1e6)),
-            hovertemplate=("%{y}<br>%{x:.1%} of exports<br>%{customdata[0]:,.0f} t"
-                           " · $%{customdata[1]:,.0f}m<extra></extra>"),
+            customdata=custom,
+            hovertemplate=t("chart.exports.hover", share=share),
         )
     )
     fig.update_layout(
@@ -338,11 +406,11 @@ def crop_vs_price(crop: pd.DataFrame, x_col: str, x_title: str) -> go.Figure:
     fig = go.Figure()
     if not df.empty:
         latest, rest = df.iloc[[-1]], df.iloc[:-1]
-        hover = "%{text}<br>%{x:,.0f} t crop<br>$%{y:.2f} /kg season average<extra></extra>"
+        hover = t("chart.crop.hover")
         fig.add_traces(
             [
                 go.Scatter(x=rest[x_col], y=rest["season_avg_usd"], mode="markers",
-                           name="Earlier seasons", meta="fg", text=rest["season"],
+                           name=t("chart.crop.earlier"), meta="fg", text=rest["season"],
                            marker=dict(color=FG, opacity=0.75, size=8),
                            hovertemplate=hover),
                 go.Scatter(x=latest[x_col], y=latest["season_avg_usd"], mode="markers+text",
@@ -356,10 +424,11 @@ def crop_vs_price(crop: pd.DataFrame, x_col: str, x_title: str) -> go.Figure:
     fig.update_layout(
         layout(
             height=300,
-            xaxis=dict(showgrid=False, tickformat="~s", ticksuffix=" t",
+            xaxis=dict(showgrid=False, tickformat=t("chart.tonnes_tickformat"),
+                       ticksuffix=" " + t("unit.tonnes"),
                        title=dict(text=x_title)),
-            yaxis=dict(tickprefix="$", tickformat=".2f",
-                       title=dict(text="Season average")),
+            yaxis=dict(**_usd_axis(), tickformat=".2f",
+                       title=dict(text=t("chart.crop.season_average"))),
         )
     )
     return fig
@@ -370,24 +439,31 @@ def crop_vs_price(crop: pd.DataFrame, x_col: str, x_title: str) -> go.Figure:
 def season_profile(profile: pd.DataFrame) -> go.Figure:
     """Average change from the season's mean by month (bars), with a thin whisker over the
     middle half of seasons. ``profile`` is ``page_helpers.seasonal_profile``'s output."""
-    labels = [calendar.month_abbr[int(m)] for m in profile["month"]]
+    labels = [i18n.month_name(int(m), short=True) for m in profile["month"]]
     wx, wy = [], []
     for lab, lo, hi in zip(labels, profile["q25"], profile["q75"]):
         wx += [lab, lab, None]
         wy += [float(lo), float(hi), None]
+    custom = [profile["label"], profile["q25"], profile["q75"]]
+    if _d3_percents():
+        pcts = dict(mean="%{y:+.1%}", low="%{customdata[1]:+.1%}", high="%{customdata[2]:+.1%}")
+    else:
+        custom += [_pct_texts(profile[c], 1, signed=True) for c in ("mean", "q25", "q75")]
+        pcts = dict(mean="%{customdata[3]}", low="%{customdata[4]}", high="%{customdata[5]}")
     fig = go.Figure([
-        go.Bar(x=labels, y=[float(v) for v in profile["mean"]], name="Average month",
+        go.Bar(x=labels, y=[float(v) for v in profile["mean"]], name=t("chart.season.average_month"),
                meta="fg", marker=dict(color=FG, opacity=0.8, line=dict(width=0)),
-               customdata=list(zip(profile["label"], profile["q25"], profile["q75"])),
-               hovertemplate=("%{customdata[0]}<br>average %{y:+.1%}<br>middle half of seasons "
-                              "%{customdata[1]:+.1%} to %{customdata[2]:+.1%}<extra></extra>")),
-        go.Scatter(x=wx, y=wy, mode="lines", name="Middle half of seasons", meta="fg",
+               customdata=list(zip(*custom)),
+               hovertemplate=t("chart.season.hover", **pcts)),
+        go.Scatter(x=wx, y=wy, mode="lines", name=t("chart.season.middle_half"), meta="fg",
                    line=dict(color=FG, width=1.5), opacity=0.45, hoverinfo="skip"),
     ])
     fig.update_layout(layout(
         height=320, showlegend=True, bargap=0.45, margin=dict(t=40),
         xaxis=dict(type="category"),
-        yaxis=dict(tickformat="+.0%", showgrid=True),
+        # the bars start at 0
+        yaxis=dict(**_pct_axis(*_span([0], profile["mean"], profile["q25"], profile["q75"]),
+                               signed=True), showgrid=True),
     ))
     return fig
 
@@ -396,34 +472,46 @@ def share_lines(shares: pd.DataFrame, highlight: str | None = None) -> go.Figure
     """One line per column (a partner's share by year), labelled at its last point;
     ``highlight`` is drawn in amber."""
     x = [int(y) for y in shares.index]
+    d3 = _d3_percents()
     traces = []
     for col in shares.columns:
         hl = col == highlight
+        name = i18n.country_name(str(col))
+        pct = {} if d3 else {"customdata": _pct_texts(shares[col], 0)}
         traces.append(go.Scatter(
-            x=x, y=[float(v) for v in shares[col]], name=str(col), mode="lines+text",
-            text=[""] * (len(x) - 1) + [str(col)], textposition="middle right",
+            x=x, y=[float(v) for v in shares[col]], name=name, mode="lines+text",
+            text=[""] * (len(x) - 1) + [name], textposition="middle right",
             textfont=dict(family=FONT, size=12, color=MUTED), cliponaxis=False,
             meta="accent" if hl else "fg", opacity=1 if hl else 0.75,
             line=dict(color=ACCENT if hl else FG, width=2 if hl else 1.5),
-            hovertemplate=f"{html.escape(str(col))} %{{y:.0%}}<extra></extra>",
+            hovertemplate=f"{html.escape(name)} {'%{y:.0%}' if d3 else '%{customdata}'}"
+                          "<extra></extra>",
+            **pct,
         ))
     fig = go.Figure(traces)
     fig.update_layout(layout(
         height=340, hovermode="x unified", margin=dict(r=96),
         xaxis=dict(tickformat="d"),
-        yaxis=dict(tickformat=".0%", rangemode="tozero"),
+        yaxis=dict(**_pct_axis(*_span([0], *(shares[c] for c in shares.columns))),
+                   rangemode="tozero"),
     ))
     return fig
 
 
-def compare_lines(x, a, b, a_name: str, b_name: str, *, prefix: str = "$",
-                  suffix: str = " /kg", shocks: Sequence[tuple[str, str]] = ()) -> go.Figure:
+def compare_lines(x, a, b, a_name: str, b_name: str, *, prefix: str | None = None,
+                  suffix: str | None = None,
+                  shocks: Sequence[tuple[str, str]] = ()) -> go.Figure:
     """Two monthly series on one axis: ``a`` solid, ``b`` dotted and fainter. Gaps (NaN)
-    stay gaps. ``x`` is YYYY-MM months; ``shocks`` are shaded amber."""
+    stay gaps. ``x`` is YYYY-MM months; ``shocks`` are shaded amber. The values are USD per
+    kg unless ``prefix`` / ``suffix`` give another unit."""
     xs = _dates(x)
+    usd = prefix is None and suffix is None
+    axis = _usd_axis() if usd else {"tickprefix": prefix or ""}
 
     def hover(name: str) -> str:
-        return f"{html.escape(name)} {prefix}%{{y:,.2f}}{suffix}<extra></extra>"
+        if usd:
+            return t("chart.compare_hover", name=html.escape(name))
+        return f"{html.escape(name)} {prefix or ''}%{{y:,.2f}}{suffix or ''}<extra></extra>"
 
     fig = go.Figure([
         go.Scatter(x=xs, y=list(a), name=a_name, mode="lines", meta="fg",
@@ -435,7 +523,7 @@ def compare_lines(x, a, b, a_name: str, b_name: str, *, prefix: str = "$",
     fig.update_layout(layout(
         height=340, showlegend=True, hovermode="x unified", margin=dict(t=40),
         xaxis=dict(type="date", hoverformat="%b %Y"),
-        yaxis=dict(tickprefix=prefix, tickformat=".2f"),
+        yaxis=dict(**axis, tickformat=".2f"),
         shapes=_shock_shapes(shocks),
     ))
     return fig
@@ -448,11 +536,13 @@ def gap_line(x, gap, median: float) -> go.Figure:
     s = s.reindex(pd.period_range(s.index.min(), s.index.max(), freq="M"))
     xs = pd.Series(s.index.to_timestamp())
     ys = [None if pd.isna(v) else float(v) for v in s]
-    label = f"Median {median:+.1%}".replace("-", "−")
+    label = t("chart.median", value=i18n.fmt_pct(median, 1, signed=True))
+    hover = (dict(hovertemplate="%{y:+.1%}<extra></extra>") if _d3_percents() else
+             dict(customdata=_pct_texts(ys, 1, signed=True),
+                  hovertemplate="%{customdata}<extra></extra>"))
     fig = go.Figure([
-        go.Scatter(x=xs, y=ys, name="Gap", mode="lines", meta="fg",
-                   line=dict(color=FG, width=1.5), connectgaps=False,
-                   hovertemplate="%{y:+.1%}<extra></extra>"),
+        go.Scatter(x=xs, y=ys, name=t("chart.gap"), mode="lines", meta="fg",
+                   line=dict(color=FG, width=1.5), connectgaps=False, **hover),
         go.Scatter(x=[xs.min(), xs.max()], y=[median, median], name=label, mode="lines",
                    meta="accent", line=dict(color=ACCENT, width=1.5, dash="dash"),
                    hoverinfo="skip"),
@@ -460,7 +550,7 @@ def gap_line(x, gap, median: float) -> go.Figure:
     fig.update_layout(layout(
         height=280, showlegend=True, hovermode="x unified", margin=dict(t=40),
         xaxis=dict(type="date", hoverformat="%b %Y"),
-        yaxis=dict(tickformat="+.0%"),
+        yaxis=_pct_axis(*_span([0, median], ys), signed=True),  # with the zero line
         shapes=[_ref_shape(0)],
     ))
     return fig
@@ -470,7 +560,8 @@ def labeled_scatter(df: pd.DataFrame, x: str, y: str, label: str, highlight: Seq
                     *, x_title: str = "", y_title: str = "", x_hover: str = ",.1f",
                     y_hover: str = ",.0f", y_suffix: str = "") -> go.Figure:
     """Points of ``y`` against ``x``; rows whose ``label`` is in ``highlight`` are amber and
-    labelled. Rows missing either value are left out."""
+    labelled. Rows missing either value are left out. The y ticks use the tonne-axis
+    format ("chart.tonnes_tickformat"): the pages plot crop sizes there."""
     d = df.dropna(subset=[x, y])
     is_hl = d[label].isin(list(highlight))
     hover = (f"%{{text}}<br>{html.escape(x_title)} %{{x:{x_hover}}}<br>"
@@ -480,7 +571,7 @@ def labeled_scatter(df: pd.DataFrame, x: str, y: str, label: str, highlight: Seq
         return go.Scatter(
             x=list(part[x]), y=list(part[y]), text=[str(v) for v in part[label]],
             mode="markers+text" if hl else "markers", meta="accent" if hl else "fg",
-            name="Highlighted" if hl else "Other years", textposition="top center",
+            name=t("chart.highlighted" if hl else "chart.other_years"), textposition="top center",
             textfont=dict(family=MONO, size=11, color=MUTED),
             marker=(dict(color=ACCENT, size=11, line=dict(width=2, color=PANEL)) if hl
                     else dict(color=FG, size=8, opacity=0.7)),
@@ -491,7 +582,8 @@ def labeled_scatter(df: pd.DataFrame, x: str, y: str, label: str, highlight: Seq
     fig.update_layout(layout(
         height=320,
         xaxis=dict(title=dict(text=x_title), showgrid=False),
-        yaxis=dict(title=dict(text=y_title), tickformat="~s", ticksuffix=y_suffix),
+        yaxis=dict(title=dict(text=y_title), tickformat=t("chart.tonnes_tickformat"),
+                   ticksuffix=y_suffix),
     ))
     return fig
 
@@ -505,11 +597,11 @@ def forecast_vs_actual(f: pd.DataFrame, other_name: str,
 
     def line(col: str, name: str, meta: str, **style) -> go.Scatter:
         return go.Scatter(x=xs, y=[float(v) for v in f[col]], name=name, mode="lines",
-                          meta=meta, hovertemplate=f"{html.escape(name)} $%{{y:.2f}}<extra></extra>",
+                          meta=meta, hovertemplate=t("chart.usd_hover", name=html.escape(name)),
                           **style)
 
     fig = go.Figure([
-        line("actual", "Actual", "fg", line=dict(color=FG, width=2)),
+        line("actual", t("chart.actual"), "fg", line=dict(color=FG, width=2)),
         line("naive", naive, "accent", line=dict(color=ACCENT, width=1.5)),
         line("best_other", other_name, "fg", opacity=0.6,
              line=dict(color=FG, width=1.5, dash="dot")),
@@ -517,7 +609,7 @@ def forecast_vs_actual(f: pd.DataFrame, other_name: str,
     fig.update_layout(layout(
         height=360, showlegend=True, hovermode="x unified", margin=dict(t=40),
         xaxis=dict(type="date", hoverformat="%b %Y"),
-        yaxis=dict(tickprefix="$", tickformat=".2f"),
+        yaxis=dict(**_usd_axis(), tickformat=".2f"),
         shapes=_shock_shapes(shocks),
     ))
     return fig
@@ -533,21 +625,21 @@ def range_band(band: pd.DataFrame) -> go.Figure:
     out = (actual < lo) | (actual > hi)
     fig = go.Figure([
         go.Scatter(x=xs, y=list(lo), mode="lines", line=dict(width=0), meta="accent-fill",
-                   showlegend=False, hoverinfo="skip", name="Range low"),
+                   showlegend=False, hoverinfo="skip", name=t("chart.band.low")),
         go.Scatter(x=xs, y=list(hi), mode="lines", line=dict(width=0), meta="accent-fill",
-                   fill="tonexty", fillcolor=ACCENT_SOFT, name="8-in-10 range",
+                   fill="tonexty", fillcolor=ACCENT_SOFT, name=t("chart.band.range"),
                    customdata=list(lo),
-                   hovertemplate="range $%{customdata:.2f} to $%{y:.2f}<extra></extra>"),
-        go.Scatter(x=xs, y=list(actual), mode="lines", name="Actual", meta="fg",
-                   line=dict(color=FG, width=1.5), hovertemplate="actual $%{y:.2f}<extra></extra>"),
+                   hovertemplate=t("chart.band.range_hover")),
+        go.Scatter(x=xs, y=list(actual), mode="lines", name=t("chart.actual"), meta="fg",
+                   line=dict(color=FG, width=1.5), hovertemplate=t("chart.band.actual_hover")),
         go.Scatter(x=list(xs[out]), y=list(actual[out]), mode="markers",
-                   name="Outside the range", meta="accent",
+                   name=t("chart.band.outside"), meta="accent",
                    marker=dict(color=ACCENT, size=6), hoverinfo="skip"),
     ])
     fig.update_layout(layout(
         height=340, showlegend=True, hovermode="x unified", margin=dict(t=40),
         xaxis=dict(type="date", hoverformat="%b %Y"),
-        yaxis=dict(tickprefix="$", tickformat=".2f"),
+        yaxis=dict(**_usd_axis(), tickformat=".2f"),
     ))
     return fig
 
@@ -555,7 +647,7 @@ def range_band(band: pd.DataFrame) -> go.Figure:
 def ratio_bars(wide: pd.DataFrame, highlight: str | None = None) -> go.Figure:
     """Grouped bars of error ratios by horizon (index, months), one bar per column, with a
     dashed line at 1 (naive). ``highlight`` is amber."""
-    x = [f"{int(h)} mo" for h in wide.index]
+    x = [t("unit.mo", n=int(h)) for h in wide.index]
     bars = []
     for col in wide.columns:
         hl = col == highlight
@@ -588,13 +680,28 @@ def _plotlyjs_source() -> tuple[str, str]:
     return url, "sha256-" + base64.b64encode(digest).decode("ascii")
 
 
+def _localised(spec: dict) -> dict:
+    """``spec`` for the active language: outside English, plotly.js gets that language's
+    locale (month and day names in date ticks and hovers) and its decimal and thousands
+    separators. English specs are returned unchanged."""
+    if i18n.LANG == i18n.DEFAULT:
+        return spec
+    loc = i18n.plotly_locale()
+    code = loc["locale"]
+    return {
+        **spec,
+        "layout": {**spec.get("layout", {}), "separators": loc["separators"]},
+        "config": {**spec["config"], "locale": code, "locales": {code: LOCALES[code]}},
+    }
+
+
 def to_html(fig: go.Figure) -> str:
     """The figure as a placeholder ``<div>`` that ``site.js`` draws.
 
     The div is sized to the figure height (default 360px) and shows a loading
     skeleton until plotly.js arrives; the figure JSON sits in a JSON script block.
     """
-    spec = {**fig.to_plotly_json(), "config": CONFIG}
+    spec = _localised({**fig.to_plotly_json(), "config": CONFIG})
     spec.pop("frames", None)
     # "<\/" is the same string to JSON, and cannot close the script block early.
     payload = pio.to_json(spec, validate=False).replace("</", "<\\/")

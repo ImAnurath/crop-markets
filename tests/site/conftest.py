@@ -76,6 +76,25 @@ def _ordu_daily() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["date", "price", "special_terms", "old_lira"])
 
 
+@pytest.fixture(autouse=True)
+def english_by_default(monkeypatch):
+    """Site code runs in English unless a test sets the language (see hazelnut.site.i18n)."""
+    from hazelnut.site import i18n
+
+    monkeypatch.delenv("QUARTO_PROFILE", raising=False)
+    monkeypatch.delenv("SITE_LANG", raising=False)
+    monkeypatch.setattr(i18n, "LANG", "en")
+
+
+@pytest.fixture
+def turkish(monkeypatch):
+    """Run the test with Turkish as the active site language (i18n.LANG is read once, at
+    import, so a test sets the module attribute)."""
+    from hazelnut.site import i18n
+
+    monkeypatch.setattr(i18n, "LANG", "tr")
+
+
 @pytest.fixture
 def tiny_tables() -> dict[str, pd.DataFrame]:
     return {

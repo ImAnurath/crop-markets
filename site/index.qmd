@@ -1,6 +1,8 @@
 ---
 title: "Crop Markets"
+title-tr: "Ürün Piyasaları"
 description: "Prices, exports, crop sizes and tested forecasts for export crops, rebuilt every week from public data."
+description-tr: "İhraç ürünleri için fiyatlar, ihracat, hasat miktarları ve test edilmiş tahminler; her hafta kamuya açık verilerden yeniden hazırlanır."
 ---
 
 ```{python}
@@ -9,6 +11,7 @@ from hazelnut.site.config import SITE_DIR, load_crops
 ```
 
 ::: {.home}
+::: {.content-visible when-profile="en"}
 [Crop Markets]{.eyebrow}
 
 # Export crop markets, *built in the open.*
@@ -16,12 +19,31 @@ from hazelnut.site.config import SITE_DIR, load_crops
 ::: {.lede}
 Exchange prices, exports, crop sizes and weather, collected from public sources every week. Each crop gets an overview, a dashboard, analyses and a data explorer, and its forecasts are tested without hindsight.
 :::
+:::
+
+::: {.content-visible when-profile="tr"}
+[Ürün Piyasaları]{.eyebrow}
+
+# İhraç ürünlerinin piyasaları, *şeffaf biçimde izleniyor.*
+
+::: {.lede}
+Borsa fiyatları, ihracat, hasat miktarları ve hava durumu; her hafta kamuya açık kaynaklardan toplanır. Her ürünün bir genel bakış sayfası, bir gösterge paneli, analizleri ve bir veri gezgini vardır. Tahminler de sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.
+:::
+:::
 
 ::: {.sect}
 ::: {}
+::: {.content-visible when-profile="en"}
 [Crops]{.eyebrow}
 
 ## Pick a crop
+:::
+
+::: {.content-visible when-profile="tr"}
+[Ürünler]{.eyebrow}
+
+## Bir ürün seçin
+:::
 :::
 :::
 

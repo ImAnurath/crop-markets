@@ -1,0 +1,38 @@
+# English (the default profile): rendered into site/_site/.
+lang: en
+
+website:
+  navbar:
+    right:
+      - text: Overview
+        href: hazelnut/index.qmd
+      - text: Dashboard
+        href: hazelnut/dashboard.qmd
+      - text: Analyses
+        href: hazelnut/analyses/index.qmd
+      - text: Data explorer
+        href: hazelnut/explorer.qmd
+      - text: Methods
+        href: methods.qmd
+      - text: Downloads
+        href: downloads.qmd
+      - text: Excel
+        href: downloads/hazelnut-market-data.xlsx
+        aria-label: Download the full Excel workbook
+  page-footer:
+    left: "Crop Markets · data refreshed weekly from public sources · [Sources and credits](/downloads.qmd#src-hazelnut)"
+    right: >-
+      Hero photo: [Zeynel Cebeci](https://commons.wikimedia.org/wiki/File:Corylus_avellana_-_Hazelnut_-_F%C4%B1nd%C4%B1k_1.JPG),
+      [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons (cropped)
+
+# Strings site.js shows, written into every page as a JSON block (#site-strings) by
+# filters/lang-links.lua. The switch lists each language by its code; a link's title is
+# written in the language it leads to, so it reads the same on both sides.
+site-strings:
+  chart-failed: "This chart could not load (the charting library did not download). Reload the page to try again; the numbers are also in the Excel workbook."
+  theme-toggle: "Switch light / dark"
+  lang-switch:
+    label: "Language"
+    langs:
+      - { lang: tr, code: TR, title: "Bu sayfayı Türkçe okuyun" }
+      - { lang: en, code: EN, title: "Read this page in English" }

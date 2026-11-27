@@ -1,0 +1,81 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Downloads
+The full Excel workbook for each crop, rebuilt on every weekly refresh, with the as-of date, what each sheet holds and the source credits.
+Downloads
+Take the data with you
+Each crop’s workbook holds the site’s main tables in one formatted Excel file; its sheets are listed below. It is rebuilt on every weekly refresh. To take only some months, filter them in the crop’s data explorer and download that view.
+Hazelnut · Turkey
+Hazelnut market data workbook
+The site's main tables, formatted, with a README and the source credits; the sheets are listed below.
+Download the workbook (.xlsx, 561 KB)Filter the monthly records Data as of October 2026 · refreshed weekly (some sources from December 2025)
+[data-scroll-hint] Scroll for more →
+Sheets in the workbook
+Sheet
+What it holds
+README
+What each sheet holds, the as-of date and any stale sources
+Prices
+Monthly Giresun price, USD/kg and TL/kg
+Ordu
+Monthly Ordu exchange price
+Exports
+Monthly exports by destination
+Top destinations
+Largest export destinations
+Crop
+The Giresun exchange's crop estimate by year, and the season average price
+Forecast range
+Empirical price range by horizon, in USD/kg
+Scoreboard
+Backtest accuracy by method; holdout table scored once, never tuned on
+Sources
+Data providers, what we use and credit
+Coming later
+Power BI template
+A Power BI template built on the same tables. Not available yet.
+Sources and credits
+The hazelnut data comes from these public providers. If you reuse it, credit them as listed.
+[data-scroll-hint] Scroll for more →
+Data sources and their terms
+Provider
+What we use
+Credit and terms
+UN Comtrade
+Monthly export volumes and values by destination (HS 080221, 080222)
+Credit the source; see provider terms
+FAOSTAT
+Annual national production statistics
+CC BY 4.0
+TOBB
+Commodity exchange price records (TOBB exchange price query)
+Credit the source; see provider terms
+Giresun Commodity Exchange
+Monthly prices, crop estimates and trade volumes
+Credit the source; see provider terms
+Ordu Commodity Exchange
+Daily prices, published by the exchange as a public Google Sheet
+Credit the source; see provider terms
+Open-Meteo
+Historical daily weather (frost days)
+CC BY 4.0
+ECB
+Daily euro foreign-exchange reference rates
+Free reuse with the source acknowledged
+OECD
+Consumer price index
+CC BY 4.0
+Where the terms say to see the provider's terms, check them before republishing.
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

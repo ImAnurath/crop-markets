@@ -1,13 +1,17 @@
 ---
 title: "Hazelnut data explorer"
+title-tr: "Fındık veri gezgini"
 description: "Every monthly hazelnut price record from the Giresun and Ordu commodity exchanges, filtered in the browser and downloadable as Excel."
+description-tr: "Giresun ve Ordu ticaret borsalarının bütün aylık fındık fiyatı kayıtları; tarayıcıda filtreleyip Excel olarak indirebilirsiniz."
 ---
 
 ```{python}
+from hazelnut.site import i18n
 from hazelnut.site import page_helpers as ph
-from hazelnut.site.config import SITE_DIR, SITE_URL, load_crops
+from hazelnut.site.config import SITE_DIR, load_crops
 from hazelnut.site.crops import crop_module
-from hazelnut.site.labels import SCROLL_HINT
+from hazelnut.site.i18n import t
+from hazelnut.site.labels import scroll_hint
 
 crop = load_crops()["hazelnut"]
 mod = crop_module(crop.slug)
@@ -15,7 +19,8 @@ data_dir = SITE_DIR / "data" / crop.slug
 manifest = ph.read_json_or_none(data_dir / "manifest.json")
 local = crop.local_currency
 
-# Filters, files, labels and number formats all come from the crop config and the workbook spec.
+# Filters, files, labels and number formats all come from the crop config and the workbook
+# spec; the interface text, number locale and month names from site/i18n (cfg["ui"] etc.).
 cfg = ph.explorer_config(crop, mod.WORKBOOK_SHEETS, mod.EXPLORER_SHEETS, mod.WORKBOOK_SOURCES,
                          f"../data/{crop.slug}")
 
@@ -40,10 +45,7 @@ if cfg["exchanges"]:
 cfg.update(
     notes=notes,
     as_of=ph.month_label(manifest["as_of"]) if manifest else None,
-    downloads_url=f"{SITE_URL}downloads.html",
-    unavailable="These records could not be loaded. Reload the page to try again.",
-    empty="No months match these filters.",
-    scroll_hint=SCROLL_HINT,
+    scroll_hint=scroll_hint(),
 )
 ojs_define(explorer=cfg)
 
@@ -53,26 +55,40 @@ if manifest is not None:
              f'{ph.escape(ph.as_of_stamp(manifest))}</span>')
 ph.raw_html(
     '<div class="dash-head"><div>'
-    f'<span class="eyebrow">Crops / {ph.escape(crop.name)} / Data explorer</span>'
-    "<h1>Every record, ready to filter and take</h1></div>"
+    f'<span class="eyebrow">{ph.escape(t("explorer.eyebrow", crop=i18n.crop_name(crop)))}</span>'
+    f'<h1>{ph.escape(t("explorer.h1"), quote=False)}</h1></div>'
     f"{stamp}</div>"
 )
 ```
 
+::: {.content-visible when-profile="en"}
 ::: {.lede .explorer-lede}
 Monthly exchange prices, as published. Whatever you filter is what you download. The full workbook, with exports, crop sizes and the forecast scores, is on the [Downloads](../downloads.qmd) page.
+:::
+:::
+
+::: {.content-visible when-profile="tr"}
+::: {.lede .explorer-lede}
+Aylık borsa fiyatları, yayımlandığı gibi. İndirdiğiniz dosya, filtrelediğiniz görünümün aynısıdır. İhracatı, hasat miktarlarını ve tahmin puanlarını da içeren tam çalışma kitabı [İndirmeler](../downloads.qmd) sayfasında.
+:::
 :::
 
 ::: {.explorer}
 
 ::: {.panel .filters}
+::: {.content-visible when-profile="en"}
 [Filters]{.eyebrow}
+:::
+
+::: {.content-visible when-profile="tr"}
+[Filtreler]{.eyebrow}
+:::
 
 ```{ojs}
-viewof exchange = segInput("Exchange", explorer.exchanges.map(e => e.name))
-viewof currency = segInput("Currency", explorer.currencies.map(c => c.label))
+viewof exchange = segInput("exchange", ui.exchange, explorer.exchanges.map(e => e.name))
+viewof currency = segInput("currency", ui.currency, explorer.currencies.map(c => c.label))
 viewof seasons = seasonInput(allSeasons)
-viewof extras = checkInput("Columns", exchangeCfg.extras.map(k => colOf(exchangeCfg, k)))
+viewof extras = checkInput(ui.columns, exchangeCfg.extras.map(k => colOf(exchangeCfg, k)))
 ```
 :::
 
@@ -148,32 +164,38 @@ rows = {
   return all.filter(r => keep.has(r.season));
 }
 
+// ---- interface text --------------------------------------------------------------------
+// Every visible string is the page language's, from site/i18n via ojs_define (explorer.ui).
+ui = explorer.ui
+
+// A template's {name} fields filled from `values` (unknown fields are left as they are).
+fill = (template, values) => template.replace(/\{(\w+)\}/g, (m, k) => k in values ? String(values[k]) : m)
+
 // ---- header, download and note ---------------------------------------------------------
 recordsHead = (view, seasons, exchange) => {
   const n = view.length;
   const status = htl.html`<span class="dl-status" role="status"></span>`;
   const button = htl.html`<button type="button" class="btn pri" disabled=${n === 0}
-      title=${n === 0 ? "Nothing to download: no months match these filters" : null}>
-    <svg class="ico" aria-hidden="true"><use href="#download"/></svg>Download this view (.xlsx)</button>`;
+      title=${n === 0 ? ui.nothing : null}>
+    <svg class="ico" aria-hidden="true"><use href="#download"/></svg>${ui.download}</button>`;
   button.onclick = async () => {
     button.disabled = true;
-    status.textContent = "Preparing the file…";
+    status.textContent = ui.preparing;
     try {
       await downloadView(view, columns);
       status.textContent = "";
     } catch (e) {
-      status.textContent = e instanceof LoadError
-        ? "The Excel library could not load. Check your connection and try again."
-        : "The file could not be made. Please try again.";
+      status.textContent = e instanceof LoadError ? ui.load_error : ui.make_error;
     } finally {
       button.disabled = view.length === 0;
     }
   };
+  const rowsText = fill(n === 1 ? ui.rows.one : ui.rows.other, {n: n.toLocaleString(explorer.locale)});
   return htl.html`<div class="phead records-head">
-    <div><span class="eyebrow">Monthly records</span>
-      <h2 class="ptitle">${exchange}, ${seasonsLabel(seasons)}</h2></div>
+    <div><span class="eyebrow">${ui.records}</span>
+      <h2 class="ptitle">${fill(ui.heading, {exchange, seasons: seasonsLabel(seasons)})}</h2></div>
     <div class="records-actions">
-      <span class="pill" aria-live="polite">${n.toLocaleString("en-US")} ${n === 1 ? "row" : "rows"}</span>
+      <span class="pill" aria-live="polite">${rowsText}</span>
       ${button}${status}
     </div>
   </div>`;
@@ -199,26 +221,27 @@ downloadView = async (records, cols) => {
   const body = records.map(r => cols.map(c => xlsxCell(r[c.key], c)));
   const ws = XLSX.utils.aoa_to_sheet([head, ...body]);
   ws["!cols"] = cols.map(c => ({wch: Math.max(c.label.length + 2, c.key === "month" ? 10 : 9)}));
+  const a = ui.about;
   const about = XLSX.utils.aoa_to_sheet([
-    [`${explorer.name} monthly records`],
-    ["Exchange", exchange],
-    ["Currency", currency],
-    ["Seasons", [...seasons].sort().join(", ")],
-    ["Rows", records.length],
-    ["Data as of", explorer.as_of ?? "unknown"],
-    ["Source", exchangeCfg.source ?? "See the Downloads page"],
-    ["Credit and terms", exchangeCfg.terms ?? "See the Downloads page"],
-    ["All sources and terms", explorer.downloads_url],
+    [fill(a.title, {crop: explorer.name})],
+    [a.exchange, exchange],
+    [a.currency, currency],
+    [a.seasons, [...seasons].sort().join(", ")],
+    [a.rows, records.length],
+    [a.as_of, explorer.as_of ?? a.unknown],
+    [a.source, exchangeCfg.source ?? a.see_downloads],
+    [a.terms, exchangeCfg.terms ?? a.see_downloads],
+    [a.all_sources, explorer.downloads_url],
   ]);
   about["!cols"] = [{wch: 22}, {wch: 70}];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Records");
-  XLSX.utils.book_append_sheet(wb, about, "About");
+  XLSX.utils.book_append_sheet(wb, ws, a.records_sheet);
+  XLSX.utils.book_append_sheet(wb, about, a.sheet);
   XLSX.writeFile(wb, fileName, {compression: true});
 }
 
 // ---- helpers ---------------------------------------------------------------------------
-MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+MONTHS = explorer.months  // short month names in the page's language
 
 colOf = (ex, key) => ex.columns.find(c => c.key === key)
 
@@ -226,16 +249,17 @@ fmtCell = (v, c) => {
   if (v === null || v === undefined || v === "" || Number.isNaN(v)) return "";
   if (c.key === "month") return `${MONTHS[+v.slice(5, 7) - 1]} ${v.slice(0, 4)}`;
   if (c.decimals === null) return String(v);
-  return v.toLocaleString("en-US", {minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals});
+  return v.toLocaleString(explorer.locale, {minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals});
 }
 
-// One spreadsheet cell: months become real dates shown as "Sep 2026", numbers keep their
+// One spreadsheet cell: months become real dates shown as "Sep 2026" (in the page's
+// language: explorer.month_format), numbers keep their
 // full value with the table's number format, and missing values stay empty.
 xlsxCell = (v, c) => {
   if (v === null || v === undefined || v === "" || Number.isNaN(v)) return null;
   if (c.key === "month") {
     const serial = (Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, 1) - Date.UTC(1899, 11, 30)) / 864e5;
-    return {t: "n", v: serial, z: "mmm yyyy"};
+    return {t: "n", v: serial, z: explorer.month_format};
   }
   if (c.decimals === null) return {t: "s", v: String(v)};
   return {t: "n", v, z: c.decimals ? `0.${"0".repeat(c.decimals)}` : "0"};
@@ -250,11 +274,11 @@ isRun = list => {
 
 seasonsLabel = list => {
   const s = [...list].sort();
-  if (s.length === 0) return "no season selected";
-  if (s.length === 1) return `season ${s[0]}`;
-  if (s.length === allSeasons.length) return "all seasons";
-  if (isRun(s)) return `seasons ${s[0]} to ${s[s.length - 1]}`;
-  return `${s.length} seasons`;
+  if (s.length === 0) return ui.seasons_none;
+  if (s.length === 1) return fill(ui.seasons_one, {season: s[0]});
+  if (s.length === allSeasons.length) return ui.seasons_all;
+  if (isRun(s)) return fill(ui.seasons_run, {first: s[0], last: s[s.length - 1]});
+  return fill(ui.seasons_some, {n: s.length.toLocaleString(explorer.locale)});
 }
 
 seasonsToken = list => {
@@ -291,8 +315,9 @@ loadXLSX = {
 LoadError = class extends Error {}
 
 // ---- inputs, styled by the site theme (no Observable Inputs) ----------------------------
-segInput = (label, options) => {
-  const name = `seg-${label.toLowerCase()}`;
+// `key` names the radio group (seg-<key>); `label` is the visible legend.
+segInput = (key, label, options) => {
+  const name = `seg-${key}`;
   const el = htl.html`<fieldset class="field"><legend class="eyebrow">${label}</legend>
     <div class="seg">${options.map((o, i) => htl.html`<label class=${i === 0 ? "on" : null}>
       <input type="radio" class="visually-hidden" name=${name} value=${o} checked=${i === 0}>${o}</label>`)}</div>
@@ -317,13 +342,13 @@ checkInput = (label, cols) => {
 
 seasonInput = (list) => {
   const picked = new Set(list.slice(0, 2));  // the newest two seasons: the latest months and one full season
-  const el = htl.html`<fieldset class="field"><legend class="eyebrow">Season</legend>
+  const el = htl.html`<fieldset class="field"><legend class="eyebrow">${ui.season}</legend>
     <div class="season-tools">
-      <button type="button" data-pick="latest">Latest</button>
-      <button type="button" data-pick="all">All</button>
-      <button type="button" data-pick="none">None</button>
+      <button type="button" data-pick="latest">${ui.latest}</button>
+      <button type="button" data-pick="all">${ui.all}</button>
+      <button type="button" data-pick="none">${ui.none}</button>
     </div>
-    <div class="season-list" role="group" aria-label="Seasons, newest first">${list.map(s => htl.html`<label class="check">
+    <div class="season-list" role="group" aria-label=${ui.seasons_aria}>${list.map(s => htl.html`<label class="check">
       <input type="checkbox" value=${s} checked=${picked.has(s)}>${s}</label>`)}</div>
   </fieldset>`;
   Object.defineProperty(el, "value", {
@@ -346,17 +371,17 @@ sortState = ({key: "month", dir: -1})  // newest month first; kept while the fil
 
 recordsTable = (records, cols) => {
   if (records === null) {
-    const el = htl.html`<div class="chart-error" role="note">${explorer.unavailable}</div>`;
+    const el = htl.html`<div class="chart-error" role="note">${ui.unavailable}</div>`;
     el.value = [];
     return el;
   }
   if (records.length === 0) {
-    const el = htl.html`<div class="chart-error records-empty" role="status">${explorer.empty}</div>`;
+    const el = htl.html`<div class="chart-error records-empty" role="status">${ui.empty}</div>`;
     el.value = [];
     return el;
   }
   if (!cols.some(c => c.key === sortState.key)) Object.assign(sortState, {key: "month", dir: -1});
-  const wrap = htl.html`<div class="records-wrap" tabindex="0" role="region" aria-label="Monthly records table" data-scroll-hint=${explorer.scroll_hint}>`;
+  const wrap = htl.html`<div class="records-wrap" tabindex="0" role="region" aria-label=${ui.table_aria} data-scroll-hint=${explorer.scroll_hint}>`;
   const sorted = () => {
     const {key, dir} = sortState;
     return [...records].sort((a, b) => {
@@ -383,7 +408,7 @@ recordsTable = (records, cols) => {
       return th;
     });
     const table = htl.html`<table class="records" data-quarto-disable-processing="true">
-      <caption class="visually-hidden">Monthly records; select a column heading to sort</caption>
+      <caption class="visually-hidden">${ui.table_caption}</caption>
       <thead><tr>${head}</tr></thead>
       <tbody>${list.map(r => htl.html`<tr>${cols.map(c =>
         htl.html`<td class=${c.decimals === null ? null : "n"}>${fmtCell(r[c.key], c)}</td>`)}</tr>`)}</tbody>

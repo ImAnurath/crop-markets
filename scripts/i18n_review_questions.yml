@@ -1,0 +1,68 @@
+# Leftover questions for the owner, shown first in the review pack (scripts/i18n_review.py).
+#
+# After the owner's review (2026-11-25, Q2–Q23 answered) and the naturalness pass, only the
+# points that are genuinely open or a matter of taste are left. Each has a suggestion; reply
+# "keep" to accept it. The "Changed since your review" section of the pack lists every edit.
+# Each item:
+#   title    the question, short
+#   source   where it came from
+#   keys     site/i18n keys it is about; the pack shows their current English and Turkish
+#   where    for text outside site/i18n: the file (qmd prose, profile, workbook)
+#   en, tr   that text, quoted
+#   en_var   a site/_variables.yml entry to quote as the English text
+#   suggest  a concrete suggestion (`backticks` show as code)
+
+- title: "Turkish author bio is missing (the deploy is blocked until it is added)"
+  source: "T6 batch 1 (fix round 1), T8; your Q1: you add it yourself"
+  where: "site/_variables.yml (your file), shown on the overview byline"
+  en_var: author_bio
+  tr: "(missing: the Turkish byline shows ?var:author_bio_tr, and check_site_vars.py stops the deploy)"
+  suggest: 'Add to `site/_variables.yml`: `author_bio_tr: "Türkiye tarım ürünleri piyasalarının veri analizi."` (or your own wording).'
+
+- title: "Brand \"Ürün Piyasaları\" and \"ürün\" (not \"mahsul\")"
+  source: "your Q19 and Q20"
+  where: "navbar, tab titles, footer, home eyebrow, 404 (Turkish pages); the workbooks carry no brand"
+  en: "Crop Markets"
+  tr: "Ürün Piyasaları"
+  suggest: 'Done as decided; it fits the navbar at 390 px (screenshots). "Crop" stays "ürün" everywhere, as it is the more general word; "mahsul" would read as farm produce only. Keep, or say "mahsul" and we switch the headings.'
+
+- title: "Home headline can read as if the markets were built"
+  source: "your Q18 (alternative chosen); naturalness pass"
+  where: "site/index.qmd (prose, Home)"
+  en: "Export crop markets, *built in the open.*"
+  tr: "İhraç ürünlerinin piyasaları, *şeffaf biçimde kuruldu.*"
+  suggest: 'Kept as you chose. A reader may take "kuruldu" to mean the markets themselves were set up. If that bothers you: "İhraç ürünlerinin piyasaları, *şeffaf biçimde izleniyor.*"'
+
+- title: "Holdout card on Methods: no repetition found, so the lead-in stays"
+  source: "your Q31 default (a bug to fix)"
+  keys: [methods_page.fact_holdout, forecast.holdout_some_lost]
+  suggest: 'The card prints "Ayrılmış test dönemi, Ekim 2024 – Eylül 2026: Her ufukta 24 tahmin; …": the name appears once (a new test checks every holdout wording in both languages). Dropping the lead-in would leave the line without a name, so it is kept. Keep.'
+
+- title: "Workbook months: Turkish names in the explorer download"
+  source: "your Q33 (B)"
+  where: "explorer download (Turkish): month cells `[$-41F]mmm yyyy` (the Turkish LCID); the full workbooks"
+  en: "Oct 2026 (explorer download); 2026-10 (full workbook)"
+  tr: "Eki 2026 in any Excel (explorer download); 2026-10 (full workbook)"
+  suggest: 'Only the explorer download had real date cells; it now shows Turkish month names in any Excel. The full workbooks write months as text "2026-10" (no month names, same in both languages), so there was nothing to force. Keep, or ask for real dates in the Turkish full workbook.'
+
+- title: "Missing peak: \"zirve: N/A\""
+  source: "your Q16 (N/A in both languages)"
+  keys: [na, strip.peak_na]
+  suggest: 'The peak tile now reads "zirve: N/A", in the same form as "zirve: Mayıs 2015 (7,59 $)". Keep, or "zirve verisi yok" for that one phrase.'
+
+- title: "English: how the TL rule was applied"
+  source: "your Q13 (TL as unit and label, lira for the currency itself)"
+  keys: [crop.hazelnut.local_name, hazelnut.analyses.forecasting.lira_title, hazelnut.analyses.forecasting.lira_method.naive]
+  where: "site/methods.qmd and forecasting.qmd (English prose)"
+  en: "Price, TL · TL forecasts against TL naive · TL data only · exchange rate (USD/TL) · TL prices · Lira crises · the lira's depreciation trend · old lira / new lira"
+  suggest: 'Unit and label → "TL"; the currency as a thing keeps "lira" (Lira crises, the lira''s depreciation, old lira became 1 new lira). Keep.'
+
+- title: "\"varyant\" in the TL forecasts"
+  source: "naturalness pass (a word a general reader may not use)"
+  keys: [hazelnut.analyses.forecasting.lira_caveat, hazelnut.analyses.forecasting.lira_split_foot, hazelnut.analyses.forecasting.lira_foot]
+  suggest: 'Keep "varyant" (now common in Turkish), or "6 farklı kur hesabı denendi" / "Altı farklı kur hesabı denendi".'
+
+- title: "\"medyan\" for a general reader"
+  source: "naturalness pass (glossary term)"
+  keys: [gap.median_below, exports.ratio_subtitle, chart.median]
+  suggest: 'Keep "medyan" (glossary; the press uses it). Alternative: "ortanca", or "medyan olarak" → "çoğu ayda" where the exact statistic matters less.'

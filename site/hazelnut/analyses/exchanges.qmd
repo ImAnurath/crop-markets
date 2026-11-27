@@ -1,19 +1,24 @@
 ---
 title: "Giresun and Ordu exchanges"
+title-tr: "Giresun ve Ordu borsaları"
 description: "The Giresun and Ordu commodity exchanges' hazelnut prices side by side, and how far apart they run month to month."
+description-tr: "Giresun ve Ordu ticaret borsalarının fındık fiyatları yan yana ve aradaki farkın aydan aya ne kadar açıldığı."
 ---
 
 ```{python}
-from hazelnut.site import charts
+from hazelnut.site import charts, i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site.config import SITE_DIR, load_crops
+from hazelnut.site.i18n import t
 
 crop = load_crops()["hazelnut"]
 data_dir = SITE_DIR / "data" / crop.slug
 local = crop.local_currency
 manifest = ph.read_json_or_none(data_dir / "manifest.json")
 stamp = ph.as_of_stamp(manifest) if manifest is not None else None
+K = f"{crop.slug}.analyses.exchanges"  # this page's strings in site/i18n
 REF, OTHER = crop.exchanges[0], crop.exchanges[1]  # Giresun (the site's price), Ordu
+PAIR = dict(ref=REF, other=OTHER)
 
 ref = ph.read_csv_or_none(data_dir / "prices_monthly.csv",
                           required=("month", "usd_kg", local.column))
@@ -42,37 +47,30 @@ if ref is not None and other is not None:
 
 ```{python}
 if gap is None:
-    found = f"The {REF} and {OTHER} exchanges' prices, side by side."
+    found = t(f"{K}.found_fallback", **PAIR)
 else:
     g = gap["gap"]
-    found = (
-        f"{OTHER}'s price has run below {REF}'s in most months: a median "
-        f"{abs(float(g.median())) * 100:.1f}% lower over {len(g)} months, and higher in only "
-        f"{int((g > 0).sum())}. Over the years the two lines rise and fall together, so either "
-        "exchange tells the same story about the market, at a different level."
-    )
-ph.raw_html(ph.analysis_head_html(crop.name, f"{REF} and {OTHER}",
-                                  f"Two exchanges, one market: {REF} against {OTHER}",
-                                  found, stamp))
+    found = t(f"{K}.found", pct=i18n.fmt_pct(abs(float(g.median())), 1), n=len(g),
+              higher=int((g > 0).sum()), **PAIR)
+ph.raw_html(ph.analysis_head_html(i18n.crop_name(crop), i18n.join_names([REF, OTHER]),
+                                  t(f"{K}.h1", **PAIR), found, stamp))
 ```
 
 ::: {.dash}
 
 ::: {#panel-both .panel .span-12}
 ```{python}
-TITLE = f"{REF} and {OTHER} prices"
+TITLE = t(f"{K}.both_title", **PAIR)
 if both is None:
-    ph.raw_html(ph.panel_head_html(TITLE, "Monthly prices on the two exchanges."))
+    ph.raw_html(ph.panel_head_html(TITLE, t(f"{K}.both_fallback")))
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.gap_subtitle(gap, OTHER, REF)))
     charts.show(charts.compare_lines(both["month"], both["usd_kg_ref"], both["usd_kg_oth"],
                                      REF, OTHER))
+    foot = t(f"{K}.both_foot", local=local.label, **PAIR)
     ph.raw_html(
-        f'<p class="foot">USD per kg, in-shell. {REF}: the exchange\'s monthly average. '
-        f"{OTHER}: the monthly average of the exchange's daily price sheet, converted at "
-        f"{REF}'s monthly rate, so it has no USD value past {REF}'s latest month. The gap is "
-        f"measured in {ph.escape(local.label)}, which both exchanges quote."
+        f'<p class="foot">{ph.escape(foot, quote=False)}'
         f"{' ' + ph.escape(dropped_note) if dropped_note else ''}</p>"
     )
 ```
@@ -80,19 +78,16 @@ else:
 
 ::: {#panel-gap .panel .span-12}
 ```{python}
-TITLE = f"How far {OTHER} sits from {REF}"
+TITLE = t(f"{K}.gap_title", **PAIR)
 if gap is None:
-    ph.raw_html(ph.panel_head_html(TITLE, f"{OTHER}'s price as a change from {REF}'s."))
+    ph.raw_html(ph.panel_head_html(TITLE, t(f"{K}.gap_fallback", **PAIR)))
     ph.raw_html(ph.unavailable_html())
 else:
     ph.raw_html(ph.panel_head_html(TITLE, ph.gap_detail_subtitle(gap, OTHER)))
     charts.show(charts.gap_line(gap["month"], gap["gap"], float(gap["gap"].median())))
+    foot = t(f"{K}.gap_foot", local=local.label, **PAIR)
     ph.raw_html(
-        f'<p class="foot">{OTHER}\'s monthly price divided by {REF}\'s, minus one, in '
-        f"{ph.escape(local.label)}. {OTHER}'s sheet agrees closely with TOBB's {OTHER} Levant "
-        f"series on the days both report a price. "
-        f"{REF}-quality nuts usually fetch a premium over Levant, which may explain much of "
-        "the gap."
+        f'<p class="foot">{ph.escape(foot, quote=False)}'
         f"{' ' + ph.escape(dropped_note) if dropped_note else ''}</p>"
     )
 ```
@@ -100,6 +95,14 @@ else:
 
 :::
 
+::: {.content-visible when-profile="en"}
 ```{=html}
 <p class="back"><a href="index.qmd">All analyses</a></p>
 ```
+:::
+
+::: {.content-visible when-profile="tr"}
+```{=html}
+<p class="back"><a href="index.qmd">Tüm analizler</a></p>
+```
+:::

@@ -1,5 +1,6 @@
 # Owner details shown on the site ({{< var author_name >}} etc.).
 author_name: "Ozan Berk Gultegin"
 author_bio: "Data analysis of Turkish crop markets."
+author_bio_tr: "Türkiye tarım ürünleri piyasalarının veri analizi."
 github_url: "https://github.com/ImAnurath/"
 linkedin_url: "https://www.linkedin.com/in/ozanberkgultegin/"

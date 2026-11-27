@@ -1,14 +1,15 @@
-"""Readable names shared by the site pages and the Excel workbook."""
+"""Readable names shared by the site pages and the Excel workbook.
+
+The words themselves live in ``site/i18n/{en,tr}.yml`` (see ``hazelnut.site.i18n``).
+"""
 from __future__ import annotations
 
-METHOD_NAMES = {
-    "naive": "Naive", "seasonal_naive": "Seasonal naive", "sarima": "SARIMA",
-    "sarimax": "SARIMAX", "season_reg": "Season regression", "lightgbm": "LightGBM",
-    "chronos": "Chronos-Bolt",
-    # Range (quantile) forecasts
-    "naive_emp": "Naive range (past moves)", "naive_vol": "Naive range, volatility-scaled",
-    "lightgbm_q": "LightGBM quantiles",
-}
+from hazelnut.site.i18n import country_name, has, t
+
+# The forecasting methods with a readable name (site/i18n "method.<code>").
+METHODS = ("naive", "seasonal_naive", "sarima", "sarimax", "season_reg", "lightgbm", "chronos",
+           # Range (quantile) forecasts
+           "naive_emp", "naive_vol", "lightgbm_q")
 
 
 # The Methods page card that explains each method (its anchor id).
@@ -19,35 +20,39 @@ METHOD_ANCHORS = {
 }
 
 
-# Shown above a table that is wider than its card, so a reader knows it scrolls sideways.
-SCROLL_HINT = "Scroll for more →"
-
-
-# The exports table's bucket for every partner outside the top ten.
+# The exports table's bucket for every partner outside the top ten. This is the value in
+# the data (exports_top.csv); pages show it as ``other_partner_label()``.
 OTHER_PARTNER = "Other"
 
 
-# Stat-tile labels for a crop estimate, whole sentences with named fields.
-CROP_ESTIMATE_LABEL = "{source} crop estimate, {year}"
-CROP_ESTIMATE_LABEL_NO_YEAR = "{source} crop estimate"
+def other_partner_label() -> str:
+    return t("exports.other")
 
 
-HOLDOUT_LUCK_NOTE = ("Each score that beat naive in the holdout had lost to naive at that same "
-                     "horizon in development, so these wins look like luck, not skill.")
-HOLDOUT_NO_REPEAT_NOTE = ("None of the holdout scores that beat naive also beat it in "
-                          "development at the same horizon.")
+def partner_label(partner: str) -> str:
+    """An export destination as the pages show it: the "Other" bucket as
+    ``other_partner_label()``, a country by ``i18n.country_name``."""
+    return other_partner_label() if partner == OTHER_PARTNER else country_name(partner)
 
-HOLDOUT_REPEAT_NOTE = ("{n} of the holdout scores that beat naive also beat it in development "
-                       "at the same horizon.")
 
-# Footnote under the crop-and-frost chart naming whose crop figures are plotted.
-CROP_FIGURES_NOTE = "The crop figures are the {source} exchange's estimates."
+def scroll_hint() -> str:
+    """Shown above a table that is wider than its card, so a reader knows it scrolls."""
+    return t("table.scroll_hint")
 
-# Frost page subtitle when there are too few years to correlate.
-FROST_CROP_FALLBACK = "Spring frost days against the {source} crop estimate."
-FROST_CROP_FALLBACK_NO_SOURCE = "Spring frost days against the crop estimate."
+
+def crop_estimate_label(source: str, year: int | None = None) -> str:
+    """Stat-tile and axis label for a crop estimate: "Giresun crop estimate, 2026"."""
+    if year is None:
+        return t("crop_estimate.label_no_year", source=source)
+    return t("crop_estimate.label", source=source, year=year)
+
+
+def crop_figures_note(source: str) -> str:
+    """Footnote under the crop-and-frost chart naming whose crop figures are plotted."""
+    return t("crop_estimate.figures_note", source=source)
 
 
 def method_name(method: str) -> str:
     """Readable forecasting-method name; unknown methods keep their code name."""
-    return METHOD_NAMES.get(method, method)
+    key = f"method.{method}"
+    return t(key) if has(key) else method

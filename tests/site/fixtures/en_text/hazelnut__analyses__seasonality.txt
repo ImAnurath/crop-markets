@@ -1,0 +1,26 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut seasonality
+Does the Giresun hazelnut price follow the harvest calendar? Average price by month of the season, as a change from the season’s mean.
+Crops / Hazelnut / Analyses / Seasonality
+Does the price follow the harvest calendar?
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+What we found
+The price does follow the season, but only just. Averaged over 31 seasons it is lowest in September (−3.2% from the season's mean) and highest in May (+4.5%). One season's own ups and downs are far bigger: in a typical month the middle half of seasons spans 15 points, so the calendar alone is a weak guide to next month's price.
+Average price by month of the season
+Across 31 complete seasons, the average month sits between −3.2% (September) and +4.5% (May) from its season's mean; the middle half of seasons spans 15 points in a typical month.
+Giresun exchange monthly average, USD per kg. Seasons run September to August; only complete seasons are counted. Bars: the average across seasons; whiskers: the middle half of seasons. In TL the averages run from −12.7% to +11.0%, because the currency's slide lifts prices through every season.
+All analyses
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

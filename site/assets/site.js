@@ -1,5 +1,7 @@
-/* Site behaviour: sprite icons in the nav, and Plotly charts that follow the colour scheme.
-   The scheme itself (stored choice, else dark) is Quarto's; this file only reacts to it.
+/* Site behaviour: sprite icons and the language switch in the nav, and Plotly charts that
+   follow the colour scheme. The scheme itself (stored choice, else dark) is Quarto's; this
+   file only reacts to it. Words shown come from the page's #site-strings JSON block
+   (each profile's `site-strings`, written by filters/lang-links.lua).
    Charts are written by hazelnut.site.charts.show() as
      <div class="chart chart-skeleton" data-plotly data-plotly-src=… data-plotly-sri=…>
        <script type="application/json">{data, layout, config}</script></div>
@@ -8,6 +10,12 @@
   "use strict";
 
   var SVG = "http://www.w3.org/2000/svg";
+  var LANG_KEY = "crop-markets-lang";
+
+  var STR = (function () {
+    try { return JSON.parse(document.getElementById("site-strings").textContent) || {}; }
+    catch (e) { return {}; }
+  })();
 
   function icon(name) {
     var svg = document.createElementNS(SVG, "svg");
@@ -22,11 +30,59 @@
   function decorateNav() {
     document.querySelectorAll(".quarto-color-scheme-toggle").forEach(function (btn) {
       if (!btn.querySelector("svg.ico")) btn.appendChild(icon("contrast"));
-      btn.setAttribute("title", "Switch light / dark");
+      if (STR["theme-toggle"]) btn.setAttribute("title", STR["theme-toggle"]);
     });
     document.querySelectorAll('.navbar a.nav-link[href$=".xlsx"]').forEach(function (a) {
       if (!a.querySelector("svg.ico")) a.insertBefore(icon("download"), a.firstChild);
     });
+  }
+
+  // ---- Language switch ----------------------------------------------------
+  /* "TR / EN" before the theme toggle: the current language (from <html lang>) marked,
+     the other a link to this page in that language, keeping the query and #hash. The
+     target is the page's <link rel="alternate" hreflang data-href> (on the 404 page,
+     added by its own script). Following it stores the choice, which detection obeys. */
+  function addLangSwitch() {
+    var tools = document.querySelector(".quarto-navbar-tools");
+    var sw = STR["lang-switch"];
+    if (!tools || !sw || !sw.langs || tools.querySelector(".lang-switch")) return;
+    var current = document.documentElement.lang;
+    var box = document.createElement("div");
+    box.className = "lang-switch";
+    box.setAttribute("role", "group");
+    box.setAttribute("aria-label", sw.label);
+    sw.langs.forEach(function (l) {
+      var el;
+      if (l.lang === current) {
+        el = document.createElement("span");
+        el.setAttribute("aria-current", "true");
+      } else {
+        var alt = document.querySelector('link[rel="alternate"][hreflang="' + l.lang + '"][data-href]');
+        if (!alt) return;
+        el = document.createElement("a");
+        el.setAttribute("hreflang", l.lang);
+        el.setAttribute("lang", l.lang);
+        if (l.title) el.setAttribute("title", l.title);
+        var point = function () {
+          var url = new URL(alt.getAttribute("data-href"), location.href);
+          url.search = location.search;
+          url.hash = location.hash;
+          el.href = url.href;
+        };
+        point();
+        window.addEventListener("hashchange", point);
+        var choose = function () {
+          point();
+          try { window.localStorage.setItem(LANG_KEY, l.lang); } catch (e) {}
+        };
+        // A middle-click (auxclick) opens the other language in a new tab: a choice too.
+        el.addEventListener("click", choose);
+        el.addEventListener("auxclick", choose);
+      }
+      el.textContent = l.code;
+      box.appendChild(el);
+    });
+    if (box.children.length > 1) tools.insertBefore(box, tools.firstChild);
   }
 
   // ---- Theme tokens -------------------------------------------------------
@@ -103,8 +159,7 @@
   function fail(div) {
     div.classList.remove("chart-skeleton");
     div.classList.add("chart-error");
-    div.textContent = "This chart could not load (the charting library did not download). " +
-      "Reload the page to try again; the numbers are also in the Excel workbook.";
+    div.textContent = STR["chart-failed"] || "";
   }
 
   function draw(div, t) {
@@ -187,6 +242,7 @@
 
   function init() {
     decorateNav();
+    addLangSwitch();
     scanWraps();
     window.addEventListener("resize", scanWraps);
     // The explorer redraws its table in place on every filter change.

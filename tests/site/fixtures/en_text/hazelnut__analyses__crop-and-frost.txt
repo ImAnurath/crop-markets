@@ -1,0 +1,29 @@
+Skip to main content
+[aria-label] Site
+Crop Markets
+[aria-label] Toggle navigation
+Overview
+Dashboard
+Analyses
+Data explorer
+Methods
+Downloads
+Excel
+[title] Toggle dark mode
+[aria-label] Toggle dark mode
+Hazelnut crop and frost
+Does a bigger hazelnut crop mean a lower price, and how much does a count of spring frost days say about the crop?
+Crops / Hazelnut / Analyses / Crop and frost
+Bigger crop, lower price? And what frost does
+Data as of October 2026 · refreshed weekly (some sources from December 2025)
+What we found
+Over 32 seasons, bigger crops have usually come with lower prices (correlation −0.56). Two frost years carry much of that: without 2004 and 2014, the correlation is −0.38 (30 seasons). A plain count of spring frost days says less: over 37 years, the frost-day count says little about the crop (correlation −0.17).
+Crop size against the season's price
+Over 32 seasons, bigger crops have usually come with lower prices (correlation −0.56).
+Giresun exchange crop estimate against the season's average USD price. The 2004 and 2014 frost years carry much of this link: without 2004 and 2014, the correlation is −0.38 (30 seasons). 2026/27 is season to date (September to October 2026), so its average is provisional.
+Spring frost days against the crop
+Over 37 years, the frost-day count says little about the crop (correlation −0.17).
+The crop figures are the Giresun exchange's estimates. The two smallest crops, 2004 and 2014, followed 8.7 and 2.3 frost days. A count of cold days does not say how hard or when the frost hit; one bad night at flowering can do the damage. Frost days: March-April days below 0 °C, averaged over the growing-area weather points (Open-Meteo).
+All analyses
+Crop Markets · data refreshed weekly from public sources · Sources and credits
+Hero photo: Zeynel Cebeci, CC BY-SA 4.0, via Wikimedia Commons (cropped)

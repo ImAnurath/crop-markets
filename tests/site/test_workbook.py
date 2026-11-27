@@ -101,3 +101,157 @@ def test_stale_output_listed_in_readme(tiny_tables, tmp_path):
     readme = "\n".join(str(c.value) for r in wb["README"].iter_rows() for c in r if c.value)
     assert "stale, as of December 2007" in readme
     assert "exports_top" not in readme
+
+
+# --- the English workbook stays as it was; the Turkish one mirrors it -------------------
+
+import hashlib  # noqa: E402
+import importlib  # noqa: E402
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from hazelnut.site import i18n  # noqa: E402
+from hazelnut.site.workbook import workbook_filename  # noqa: E402
+
+EN_SNAPSHOT = Path(__file__).parent / "fixtures" / "workbook_en.json"
+TR_SHEETS = ["Açıklama", "Fiyatlar", "Ordu", "İhracat", "Başlıca pazarlar", "Hasat",
+             "Tahmin aralığı", "Puan tablosu", "Kaynaklar"]
+
+
+def workbook_digest(path) -> dict:
+    """Each sheet's header row, row count and a hash of every cell value, in sheet order:
+    enough to show two builds wrote the same workbook."""
+    wb = load_workbook(path)
+    out = {}
+    for ws in wb.worksheets:
+        cells = [[c.value for c in row] for row in ws.iter_rows()]
+        blob = json.dumps(cells, default=str, ensure_ascii=False).encode("utf-8")
+        out[ws.title] = {"header": [v for v in (cells[0] if cells else []) if v is not None],
+                         "rows": ws.max_row, "sha256": hashlib.sha256(blob).hexdigest()}
+    return out
+
+
+def test_english_workbook_is_unchanged(data_dir, tmp_path):
+    # Snapshot of the English build before the Turkish workbook existed (sheet names,
+    # headers, every cell); it changes only for a deliberate English change.
+    want = json.loads(EN_SNAPSHOT.read_text(encoding="utf-8"))
+    assert workbook_digest(build_workbook(data_dir, tmp_path / "x.xlsx", CROP, URL)) == want
+
+
+@pytest.fixture
+def turkish_crop(turkish):
+    """Turkish, with the crop module re-read in Turkish (it reads its words on import)."""
+    from hazelnut.site import hazelnut_data
+
+    importlib.reload(hazelnut_data)
+    yield
+    i18n.LANG = "en"
+    importlib.reload(hazelnut_data)
+
+
+def _tr_wb(data_dir, tmp_path):
+    out = build_workbook(data_dir, tmp_path / "tr.xlsx", CROP, i18n.site_url())
+    return load_workbook(out)
+
+
+def test_turkish_workbook_has_turkish_sheet_names(turkish_crop, data_dir, tmp_path):
+    names = _tr_wb(data_dir, tmp_path).sheetnames
+    assert names == TR_SHEETS
+    for name in names:  # Excel's rules for a sheet name
+        assert len(name) <= 31 and not set(name) & set("[]:*?/\\"), name
+
+
+def test_turkish_workbook_has_turkish_headers_and_readme(turkish_crop, data_dir, tmp_path):
+    wb = _tr_wb(data_dir, tmp_path)
+    assert [c.value for c in wb["Fiyatlar"][1]] == ["Ay", "Sezon", "USD/kg", "TL/kg",
+                                                    "USD/TL kuru"]
+    assert [c.value for c in wb["Puan tablosu"][1]][:2] == ["Yöntem", "Ufuk (ay)"]
+    assert [c.value for c in wb["Kaynaklar"][1]] == ["Sağlayıcı", "Kullandığımız veri",
+                                                     "Adres", "Atıf ve koşullar"]
+    readme = wb["Açıklama"]
+    assert readme["A1"].value == "Fındık piyasa verileri (Türkiye)"
+    assert readme["A2"].value == "Veriler Aralık 2007 itibarıyla"
+    assert readme["A3"].value == "https://imanurath.github.io/crop-markets/tr/"
+    text = "\n".join(str(c.value) for r in readme.iter_rows() for c in r if c.value)
+    assert "Fiyatlar" in text and "Puan tablosu" in text and "Prices" not in text
+
+
+def test_turkish_workbook_holds_the_same_rows_as_the_english_one(data_dir, tmp_path, turkish):
+    from hazelnut.site import hazelnut_data
+
+    i18n.LANG = "en"
+    en = load_workbook(build_workbook(data_dir, tmp_path / "en.xlsx", CROP, URL))
+    i18n.LANG = "tr"
+    importlib.reload(hazelnut_data)
+    try:
+        tr = _tr_wb(data_dir, tmp_path)
+    finally:
+        i18n.LANG = "en"
+        importlib.reload(hazelnut_data)
+    assert len(en.worksheets) == len(tr.worksheets)
+    for e, t_ in zip(en.worksheets, tr.worksheets):
+        assert (e.max_row, e.max_column) == (t_.max_row, t_.max_column), e.title
+        if e.title in ("README", "Sources"):
+            continue
+        # Numbers (and their formats) are the same; only the words differ.
+        for er, tr_row in zip(e.iter_rows(min_row=2), t_.iter_rows(min_row=2)):
+            for a, b in zip(er, tr_row):
+                if isinstance(a.value, (int, float)):
+                    assert (a.value, a.number_format) == (b.value, b.number_format)
+
+
+def test_workbook_filename_per_language(turkish):
+    assert workbook_filename("hazelnut", "en") == "hazelnut-market-data.xlsx"
+    assert workbook_filename("hazelnut", "tr") == "hazelnut-market-data-tr.xlsx"
+    assert workbook_filename("hazelnut") == "hazelnut-market-data-tr.xlsx"  # active language
+    for lang in i18n.LANGS:
+        assert workbook_filename("rye", lang).isascii()
+
+
+def test_site_url_per_language(turkish):
+    assert i18n.site_url() == "https://imanurath.github.io/crop-markets/tr/"
+    i18n.LANG = "en"
+    assert i18n.site_url() == "https://imanurath.github.io/crop-markets/"
+
+
+def test_turkish_workbook_translates_destinations_and_products(data_dir, tmp_path, turkish):
+    # T7a: the Turkish workbook's Exports and Top destinations values are Turkish too:
+    # destinations by i18n.country_name ("Other" by exports.other), products by the
+    # crop's hazelnut.product.* labels. Checked row by row against the English build.
+    from hazelnut.site import hazelnut_data
+
+    i18n.LANG = "en"
+    en = load_workbook(build_workbook(data_dir, tmp_path / "en.xlsx", CROP, URL))
+    i18n.LANG = "tr"
+    importlib.reload(hazelnut_data)
+    try:
+        tr = _tr_wb(data_dir, tmp_path)
+        tr_strings = i18n.strings("tr")
+
+        def partner(p):
+            return tr_strings["exports.other"] if p == "Other" else i18n.country_name(p)
+
+        products = {code: tr_strings[f"hazelnut.product.{code}"] for code in ("in_shell", "shelled")}
+        checked = 0
+        for en_name, tr_name, cols in (("Exports", "İhracat", {2: products.get, 3: partner}),
+                                       ("Top destinations", "Başlıca pazarlar", {1: partner})):
+            for e_row, t_row in zip(en[en_name].iter_rows(min_row=2, values_only=True),
+                                    tr[tr_name].iter_rows(min_row=2, values_only=True)):
+                for col, label in cols.items():
+                    assert t_row[col - 1] == label(e_row[col - 1]), (tr_name, e_row)
+                    checked += 1
+    finally:
+        i18n.LANG = "en"
+        importlib.reload(hazelnut_data)
+    assert checked > 100
+    assert set(products.values()) == {"Kabuklu", "İç fındık"}
+    exports = [v for r in tr["İhracat"].iter_rows(min_row=2, values_only=True) for v in r[1:3]]
+    top = [r[0] for r in tr["Başlıca pazarlar"].iter_rows(min_row=2, values_only=True)]
+    for english in ("in_shell", "shelled", "Germany", "Italy", "Spain", "Other"):
+        assert english not in exports and english not in top, english
+    assert "Almanya" in top
+    # The tiny data has fewer than ten destinations, so no "Other" row; its label:
+    from hazelnut.site.labels import partner_label
+
+    i18n.LANG = "tr"
+    assert partner_label("Other") == "Diğer"

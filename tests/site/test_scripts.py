@@ -83,11 +83,27 @@ def test_no_summary_without_env(build_site_data, dirs, tmp_path, monkeypatch):
     assert build_site_data.main(_argv(dirs)) == 0
 
 
-def test_build_workbook_writes_xlsx(build_site_data, build_workbook, dirs, tmp_path):
+def test_build_workbook_writes_one_xlsx_per_language(build_site_data, build_workbook, dirs,
+                                                     tmp_path):
+    from openpyxl import load_workbook
+
     build_site_data.main(_argv(dirs))
-    out_file = tmp_path / "dl" / "hazelnut-market-data.xlsx"
     rc = build_workbook.main(["--data", str(dirs[2]), "--out", str(tmp_path / "dl")])
-    assert rc == 0 and out_file.exists()
+    assert rc == 0
+    en = load_workbook(tmp_path / "dl" / "hazelnut-market-data.xlsx")
+    tr = load_workbook(tmp_path / "dl" / "hazelnut-market-data-tr.xlsx")
+    assert en.sheetnames[:2] == ["README", "Prices"]
+    assert tr.sheetnames[:2] == ["Açıklama", "Fiyatlar"]
+    assert [ws.max_row for ws in en.worksheets] == [ws.max_row for ws in tr.worksheets]
+    assert tr["Fiyatlar"]["A1"].value == "Ay"
+
+
+def test_build_workbook_one_language(build_site_data, build_workbook, dirs, tmp_path):
+    build_site_data.main(_argv(dirs))
+    rc = build_workbook.main(["--data", str(dirs[2]), "--out", str(tmp_path / "dl"),
+                              "--lang", "en"])
+    assert rc == 0
+    assert sorted(p.name for p in (tmp_path / "dl").iterdir()) == ["hazelnut-market-data.xlsx"]
 
 
 def test_build_workbook_unknown_crop(build_workbook, tmp_path):
@@ -191,3 +207,89 @@ def test_second_crop_uses_its_own_columns_and_gets_no_results(build_site_data, d
     assert not (out / "results").exists()
     assert "no backtest folder" in capsys.readouterr().out
     assert not (dirs[2] / "hazelnut").exists()
+
+
+def test_render_site_renders_english_before_turkish():
+    # A full English render empties site/_site, Turkish tree included.
+    render_site = _load("render_site")
+    cmds = render_site.render_commands("quarto", ["tr", "en"])
+    assert [c[-2:] for c in cmds] == [["--profile", "en"], ["--profile", "tr"]]
+    assert all(c[:2] == ["quarto", "render"] and c[2].endswith("site") for c in cmds)
+    assert render_site.render_commands("quarto", ["tr"]) == [cmds[1]]
+
+
+def test_render_site_moves_the_turkish_sitemap_to_the_root_robots_and_drops_root_files(tmp_path):
+    render_site = _load("render_site")
+    (tmp_path / "tr").mkdir()
+    (tmp_path / "robots.txt").write_text("Sitemap: https://x.org/cm/sitemap.xml\n", "utf-8")
+    (tmp_path / "tr" / "robots.txt").write_text("Sitemap: https://x.org/cm/tr/sitemap.xml\n", "utf-8")
+    for name in ("404.html", "sitemap.xml", "index.html"):
+        (tmp_path / "tr" / name).write_text("x", "utf-8")
+    render_site.finish_tree(tmp_path, "tr")
+    render_site.finish_tree(tmp_path, "tr")  # idempotent
+    assert (tmp_path / "robots.txt").read_text("utf-8").splitlines() == [
+        "Sitemap: https://x.org/cm/sitemap.xml", "Sitemap: https://x.org/cm/tr/sitemap.xml"]
+    assert sorted(p.name for p in (tmp_path / "tr").iterdir()) == ["index.html", "sitemap.xml"]
+
+
+def test_render_site_names_the_site_once_in_a_turkish_tab_title(tmp_path):
+    render_site = _load("render_site")
+    (tmp_path / "tr" / "m").mkdir(parents=True)
+    home, page = tmp_path / "tr" / "index.html", tmp_path / "tr" / "m" / "methods.html"
+    home.write_text("<title>Ürün Piyasaları – Ürün Piyasaları</title>", "utf-8")
+    page.write_text("<title>Yöntemler – Ürün Piyasaları</title>", "utf-8")
+    render_site.finish_tree(tmp_path, "tr")
+    render_site.finish_tree(tmp_path, "tr")
+    assert home.read_text("utf-8") == "<title>Ürün Piyasaları</title>"
+    assert page.read_text("utf-8") == "<title>Yöntemler – Ürün Piyasaları</title>"
+
+
+# --- check_countries.py (Ruling F1: a warning in CI, never a failure) --------------------
+
+def _exports_csv(data_dir, partners):
+    folder = data_dir / "hazelnut"
+    folder.mkdir(parents=True)
+    rows = "".join(f'2020-01,shelled,"{p}",1.0,2.0\n' for p in partners)
+    (folder / "exports_monthly.csv").write_text(
+        "month,product,partner,net_kg,fob_usd\n" + rows, encoding="utf-8")
+
+
+def test_check_countries_warns_about_a_destination_without_an_entry(tmp_path, monkeypatch, capsys):
+    _exports_csv(tmp_path / "data", ["Italy", "Isle of Atlantis"])
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    assert _load("check_countries").main([str(tmp_path / "data")]) == 0
+    out = capsys.readouterr().out
+    assert "::warning::" in out and "Isle of Atlantis" in out
+    assert "Italy" not in out
+    text = summary.read_text(encoding="utf-8")
+    assert "Isle of Atlantis" in text and "1 export destination" in text
+
+
+def test_check_countries_is_quiet_when_every_destination_has_an_entry(tmp_path, monkeypatch, capsys):
+    _exports_csv(tmp_path / "data", ["Italy", "USA"])
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    assert _load("check_countries").main([str(tmp_path / "data")]) == 0
+    assert "::warning::" not in capsys.readouterr().out
+    assert "every export destination" in summary.read_text(encoding="utf-8")
+
+
+COUNTRY_TEST = "tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry"
+
+
+def test_workflow_warns_about_countries_instead_of_failing():
+    import yaml
+
+    from tests.site import test_i18n
+
+    workflow = SCRIPTS.parent / ".github" / "workflows" / "refresh-site.yml"
+    steps = yaml.safe_load(workflow.read_text(encoding="utf-8"))["jobs"]["build"]["steps"]
+    runs = [s.get("run", "") for s in steps]
+    assert hasattr(test_i18n, COUNTRY_TEST.rsplit("::", 1)[1])  # the deselected id exists
+    pytest_runs = [r for r in runs if "pytest tests/site" in r]
+    assert len(pytest_runs) == 2
+    assert all(f"--deselect {COUNTRY_TEST}" in r for r in pytest_runs)
+    warn = next(i for i, r in enumerate(runs) if "scripts/check_countries.py" in r)
+    gate = next(i for i, r in enumerate(runs) if "scripts/build_site_data.py" in r)
+    assert warn > gate and steps[warn].get("continue-on-error") is True

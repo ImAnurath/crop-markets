@@ -35,6 +35,9 @@ Thumbs.db
 site/_site/
 site/.quarto/
 site/downloads/*.xlsx
+# Quarto intermediates left in site/ by a render
+site/*.html
+site/site_libs/
 
 # Site-data writer temp dir (left behind if a run is killed)
 site/data/.site-data-*/

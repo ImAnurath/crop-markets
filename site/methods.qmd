@@ -1,31 +1,47 @@
 ---
 title: "Methods"
+title-tr: "Yöntemler"
 description: "How the numbers on this site are made: a plain-language glossary of the forecasting terms, what the tests found, and how the weekly refresh works."
+description-tr: "Bu sitedeki sayıların nasıl üretildiği: tahmin terimlerinin sade bir sözlüğü, testlerin bulguları ve haftalık güncellemenin işleyişi."
 ---
 
 ```{python}
+from hazelnut.site import i18n
 from hazelnut.site import page_helpers as ph
 from hazelnut.site import validate
 from hazelnut.site.config import SITE_DIR, load_crops
 from hazelnut.site.crops import crop_module
+from hazelnut.site.i18n import t
 
 crops = load_crops()
 first_month = ph.month_label(str(validate.FIRST_CONTIGUOUS))
 max_lag = validate.MAX_LAG_MONTHS
 holdout_text = ph.holdout_glossary_sentence(
-    [(c.name, crop_module(c.slug).HOLDOUT_PERIOD) for c in crops.values()
+    [(i18n.crop_name(c), crop_module(c.slug).HOLDOUT_PERIOD) for c in crops.values()
      if getattr(crop_module(c.slug), "HOLDOUT_PERIOD", None)]
 )
+# The glossaries and the refresh steps below are static prose, so each has an English and
+# a Turkish block. Keep the panel ids the same in both: other pages link to them
+# (methods.qmd#naive).
 ph.raw_html(
-    '<div class="dash-head"><div><span class="eyebrow">Methods</span>'
-    "<h1>How every number is made</h1></div></div>"
+    f'<div class="dash-head"><div><span class="eyebrow">{ph.escape(t("methods_page.eyebrow"))}</span>'
+    f'<h1>{ph.escape(t("methods_page.h1"), quote=False)}</h1></div></div>'
 )
 ```
 
+::: {.content-visible when-profile="en"}
 ::: {.lede .explorer-lede}
 The terms used across the site in plain words, what the forecast tests found, and how the weekly refresh keeps the data current without publishing broken numbers.
 :::
+:::
 
+::: {.content-visible when-profile="tr"}
+::: {.lede .explorer-lede}
+Sitede kullanılan terimlerin sade bir dille açıklaması, tahmin testlerinin bulguları ve haftalık güncellemenin, hatalı sayılar yayımlamadan verileri nasıl güncel tuttuğu.
+:::
+:::
+
+::: {.content-visible when-profile="en"}
 ```{python}
 ph.raw_html(f"""
 <div class="sect analysis-sect"><div><span class="eyebrow">Glossary</span><h2>The words, in plain language</h2></div></div>
@@ -70,15 +86,72 @@ ph.raw_html(f"""
     <p>A season is labelled by its two years: 2025/26 runs from September 2025 to August 2026.</p>
   </section>
   <section class="panel" id="old-lira">
-    <span class="pill tag">Turkish lira data only</span>
+    <span class="pill tag">TL data only</span>
     <h3>Old lira</h3>
-    <p>On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. Lira prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.</p>
-    <p>Lira prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.</p>
+    <p>On 1 January 2005 Turkey removed six zeros from its currency: 1,000,000 old lira became 1 new lira. TL prices before 2005 are shown in new lira (old values divided by 1,000,000), so the whole series is on one scale.</p>
+    <p>TL prices also carry decades of high inflation, which is why the forecasts are made and scored in US dollars.</p>
   </section>
 </div>
 """)
 ```
+:::
 
+::: {.content-visible when-profile="tr"}
+```{python}
+ph.raw_html(f"""
+<div class="sect analysis-sect"><div><span class="eyebrow">Sözlük</span><h2>Terimler, sade bir dille</h2></div></div>
+<div class="glossary">
+  <section class="panel" id="naive">
+    <h3>Naif tahmin</h3>
+    <p>Olabilecek en basit tahmin: fiyat olduğu yerde kalır. Gelecek ayın tahmini de altı ay sonrasının tahmini de bu ayın fiyatıdır.</p>
+    <p>Diğer bütün yöntemlerin geçmesi gereken ölçüt budur. Naif tahmini geçemeyen bir yöntem hiçbir şey katmaz.</p>
+  </section>
+  <section class="panel" id="mae">
+    <h3>Ortalama mutlak hata (MAE)</h3>
+    <p>Tahminlerin, yönüne bakılmadan, ortalama olarak ne kadar saptığı; fiyatın kendi biriminde, örneğin kilo başına ABD doları cinsinden. 0,20 $ fazla bir tahmin de 0,20 $ eksik bir tahmin de 0,20 $ hata sayılır.</p>
+  </section>
+  <section class="panel" id="ratio">
+    <h3>Naif tahmine oran</h3>
+    <p>Bir yöntemin MAE değerinin, aynı aylarda naif tahminin MAE değerine bölümü. 1'in altı, yöntemin naif tahmini geçtiği anlamına gelir; 1,03 ise hatalarının %3 daha büyük olduğunu gösterir.</p>
+    <p>Raporlar aynı karşılaştırmaya beceri adını verir: beceri = 1 − oran. Yani 0'ın üzerindeki bir beceri naif tahmini geçer.</p>
+  </section>
+  <section class="panel" id="walk-forward">
+    <h3>İleriye yürüyen geriye dönük test</h3>
+    <p>Geçmişi yeniden oynatmak gibidir. Testin her ayında her yöntem yalnızca o aya kadarki verileri görür, tahminlerini yapar ve gerçekte olanla karşılaştırılarak puanlanır. Sonra saat bir ay ileri alınır ve her şey yeniden başlar.</p>
+    <p>Tahmin ayından sonraki hiçbir bilgi kullanılmadığı için puanlar, bir yöntemin gerçekte ne kadar başarılı olacağını gösterir.</p>
+  </section>
+  <section class="panel" id="timing">
+    <h3>Zamanlama kuralları (geleceğe bakmadan)</h3>
+    <p>Her girdi, anlattığı aydan değil, gerçekte bilinir hâle geldiği aydan itibaren kullanılır. Yaklaşık üç ay gecikmeyle yayımlanan ihracat rakamları üç ay gecikmeyle kullanılır; bir hasat tahmini de normalde açıklandığı aydan itibaren kullanılır.</p>
+    <p>Bu kurallar olmasaydı geriye dönük test, fark edilmeden yarının haberlerini kullanır ve gerçek hayatta hiçbir zaman ulaşılamayacak kadar iyi görünürdü.</p>
+  </section>
+  <section class="panel" id="holdout">
+    <h3>Ayrılmış test dönemi, bir kez puanlandı</h3>
+    <p>{ph.escape(holdout_text)} Yöntemler yalnızca önceki aylar üzerinde geliştirildi ve karşılaştırıldı. Ayrılmış test dönemi ise en sonda bir kez puanlandı ve ardından hiçbir şey değiştirilmedi: "bir kez puanlandı, hiç ayarlanmadı" etiketi buradan gelir.</p>
+    <p>Ay sayısı bu kadar az olduğu için bu bir sağlamadır, yeni bir sıralama değil.</p>
+  </section>
+  <section class="panel" id="range">
+    <h3>%80 aralık ve kapsama</h3>
+    <p>Tek bir sayı yerine, fiyatın on seferde sekizinde içine düşmesi beklenen bir aralık (sitede 10'da 8 aralığı diye geçer). Kapsama, geriye dönük testte fiyatın gerçekte ne sıklıkla bu aralığa düştüğüdür.</p>
+    <p>Dürüst bir %80 aralık, ayların yaklaşık %80'ini kapsar. Bundan çok daha azı aralığın fazla dar ve fazla iddialı olduğunu, çok daha fazlası ise gerekenden geniş olduğunu gösterir. Bu sitedeki aralık şöyle kurulur: bugünkü fiyat, fiyatların geçmişte aynı sayıda ayda yaptığı hareketler kadar genişletilir.</p>
+  </section>
+  <section class="panel" id="season">
+    <h3>Sezon (Eylül'den Ağustos'a)</h3>
+    <p>Fiyatlar ve hasat rakamları takvim yılına göre değil, pazarlama sezonuna göre gruplanır: ihracatçıların esas aldığı, Eylül'den Ağustos'a uzanan yıl.</p>
+    <p>Bir sezon iki yılıyla adlandırılır: 2025/26, Eylül 2025'ten Ağustos 2026'ya kadar sürer.</p>
+  </section>
+  <section class="panel" id="old-lira">
+    <span class="pill tag">Yalnızca TL verileri</span>
+    <h3>Eski lira</h3>
+    <p>Türkiye 1 Ocak 2005'te para biriminden altı sıfır attı: 1.000.000 eski lira, 1 Yeni Türk Lirası (YTL) oldu. 2005 öncesindeki TL fiyatları yeni lira cinsinden gösterilir (eski değerler 1.000.000'a bölünür); böylece serinin tamamı tek bir ölçekte olur.</p>
+    <p>TL fiyatları onlarca yıllık yüksek enflasyonu da taşır; tahminlerin ABD doları cinsinden yapılıp puanlanmasının nedeni budur.</p>
+  </section>
+</div>
+""")
+```
+:::
+
+::: {.content-visible when-profile="en"}
 ```{python}
 ph.raw_html("""
 <div class="sect analysis-sect"><div><span class="eyebrow">Glossary</span><h2>The forecasting methods, in plain language</h2></div></div>
@@ -93,7 +166,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="sarimax">
     <h3>SARIMAX</h3>
-    <p>SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (US dollars to lira). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.</p>
+    <p>SARIMA with two extra inputs: the change in the crop estimate and the monthly change in the exchange rate (USD/TL). Beyond the last known month it holds the crop change where it was and assumes no exchange-rate move.</p>
   </section>
   <section class="panel" id="chronos-bolt">
     <h3>Chronos-Bolt</h3>
@@ -109,7 +182,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="mape">
     <h3>MAPE (mean absolute percentage error)</h3>
-    <p>How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with lira prices across decades of inflation, because a percentage stays comparable.</p>
+    <p>How far off the forecasts were on average, as a percentage of the actual price. It is used where prices sit at very different levels, as with TL prices across decades of inflation, because a percentage stays comparable.</p>
   </section>
   <section class="panel" id="pinball-loss">
     <h3>Pinball loss</h3>
@@ -121,7 +194,7 @@ ph.raw_html("""
   </section>
   <section class="panel" id="p-value">
     <h3>Statistical tests (p-value)</h3>
-    <p>The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the lira forecasts.</p>
+    <p>The Diebold-Mariano test asks whether two methods' errors really differ, or whether the gap could be chance. The p-value is the chance of seeing a gap at least this large if the two were equally good; a small one, such as 0.01, suggests a real difference. The site uses it only on the TL forecasts.</p>
   </section>
   <section class="panel" id="fob">
     <h3>FOB (free on board)</h3>
@@ -130,6 +203,61 @@ ph.raw_html("""
 </div>
 """)
 ```
+:::
+
+::: {.content-visible when-profile="tr"}
+```{python}
+ph.raw_html("""
+<div class="sect analysis-sect"><div><span class="eyebrow">Sözlük</span><h2>Tahmin yöntemleri, sade bir dille</h2></div></div>
+<div class="glossary">
+  <section class="panel" id="seasonal-naive">
+    <h3>Mevsimsel naif</h3>
+    <p>Son fiyatı alır ve ona, geçmiş yıllarda aynı takvim ayından başlayıp aynı sayıda ay içinde görülen ortalama yüzde değişimi uygular. Yalnızca fiyat geçmişini kullanır.</p>
+  </section>
+  <section class="panel" id="sarima">
+    <h3>SARIMA</h3>
+    <p>Fiyat geçmişi için klasik bir istatistiksel model. Sürekli bir eğilim, son aylardan gelen örüntüler ve yıllık bir döngü arar. Fiyatın logaritmasına uydurulur ve fiyatın kendisinden başka hiçbir şey kullanmaz.</p>
+  </section>
+  <section class="panel" id="sarimax">
+    <h3>SARIMAX</h3>
+    <p>İki ek girdisi olan SARIMA: hasat tahminindeki değişim ve dolar/TL kurundaki aylık değişim. Bilinen son aydan sonrası için hasat değişimini son değerinde tutar ve kurun hareket etmeyeceğini varsayar.</p>
+  </section>
+  <section class="panel" id="chronos-bolt">
+    <h3>Chronos-Bolt</h3>
+    <p>Başka birçok zaman serisiyle eğitilmiş, hazır bir tahmin modeli (Amazon'un Chronos-Bolt modelinin küçük sürümü). Modeli olduğu gibi, kendi verilerimizle hiç eğitmeden kullanıyoruz. Yalnızca fiyat geçmişini okur; verdiği tahmin, olası değerlerin medyanıdır.</p>
+  </section>
+  <section class="panel" id="lightgbm">
+    <h3>LightGBM</h3>
+    <p>Çok sayıda küçük karar ağacından kurulan bir makine öğrenmesi yöntemi. Kaç ay ileriye bakılacaksa o süre için fiyat değişimini bir dizi girdiden öğrenir: fiyat düzeyi ve son değişimleri, takvim ayı, hasat tahmininin açıklanmasından bu yana geçen ay sayısı, hasat tahminindeki değişim, ilkbahardaki donlu gün sayısı, ihracattaki büyüme, borsadaki işlem hacmi ve kur hareketleri. Ayarları önceden sabitlendi ve her ay yeniden eğitilir.</p>
+  </section>
+  <section class="panel" id="season-regression">
+    <h3>Sezon regresyonu</h3>
+    <p>Tek tek ayları değil, gelecek sezonun ortalama fiyatını tahmin eder. Geçmiş sezonlara düz bir çizgi uydurur: sezonun ortalama fiyatı ne kadar değişti, hasat tahmini ne kadar değişti. Hasat tahminine ihtiyaç duyduğu için, bu tahmin Ağustos'ta açıklanana kadar yöntemin yerine naif tahmin kullanılır.</p>
+  </section>
+  <section class="panel" id="mape">
+    <h3>Ortalama mutlak yüzde hata (MAPE)</h3>
+    <p>Tahminlerin, gerçekleşen fiyatın yüzdesi olarak ortalama ne kadar saptığı. Fiyatların çok farklı düzeylerde olduğu durumlarda kullanılır, çünkü yüzde karşılaştırılabilir kalır; onlarca yıllık enflasyon boyunca TL fiyatları buna bir örnektir.</p>
+  </section>
+  <section class="panel" id="pinball-loss">
+    <h3>Pinball kaybı</h3>
+    <p>Bir aralık tahmininin puanı. Yüzdelik, fiyatın zamanın belirli bir bölümünde altında kalması beklenen bir eşiktir (90. yüzdelik: on seferde dokuz). Her yüzdelik, fiyatın bu eşikten ne kadar uzağa düştüğüne göre cezalandırılır. Ceza bilerek eşit tutulmaz: 90. yüzdelikte, tahminin üzerinde kalan bir fiyat, altında kalan bir fiyatın dokuz katı ceza getirir. Site bu puanın beş yüzdelik üzerinden ortalamasını alır; düşük olması daha iyidir.</p>
+  </section>
+  <section class="panel" id="skill">
+    <h3>Beceri</h3>
+    <p>Bir tahminin bir temel tahmine göre ne kadar iyi sonuç verdiği: 1 eksi, kendi hatasının temel tahminin hatasına bölümü. 0'ın üzeri temel tahmini geçer, 0 eşit sonuç demektir, 0'ın altı daha kötüdür. Nokta tahminlerinde hata MAE, temel tahmin ise naif tahmindir; aralıklarda hata pinball kaybı, temel tahmin ise naif aralıktır.</p>
+  </section>
+  <section class="panel" id="p-value">
+    <h3>İstatistiksel testler (p değeri)</h3>
+    <p>Diebold-Mariano testi, iki yöntemin hataları arasındaki farkın gerçek mi, yoksa şans eseri mi olduğunu sorar. p değeri, iki yöntem eşit derecede iyi olsaydı en az bu büyüklükte bir fark görme olasılığıdır; 0,01 gibi küçük bir değer gerçek bir farka işaret eder. Site bunu yalnızca TL tahminlerinde kullanır.</p>
+  </section>
+  <section class="panel" id="fob">
+    <h3>FOB (free on board, gemide teslim)</h3>
+    <p>İhraç edilen malın çıkış limanındaki değeri; alıcıya kadarki navlun ve sigorta bu değere eklenmez. Bu sitedeki ihracat değerleri FOB esasına göredir.</p>
+  </section>
+</div>
+""")
+```
+:::
 
 ```{python}
 # What each crop's forecast tests found, computed from its results tables (the same words
@@ -151,25 +279,30 @@ for crop in crops.values():
         facts.insert(min(2, len(facts)), timing)
     if not facts:
         continue
+    name = i18n.crop_name(crop)
     link = ""
     if "forecasting" in crop.analyses:
-        link = (f'<p class="foot"><a href="{ph.escape(crop.slug)}/analyses/forecasting.qmd">'
-                f"{ph.escape(crop.name)} forecasting analysis</a>: every table behind these lines.</p>")
+        a = (f'<a href="{ph.escape(crop.slug)}/analyses/forecasting.qmd">'
+             f'{ph.escape(t("methods_page.facts_link", crop=name), quote=False)}</a>')
+        link = ph.facts_foot_html(a)  # the sentence escaped, the link put in as it is
     items = "".join(f"<li>{ph.escape(f, quote=False)}</li>" for f in facts)
     blocks.append(
         f'<section class="panel span-12" aria-labelledby="facts-{ph.escape(crop.slug)}">'
-        f'<span class="eyebrow">{ph.escape(crop.name)}</span>'
-        f'<h3 class="ptitle" id="facts-{ph.escape(crop.slug)}">What the forecast tests found</h3>'
+        f'<span class="eyebrow">{ph.escape(name)}</span>'
+        f'<h3 class="ptitle" id="facts-{ph.escape(crop.slug)}">'
+        f'{ph.escape(t("methods_page.facts_title"), quote=False)}</h3>'
         f'<ul class="facts">{items}</ul>{link}</section>'
     )
 if blocks:
     ph.raw_html(
-        '<div class="sect analysis-sect"><div><span class="eyebrow">In practice</span>'
-        "<h2>What the tests found</h2></div></div>"
+        '<div class="sect analysis-sect"><div>'
+        f'<span class="eyebrow">{ph.escape(t("methods_page.facts_eyebrow"))}</span>'
+        f'<h2>{ph.escape(t("methods_page.facts_h2"), quote=False)}</h2></div></div>'
         f'<div class="dash">{"".join(blocks)}</div>'
     )
 ```
 
+::: {.content-visible when-profile="en"}
 ```{python}
 ph.raw_html(f"""
 <div class="sect analysis-sect"><div><span class="eyebrow">Weekly refresh</span><h2>How the data stays current</h2></div></div>
@@ -194,3 +327,31 @@ ph.raw_html(f"""
 </div>
 """)
 ```
+:::
+
+::: {.content-visible when-profile="tr"}
+```{python}
+ph.raw_html(f"""
+<div class="sect analysis-sect"><div><span class="eyebrow">Haftalık güncelleme</span><h2>Veriler nasıl güncel kalıyor</h2></div></div>
+<div class="dash">
+<section class="panel span-7" aria-labelledby="refresh-steps">
+  <h3 class="ptitle" id="refresh-steps">Her hafta, dört adımda</h3>
+  <div class="sub">Kontrollerden geçmeyen hiçbir şey siteye ulaşmaz.</div>
+  <ol class="steps">
+    <li><strong>İndirme.</strong> Otomatik bir görev, bütün kaynakları yeniden indirir. Her kaynak ayrı ayrı alınır; böylece biri indirilemese de diğerleri durmaz.</li>
+    <li><strong>Yedekli derleme.</strong> Sitenin tabloları yeni verilerden yeniden oluşturulur. Kaynağına ulaşılamayan ya da bir öncekinden %10'dan fazla kısa çıkan (yarım kalmış bir indirmenin belirtisi) bir tablo, önceki güncellemedeki son sağlam sürümünü korur ve "güncel değil" diye işaretlenir. Temel tabloların (aylık fiyat serisi, fiyat aralığı ve öne çıkan sayılar) yedeği yoktur: bunlar yeniden oluşturulamazsa işlem durur.</li>
+    <li><strong>Doğrulama.</strong> Hiçbir şey yayımlanmadan önce bir kontrol adımı verileri denetler: aylık fiyat serisinde {ph.escape(first_month)} ile son ay arasındaki her ay bulunmalı, hiçbir ay iki kez geçmemeli, her fiyat ve döviz kuru sıfırın üzerinde olmalıdır; fiyat aralığı pozitif ve doğru sırada olmalıdır; öne çıkan sayıların hepsi geçerli sayılar olmalıdır; son ay en fazla {max_lag} ay önceye ait olmalıdır. Kontrollerden biri bile geçilemezse işlem durur ve yayındaki site olduğu gibi kalır.</li>
+    <li><strong>Yayımlama.</strong> Sayfalar, grafikler ve Excel çalışma kitabı, kontrol edilmiş verilerden yeniden oluşturulur. Tahmin modelleri her hafta yeniden çalıştırılmaz: puan tabloları kayıtlı geriye dönük test sonuçlarından gelir; yalnızca hesaplaması kolay olan fiyat aralığı en son fiyatlarla yeniden hesaplanır.</li>
+  </ol>
+</section>
+<section class="panel span-5" aria-labelledby="stamp-heading">
+  <h3 class="ptitle" id="stamp-heading">Veri tarihi damgası</h3>
+  <div class="sub">Her sayfada, sayıların ne kadar güncel olduğu.</div>
+  <p class="muted"><span class="live"><i aria-hidden="true"></i>Veriler &lt;ay&gt; itibarıyla · haftalık güncellenir</span></p>
+  <p class="muted">Buradaki ay, ürünün borsa fiyat serisindeki son aydır.</p>
+  <p class="muted">Bir tablo, kaynağına ulaşılamadığı için daha eski bir kopyayla çalışıyorsa damgaya, bu durumdaki en eski ayı belirten "(bazı kaynaklar &lt;ay&gt; tarihli)" ifadesi eklenir; tablonun henüz önceki bir kopyası yoksa "(bazı kaynaklara ulaşılamadı)" eklenir. Çalışma kitabının açıklama sayfası, güncel olmayan her tabloyu ve tarihini listeler.</p>
+</section>
+</div>
+""")
+```
+:::
