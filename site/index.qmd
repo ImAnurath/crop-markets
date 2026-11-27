@@ -24,7 +24,7 @@ Exchange prices, exports, crop sizes and weather, collected from public sources 
 ::: {.content-visible when-profile="tr"}
 [Ürün Piyasaları]{.eyebrow}
 
-# İhraç ürünlerinin piyasaları, *şeffaf biçimde kuruldu.*
+# İhraç ürünlerinin piyasaları, *şeffaf biçimde izleniyor.*
 
 ::: {.lede}
 Borsa fiyatları, ihracat, hasat miktarları ve hava durumu; her hafta kamuya açık kaynaklardan toplanır. Her ürünün bir genel bakış sayfası, bir gösterge paneli, analizleri ve bir veri gezgini vardır. Tahminler de sonradan öğrenilen hiçbir bilgi kullanılmadan test edilir.

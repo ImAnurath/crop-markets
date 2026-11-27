@@ -111,7 +111,7 @@ strip:
   change_on_month: "{month} ayına göre {change}"
   change_on_year: "{year} yılına göre {change}"
   since_peak: "zirve: {month} ({price})"
-  peak_na: "zirve: N/A"
+  peak_na: "zirve verisi yok"
   no_estimate: "henüz tahmin yok"
   no_earlier_year: "karşılaştırılacak önceki yıl yok"
 exchanges:
