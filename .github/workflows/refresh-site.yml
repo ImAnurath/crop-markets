@@ -13,6 +13,9 @@
 # - build_site_data.py: the gate. It fails when a core output (monthly prices, price range,
 #   headline stats) cannot be rebuilt (or its row count drops more than 10%) or validation
 #   finds a problem; the job stops and the site already online stays as it was.
+# - check_countries.py: never stops the job (Ruling F1). An export destination in the
+#   refreshed data without a country.* entry (a new or renamed UN Comtrade partner) is a
+#   ::warning:: and a job-summary line; the Turkish pages show its English name meanwhile.
 # - Everything after that (workbooks, tests, render, rendered-site tests and link check,
 #   commit) also stops the job.
 # Only the default branch commits data and deploys; a run on another ref only builds.
@@ -91,12 +94,22 @@ jobs:
       - name: Build site data (gate; writes the run summary)
         run: python scripts/build_site_data.py
 
+      # Warning only (Ruling F1): see the header. Locally the country-coverage test fails
+      # instead; here it is deselected from both pytest steps below.
+      - name: Untranslated export destinations (warning only)
+        continue-on-error: true
+        run: python scripts/check_countries.py
+
       - name: Build workbooks (English and Turkish)
         run: python scripts/build_workbook.py
 
       # The rendered-site tests skip here (no site/_site yet); they run after the render.
+      # The country-coverage test is a development gate: on refreshed Comtrade data a new or
+      # renamed partner would block the deploy of both languages for a missing Turkish name,
+      # so it is left out here and check_countries.py warns instead (Ruling F1).
       - name: Site tests
-        run: pytest tests/site tests/test_fetch_raw.py -q
+        run: |
+          pytest tests/site tests/test_fetch_raw.py -q             --deselect tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry
 
       - name: Render site (English, then Turkish into site/_site/tr)
         run: |
@@ -108,7 +121,8 @@ jobs:
       # Turkish text, workbooks per language, and the link check (every internal link and
       # language-switch target resolves; Turkish pages stay inside tr/). The English text
       # snapshot is a development gate fixed to the committed data, so it is left out on
-      # refreshed data.
+      # refreshed data, and so is the country-coverage test (see "Site tests"). The Turkish
+      # text test lets through the English names check_countries.py warned about.
       # The tree check comes first: without it, a missing tree would make its tests skip
       # and the step pass.
       - name: Rendered-site tests and link check (both trees)
@@ -120,7 +134,7 @@ jobs:
             fi
           done
           pytest tests/site -q -rs \
-            --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot
+            --deselect tests/site/test_rendered_text.py::test_rendered_english_text_matches_the_snapshot             --deselect tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry
 
       - name: Commit refreshed site data
         if: github.ref == 'refs/heads/main'

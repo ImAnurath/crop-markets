@@ -71,10 +71,13 @@
         };
         point();
         window.addEventListener("hashchange", point);
-        el.addEventListener("click", function () {
+        var choose = function () {
           point();
           try { window.localStorage.setItem(LANG_KEY, l.lang); } catch (e) {}
-        });
+        };
+        // A middle-click (auxclick) opens the other language in a new tab: a choice too.
+        el.addEventListener("click", choose);
+        el.addEventListener("auxclick", choose);
       }
       el.textContent = l.code;
       box.appendChild(el);

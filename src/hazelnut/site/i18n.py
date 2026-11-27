@@ -15,12 +15,14 @@ falls back to English, and ``deploy_problems()`` fails a deploy that includes Tu
 """
 from __future__ import annotations
 
+import csv
 import math
 import os
 import re
 import unicodedata
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
+from pathlib import Path
 
 import yaml
 
@@ -144,6 +146,18 @@ def country_name(name: str) -> str:
     return t(key) if has(key) else name
 
 
+def missing_countries(data_dir=None) -> list[str]:
+    """The export destinations in the site data (the ``partner`` column of every crop's
+    ``exports_monthly.csv`` under ``data_dir``, default ``site/data``) that have no
+    ``country.<key>`` entry, sorted. ``country_name`` shows them under their UN Comtrade
+    (English) name on every page."""
+    names = set()
+    for path in sorted(Path(data_dir or SITE_DIR / "data").glob("*/exports_monthly.csv")):
+        with path.open(encoding="utf-8", newline="") as f:
+            names.update(row["partner"] for row in csv.DictReader(f))
+    return sorted(n for n in names if n and not has(f"country.{country_key(n)}"))
+
+
 def crop_source_name(source: str) -> str:
     """A crop-estimate source key from the results ("national") in words, from
     ``crop_source.<key>``; a key without an entry is returned as it is."""
@@ -258,14 +272,15 @@ def fmt_pct(x, dp: int = 0, *, signed: bool = False) -> str:
 
     ``signed`` adds the sign: ``+31.5%``, ``−3.5%`` (``−%3,5``); a value that rounds to
     zero has none. Unsigned, a negative value takes ``format.pct_minus``: ``-3%`` in
-    English, as its pages have always shown, ``−%3`` in Turkish."""
+    English, as its pages have always shown, ``−%3`` in Turkish. Signed or not, a value that
+    rounds to zero has no sign (``0.0%``, not ``-0.0%``)."""
     if _missing(x):
         return _na()
     v = x * 100
+    if round(v, dp) == 0:
+        return t("format.pct", value=_plain(0, dp))
     if signed:
         p = round(v, dp)
-        if p == 0:
-            return t("format.pct", value=_plain(0, dp))
         return t("format.pct_signed", sign="+" if p > 0 else MINUS, value=_plain(abs(p), dp))
     body = _plain(v, dp)
     if body.startswith("-"):

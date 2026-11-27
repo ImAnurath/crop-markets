@@ -112,6 +112,14 @@ def test_switch_on_a_turkish_page_leads_back_to_english_and_stores_it():
     assert detect(stored={KEY: "en"})["replaced"] is None
 
 
+@pytest.mark.parametrize("event", ["click", "auxclick"])
+def test_switch_stores_the_choice_on_a_middle_click_too(event):
+    # A middle-click (auxclick) opens the other language in a new tab: that is a choice too.
+    out = run(SITE_JS, strings=STRINGS, clickAfterHash="", clickEvent=event, languages=["en"])
+    assert out["switch"]["clickedHref"] == TR_PAGE
+    assert out["stored"] == "tr"
+
+
 def test_switch_works_with_blocked_storage_and_is_absent_without_a_counterpart():
     out = run(SITE_JS, strings=STRINGS, storage="throws", clickAfterHash="")
     assert out["switch"]["clickedHref"] == TR_PAGE and out["stored"] == "THREW"

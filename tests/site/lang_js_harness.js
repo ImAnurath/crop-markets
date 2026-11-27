@@ -100,7 +100,8 @@ ctx.window = ctx;
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(script, "utf8"), ctx, { filename: script });
 
-// The switch, if site.js built one: click its link after an in-page hash change.
+// The switch, if site.js built one: click its link after an in-page hash change
+// (c.clickEvent: "click", the default, or "auxclick" for a middle-click).
 const box = tools.children.find((e) => e.className === "lang-switch");
 if (box) {
   out.switch = {
@@ -113,7 +114,7 @@ if (box) {
     location.hash = c.clickAfterHash;
     (winListeners.hashchange || []).forEach((f) => f());
     out.switch.hrefAfterHashchange = a.href;
-    (a.listeners.click || []).forEach((f) => f());
+    (a.listeners[c.clickEvent || "click"] || []).forEach((f) => f());
     out.switch.clickedHref = a.href;
   }
   out.switch.themeTitle = theme.getAttribute("title");

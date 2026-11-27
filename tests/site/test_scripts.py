@@ -242,3 +242,54 @@ def test_render_site_names_the_site_once_in_a_turkish_tab_title(tmp_path):
     render_site.finish_tree(tmp_path, "tr")
     assert home.read_text("utf-8") == "<title>Ürün Piyasaları</title>"
     assert page.read_text("utf-8") == "<title>Yöntemler – Ürün Piyasaları</title>"
+
+
+# --- check_countries.py (Ruling F1: a warning in CI, never a failure) --------------------
+
+def _exports_csv(data_dir, partners):
+    folder = data_dir / "hazelnut"
+    folder.mkdir(parents=True)
+    rows = "".join(f'2020-01,shelled,"{p}",1.0,2.0\n' for p in partners)
+    (folder / "exports_monthly.csv").write_text(
+        "month,product,partner,net_kg,fob_usd\n" + rows, encoding="utf-8")
+
+
+def test_check_countries_warns_about_a_destination_without_an_entry(tmp_path, monkeypatch, capsys):
+    _exports_csv(tmp_path / "data", ["Italy", "Isle of Atlantis"])
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    assert _load("check_countries").main([str(tmp_path / "data")]) == 0
+    out = capsys.readouterr().out
+    assert "::warning::" in out and "Isle of Atlantis" in out
+    assert "Italy" not in out
+    text = summary.read_text(encoding="utf-8")
+    assert "Isle of Atlantis" in text and "1 export destination" in text
+
+
+def test_check_countries_is_quiet_when_every_destination_has_an_entry(tmp_path, monkeypatch, capsys):
+    _exports_csv(tmp_path / "data", ["Italy", "USA"])
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    assert _load("check_countries").main([str(tmp_path / "data")]) == 0
+    assert "::warning::" not in capsys.readouterr().out
+    assert "every export destination" in summary.read_text(encoding="utf-8")
+
+
+COUNTRY_TEST = "tests/site/test_i18n.py::test_every_destination_in_the_site_data_has_a_country_entry"
+
+
+def test_workflow_warns_about_countries_instead_of_failing():
+    import yaml
+
+    from tests.site import test_i18n
+
+    workflow = SCRIPTS.parent / ".github" / "workflows" / "refresh-site.yml"
+    steps = yaml.safe_load(workflow.read_text(encoding="utf-8"))["jobs"]["build"]["steps"]
+    runs = [s.get("run", "") for s in steps]
+    assert hasattr(test_i18n, COUNTRY_TEST.rsplit("::", 1)[1])  # the deselected id exists
+    pytest_runs = [r for r in runs if "pytest tests/site" in r]
+    assert len(pytest_runs) == 2
+    assert all(f"--deselect {COUNTRY_TEST}" in r for r in pytest_runs)
+    warn = next(i for i, r in enumerate(runs) if "scripts/check_countries.py" in r)
+    gate = next(i for i, r in enumerate(runs) if "scripts/build_site_data.py" in r)
+    assert warn > gate and steps[warn].get("continue-on-error") is True

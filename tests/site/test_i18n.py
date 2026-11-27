@@ -118,6 +118,9 @@ def test_english_formats():
     assert i18n.fmt_pct(0.315, 1, signed=True) == "+31.5%"
     assert i18n.fmt_pct(-0.035, 1, signed=True) == "−3.5%"
     assert i18n.fmt_pct(0.0001, 1, signed=True) == "0.0%"
+    assert i18n.fmt_pct(-0.0004, 1) == "0.0%"  # rounds to zero: no sign
+    assert i18n.fmt_pct(-0.004) == "0%"
+    assert i18n.fmt_pct(-0.03) == "-3%"
     assert i18n.fmt_signed(-0.1) == "−0.10"
     assert i18n.fmt_signed(0.001) == "0.00"
     assert i18n.month_name(10) == "October"
@@ -135,6 +138,9 @@ def test_turkish_formats(turkish):
     assert i18n.fmt_pct(0.8418) == "%84"
     assert i18n.fmt_pct(-0.035, 1, signed=True) == "−%3,5"
     assert i18n.fmt_pct(0.315, 1, signed=True) == "+%31,5"
+    assert i18n.fmt_pct(-0.0004, 1) == "%0,0"  # rounds to zero: no sign
+    assert i18n.fmt_pct(-0.004) == "%0"
+    assert i18n.fmt_pct(-0.03) == "−%3"
     assert i18n.fmt_signed(-0.1) == "−0,10"
     assert i18n.month_name(10) == "Ekim"
     assert i18n.month_name(10, short=True) == "Eki"
@@ -210,14 +216,27 @@ def test_every_english_country_entry_is_its_own_comtrade_name():
         assert i18n.country_name(name) == name
 
 
-def test_every_destination_in_the_site_data_has_a_country_entry():
-    import pandas as pd
+def _exports(data_dir, crop, partners):
+    folder = data_dir / crop
+    folder.mkdir(parents=True)
+    rows = "".join(f'2020-01,shelled,"{p}",1.0,2.0\n' for p in partners)
+    (folder / "exports_monthly.csv").write_text(
+        "month,product,partner,net_kg,fob_usd\n" + rows, encoding="utf-8")
 
-    path = i18n.SITE_DIR / "data" / "hazelnut" / "exports_monthly.csv"
-    if not path.exists():
+
+def test_missing_countries_lists_destinations_without_an_entry(tmp_path):
+    _exports(tmp_path, "hazelnut", ["Italy", "Isle of Atlantis", "Germany", "Isle of Atlantis"])
+    _exports(tmp_path, "apricot", ["USA", "Rep. of Nowhere"])
+    assert i18n.missing_countries(tmp_path) == ["Isle of Atlantis", "Rep. of Nowhere"]
+    assert i18n.missing_countries(tmp_path / "absent") == []
+
+
+# A development gate: in CI (refreshed Comtrade data) it is deselected, and
+# scripts/check_countries.py warns instead (Ruling F1).
+def test_every_destination_in_the_site_data_has_a_country_entry():
+    if not list((i18n.SITE_DIR / "data").glob("*/exports_monthly.csv")):
         pytest.skip("no site data")
-    partners = set(pd.read_csv(path)["partner"].astype(str))
-    assert {p for p in partners if not i18n.has(f"country.{i18n.country_key(p)}")} == set()
+    assert i18n.missing_countries() == []
 
 
 def test_country_names_in_turkish(turkish):

@@ -3,7 +3,9 @@ TRANSLATED (navbar and footer included), read with scripts/snapshot_text.py's ex
 holds none of a compact list of common English words.
 
 Pages join TRANSLATED as their Turkish prose lands (Task 6 batches). Names that stay as
-they are in Turkish (sources, method names) are removed before the scan. The Turkish pages
+they are in Turkish (sources, method names) are removed before the scan, and so are the
+English names of export destinations in the site data that have no ``country.*`` entry
+(i18n.country_name shows those as they are; CI only warns about them, Ruling F1). The Turkish pages
 carry the Turkish brand, "Ürün Piyasaları" (the owner's choice); English keeps "Crop Markets".
 
 The stop-word list catches untranslated sentences. It does not catch short English
@@ -17,6 +19,7 @@ from pathlib import Path
 
 import pytest
 
+from hazelnut.site import i18n
 from hazelnut.site.config import SITE_DIR
 
 RENDERED = SITE_DIR / "_site"
@@ -80,19 +83,30 @@ def _snapshot_module():
 snapshot = _snapshot_module()
 
 
-def english_words(text: str) -> list[str]:
-    """The English words in ``text``, in order, after the allowed names are removed."""
-    for name in ALLOWED:
+def kept_names(data_dir=None) -> tuple[str, ...]:
+    """The names removed before the scan: ALLOWED, plus the English names of the export
+    destinations in the site data under ``data_dir`` (default ``site/data``) that have no
+    ``country.*`` entry, longest first."""
+    return tuple(sorted((*ALLOWED, *i18n.missing_countries(data_dir)), key=len, reverse=True))
+
+
+KEPT = kept_names()
+
+
+def english_words(text: str, kept: tuple[str, ...] | None = None) -> list[str]:
+    """The English words in ``text``, in order, after the kept names (default KEPT) are
+    removed."""
+    for name in KEPT if kept is None else kept:
         text = re.sub(rf"(?<!\w){re.escape(name)}(?!\w)", " ", text)
     return [w for w in _WORD.findall(text) if w.casefold() in ENGLISH_WORDS]
 
 
-def english_lines(text: str) -> list[str]:
+def english_lines(text: str, kept: tuple[str, ...] | None = None) -> list[str]:
     """Each line of ``text`` that holds English words, as "line  <- words"."""
     out = []
     for line in text.splitlines():
         # The extractor's "[attribute-name] value" marker is not page text; its value is.
-        found = english_words(_ATTR_MARKER.sub("", line))
+        found = english_words(_ATTR_MARKER.sub("", line), kept)
         if found:
             out.append(f"{line[:120]}  <- {', '.join(found)}")
     return out
@@ -116,6 +130,23 @@ def test_english_lines_reads_attribute_values_not_their_names():
     assert english_lines("[data-scroll-hint] Devamı için kaydırın →") == []
     assert english_lines("[aria-label] Toggle dark mode") == [
         "[aria-label] Toggle dark mode  <- Toggle"]
+
+
+def test_english_country_names_from_the_data_fallback_are_kept(tmp_path):
+    # A destination without a country.* entry shows under its UN Comtrade (English) name on
+    # Turkish pages (i18n.country_name); CI only warns about it (Ruling F1), so the scan
+    # lets that name through and still catches every other English word.
+    folder = tmp_path / "hazelnut"
+    folder.mkdir()
+    (folder / "exports_monthly.csv").write_text(
+        "month,product,partner,net_kg,fob_usd\n"
+        "2020-01,shelled,Italy,1,2\n2020-01,shelled,Isle of Atlantis,1,2\n", encoding="utf-8")
+    kept = kept_names(tmp_path)
+    assert "Isle of Atlantis" in kept and "Italy" not in kept
+    assert english_lines("İhracatın %5'i Isle of Atlantis'e gitti", kept) == []
+    assert english_lines("[title] Isle of Atlantis", kept) == []
+    assert english_words("Isle of Atlantis and the price", kept) == ["and", "the", "price"]
+    assert english_words("Isle of Atlantis") == ["of"]  # not kept without the data
 
 
 def test_tr_block_takes_only_the_turkish_block():

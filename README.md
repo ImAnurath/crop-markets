@@ -43,16 +43,17 @@ branch is merged to `main`.
 - **Methods**: a plain-language glossary and how each number is made, including the leak-free testing.
 - **Downloads**: the full formatted workbook, with source credits.
 
-Every page also exists in Turkish under `/tr/` (same paths; a switch in the navbar, and a
-Turkish-first browser is sent there once), with a Turkish workbook
-(`hazelnut-market-data-tr.xlsx`). The Turkish text is a draft until the owner reviews it.
+The Turkish site is live under `/tr/`: every page in Turkish at the same paths (a switch in
+the navbar, and a Turkish-first browser is sent there once), with a Turkish workbook
+(`hazelnut-market-data-tr.xlsx`).
 
 ## Weekly refresh
 
 `.github/workflows/refresh-site.yml` runs every Monday 05:00 UTC (and on demand):
 `check_site_vars.py` (owner details filled in, `author_bio_tr` included; no `TODO` left in
 `site/i18n/tr.yml`, since the workflow sets `SITE_DEPLOY=en,tr`) → fetch → `build_tables.py` →
-`build_site_data.py` → `build_workbook.py` (both workbooks) → `pytest tests/site
+`build_site_data.py` → `check_countries.py` (warns, never fails, about an export destination
+without a Turkish name) → `build_workbook.py` (both workbooks) → `pytest tests/site
 tests/test_fetch_raw.py` → `render_site.py` (English, then Turkish) → rendered-site tests
 and link check over both trees → bot commit of `site/data/` to `main` → GitHub Pages deploy.
 Forecast scores come from the committed `reports/backtest/` results; only the cheap
