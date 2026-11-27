@@ -622,7 +622,7 @@ hazelnut:
       ranges_foot: "Tuttu: gerçekleşen fiyatın aralığın içinde kaldığı ayların payı. Genişlik: 10'da 8 aralığının ortalama genişliği, kilogram başına USD. {skill}: 1 eksi, yöntemin {pinball} (beş yüzdeliğin ortalaması) ilk satırdakine oranı; 0'ın üzerindeki bir değer ilk satırı geçmek demektir. Geliştirme dönemi."
       lira_split_title: "Son USD fiyatı × liranın değer kaybı eğilimi"
       lira_split_fallback: "Kriz ve sakin aylarda hatanın TL naif tahmininin hatasına oranı."
-      lira_split_foot: "{mape} (ortalama mutlak yüzde hata) değerinin, TL naif tahmininin (TL fiyatı olduğu yerde kalır) aynı değerine oranı; geliştirme dönemi (36 aylık eğilim). Lira krizleri: {periods}. Buradaki kazanç, liranın 2018-24 kriz yıllarındaki kendi değer kaybı eğiliminden geliyor; yalnızca bir ipucu (6 varyant denendi), fındık piyasasına dair bir sinyal değil."
+      lira_split_foot: "{mape} (ortalama mutlak yüzde hata) değerinin, TL naif tahmininin (TL fiyatı olduğu yerde kalır) aynı değerine oranı; geliştirme dönemi (36 aylık eğilim). Lira krizleri: {periods}. Bu sonuç, liranın 2018-24 kriz yıllarındaki kendi değer kaybı eğiliminden geliyor; yalnızca bir ipucu (6 varyant denendi), fındık piyasasına dair bir sinyal değil."
       lira_title: "TL tahminleri ve TL naif tahmini"
       lira_fallback: "Tüm aylarda hatanın TL naif tahmininin hatasına oranı."
       lira_trend_words: "liranın değer kaybı eğilimine dayanan tahminler"
